@@ -1,0 +1,2342 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MedTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F7F8FA;--sf:#fff;--s2:#F0F4F8;--bd:#E4EAF0;
+  --ac:#1A9E75;--al:#E1F5EE;--ad:#0F6E56;
+  --t1:#1A2332;--t2:#5A6A7A;--t3:#9AAABB;
+  --wn:#E8A020;--wl:#FEF3DC;
+  --dg:#D94040;--dl:#FDEAEA;
+  --bl:#2563EB;--bll:#EFF6FF;
+  --pp:#7C3AED;--pl:#F5F3FF;
+  --r1:8px;--r2:12px;--r3:18px;--r4:24px;
+  --sh:0 2px 12px rgba(26,46,70,.07);
+  --shL:0 8px 32px rgba(26,46,70,.12);
+}
+
+/* ── APPOINTMENT TAB ── */
+.appt-tab{display:none;flex:1;overflow-y:auto;padding:16px;flex-direction:column;gap:14px}
+.appt-tab.on{display:flex}
+.appt-hero{background:linear-gradient(135deg,var(--bl),#1d4ed8);border-radius:var(--r3);padding:18px;color:#fff;position:relative;overflow:hidden}
+.appt-hero::before{content:"🏥";position:absolute;right:-10px;bottom:-14px;font-size:64px;opacity:.15}
+.appt-hero-title{font-size:16px;font-weight:600;margin-bottom:4px}
+.appt-hero-sub{font-size:12px;opacity:.85;line-height:1.5}
+.appt-scan-btn{margin-top:12px;background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;border-radius:var(--r2);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;width:100%}
+.appt-scan-btn:hover{background:rgba(255,255,255,.3)}
+.appt-scan-row{display:flex;gap:8px;margin-top:10px}
+.appt-scan-row .appt-scan-btn{flex:1;margin-top:0}
+.appt-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
+.appt-card-header{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)}
+.appt-card-ico{width:40px;height:40px;border-radius:10px;background:var(--bll);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.appt-card-info{flex:1}
+.appt-card-title{font-size:14px;font-weight:600;color:var(--t1)}
+.appt-card-date{font-size:12px;color:var(--bl);font-weight:500;margin-top:2px}
+.appt-card-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.appt-row{display:flex;align-items:flex-start;gap:8px}
+.appt-row-ico{width:18px;text-align:center;flex-shrink:0;margin-top:1px;font-size:14px}
+.appt-row-lbl{color:var(--t3);font-size:11px;min-width:56px;flex-shrink:0;margin-top:2px}
+.appt-row-val{color:var(--t1);font-weight:500;font-size:13px;flex:1;line-height:1.45}
+.appt-tags{display:flex;flex-wrap:wrap;gap:5px;padding:0 14px 12px}
+.appt-tag{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.appt-tag.warn{background:var(--wl);color:var(--wn);border:1px solid rgba(232,160,32,.3)}
+.appt-tag.info{background:var(--bll);color:var(--bl);border:1px solid rgba(37,99,235,.2)}
+.appt-countdown{background:var(--al);border:1px solid rgba(26,158,117,.25);border-radius:var(--r1);padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ad);font-weight:500;margin:0 14px 10px}
+.appt-actions{display:flex;gap:8px;padding:0 14px 14px}
+.appt-act-btn{flex:1;padding:8px;border-radius:var(--r1);border:1px solid var(--bd);background:var(--s2);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--t2);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .2s}
+.appt-act-btn:hover{border-color:var(--ac);color:var(--ac);background:var(--al)}
+.appt-act-btn.del{color:var(--dg)}
+.appt-act-btn.del:hover{border-color:var(--dg);background:var(--dl)}
+.appt-empty{text-align:center;padding:32px 16px;color:var(--t3)}
+.appt-empty-ico{font-size:40px;margin-bottom:10px}
+.appt-empty-txt{font-size:13px;line-height:1.6}
+.appt-analyze-wrap{background:var(--s2);border-radius:var(--r2);padding:14px;display:none}
+.appt-analyze-wrap.on{display:block}
+.appt-preview{width:100%;max-height:180px;object-fit:contain;border-radius:var(--r1);margin-bottom:10px;border:1px solid var(--bd)}
+.appt-analyzing{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--bl);padding:4px 0}
+.appt-dot{width:8px;height:8px;border-radius:50%;background:var(--bl);animation:apulsed 1.2s ease-in-out infinite}
+@keyframes apulsed{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
+.sec-lbl{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.appt-hint{background:var(--bll);border:1px solid rgba(37,99,235,.2);border-radius:var(--r1);padding:9px 12px;font-size:12px;color:var(--bl);line-height:1.55}
+.appt-badge{background:var(--dg);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 7px;min-width:18px;text-align:center}
+.upcoming-badge{background:var(--bl);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 7px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Noto Sans Thai','Noto Sans SC',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;-webkit-font-smoothing:antialiased}
+.app{max-width:390px;margin:0 auto;min-height:100vh;background:var(--sf);display:flex;flex-direction:column;box-shadow:var(--shL)}
+
+/* Header */
+.hdr{padding:10px 12px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd);background:var(--sf);position:sticky;top:0;z-index:20;overflow:hidden}
+.hlogo{width:32px;height:32px;background:var(--ac);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hlogo svg{width:17px;height:17px}
+.htitle{font-size:15px;font-weight:600}.hsub{font-size:11px;color:var(--t3);margin-top:1px}
+.lsw{display:flex;gap:2px;flex-shrink:0}
+.lb{width:30px;height:20px;border-radius:4px;border:1.5px solid var(--bd);background:var(--sf);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s;padding:0}
+.lb:hover{border-color:var(--ac)}.lb.on{border-color:var(--ac);background:var(--al)}
+.apib{font-size:10px;font-weight:500;padding:3px 7px;border-radius:20px;cursor:pointer;border:1px solid var(--bd);color:var(--t2);background:var(--s2);margin-left:3px;white-space:nowrap;transition:all .2s;font-family:inherit;flex-shrink:0}
+.apib.on{background:var(--al);color:var(--ad);border-color:var(--ac)}
+
+/* Content */
+.cnt{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* Steps */
+.steps{display:flex;align-items:center;padding:0 2px}
+.step{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:500;color:var(--t3);flex:1}
+.step.active{color:var(--ac)}.step.done{color:var(--ad)}
+.sdot{width:20px;height:20px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;background:var(--sf);flex-shrink:0;transition:all .3s}
+.step.active .sdot{border-color:var(--ac);color:var(--ac)}.step.done .sdot{background:var(--ac);border-color:var(--ac);color:#fff}
+.sline{flex:1;height:1px;background:var(--bd);margin:0 3px}.sline.done{background:var(--ac)}
+
+/* ── PHOTO QUEUE ── */
+.queue-section{background:var(--s2);border-radius:var(--r2);padding:13px}
+.queue-title{font-size:12px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.queue-grid{display:flex;gap:8px;flex-wrap:wrap;min-height:72px;align-items:flex-start;padding:8px 0}
+.q-thumb{width:68px;height:68px;border-radius:var(--r1);border:2px solid var(--bd);background:var(--sf);overflow:hidden;position:relative;flex-shrink:0;cursor:pointer}
+.q-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.q-thumb .q-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(217,64,64,.9);color:#fff;border:none;font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:400;font-family:inherit}
+.q-thumb .q-num{position:absolute;bottom:2px;left:3px;font-size:9px;font-weight:600;color:#fff;background:rgba(0,0,0,.5);border-radius:3px;padding:0 4px}
+.q-add{width:68px;height:68px;border-radius:var(--r1);border:2px dashed var(--ac);background:var(--al);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .2s;gap:2px}
+.q-add:hover{background:var(--al);border-color:var(--ad)}
+.q-add-icon{font-size:22px;line-height:1}
+.q-add-lbl{font-size:9px;font-weight:600;color:var(--ad)}
+.q-empty{font-size:12px;color:var(--t3);display:flex;align-items:center;gap:8px;width:100%;padding:8px 0}
+
+/* Scan zone (compact, shown when taking a new photo) */
+.sz-wrap{display:none;pointer-events:none;text-align:center}.sz-wrap.on{display:block;pointer-events:auto}
+.sz{border:2px dashed var(--bd);border-radius:var(--r2);background:var(--s2);aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .25s;position:relative;overflow:hidden;max-width:360px;margin:0 auto;width:100%}
+.sz:hover{border-color:var(--ac);background:var(--al)}.sz.drag{border-color:var(--ac);background:var(--al)}
+.sz.has{border-style:solid;padding:0}
+#prev{width:100%;height:100%;object-fit:cover;display:none;border-radius:calc(var(--r2) - 2px)}.sz.has #prev{display:block}
+.sz-ph{display:flex;flex-direction:column;align-items:center;gap:6px}.sz.has .sz-ph{display:none}
+.sz-ic{width:46px;height:46px;background:var(--sf);border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh)}
+.sz-ic svg{width:24px;height:24px;color:var(--ac)}
+.sz-h1{font-size:13px;font-weight:500}.sz-h2{font-size:11px;color:var(--t3)}
+.sz-ov{position:absolute;inset:0;background:rgba(0,0,0,.46);display:none;align-items:center;justify-content:center;flex-direction:column;gap:8px;border-radius:calc(var(--r2) - 2px)}.sz-ov.on{display:flex}
+.sc-ln{position:absolute;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,var(--ac),transparent);animation:scMv 2s ease-in-out infinite;border-radius:2px}
+@keyframes scMv{0%{top:15%;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:85%;opacity:0}}
+.sc-c::before,.sc-c::after,.sc-c2::before,.sc-c2::after{content:'';position:absolute;width:18px;height:18px;border-color:#fff;border-style:solid}
+.sc-c::before{top:8px;left:8px;border-width:2px 0 0 2px}.sc-c::after{top:8px;right:8px;border-width:2px 2px 0 0}
+.sc-c2::before{bottom:8px;left:8px;border-width:0 0 2px 2px}.sc-c2::after{bottom:8px;right:8px;border-width:0 2px 2px 0}
+.ov-t{color:#fff;font-size:13px;font-weight:500}.ov-s{color:rgba(255,255,255,.7);font-size:11px}
+.img-acts{display:none;position:absolute;bottom:12px;left:0;right:0;justify-content:center;gap:10px;z-index:10}.sz.has .img-acts{display:flex}
+.iab{background:rgba(255,255,255,.95);border:none;border-radius:20px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;color:var(--t1);font-family:inherit;transition:all .2s;z-index:20;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.iab:hover{background:#fff}.iab.p{background:var(--ac);color:#fff}.iab.p:hover{background:var(--ad)}
+
+/* Upload row */
+.uprow{display:flex;gap:8px}
+.upbtn{flex:1;padding:10px 6px;border:1.5px solid var(--bd);border-radius:var(--r2);background:var(--sf);cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;color:var(--t1);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s}
+.upbtn:hover{border-color:var(--ac);color:var(--ac);background:var(--al)}
+.upbtn svg{width:15px;height:15px;flex-shrink:0}
+
+/* Meal config */
+.mcfg{background:var(--s2);border-radius:var(--r2);padding:12px}
+.cfgtitle{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.mrow{display:flex;align-items:center;gap:9px;padding:4px 0}
+.mlbl{font-size:12px;color:var(--t2);width:88px;flex-shrink:0;display:flex;align-items:center;gap:5px}
+.mtime{border:1.5px solid var(--bd);border-radius:var(--r1);padding:6px 9px;font-size:12px;font-family:inherit;color:var(--t1);background:var(--sf);width:106px;transition:border-color .2s}
+.mtime:focus{outline:none;border-color:var(--ac)}
+
+/* ── ANALYZE ALL BUTTON ── */
+.btn-analyze{width:100%;padding:14px;background:var(--ac);color:#fff;border:none;border-radius:var(--r2);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .25s}
+.btn-analyze:hover:not(:disabled){background:var(--ad);transform:translateY(-1px);box-shadow:0 4px 16px rgba(26,158,117,.25)}
+.btn-analyze:disabled{background:var(--t3);cursor:not-allowed;transform:none;box-shadow:none}
+.btn-analyze svg{width:18px;height:18px}
+
+/* ── PROGRESS BAR (during batch analysis) ── */
+.progress-section{display:none;background:var(--s2);border-radius:var(--r2);padding:14px}
+.progress-section.on{display:block}
+.prog-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.prog-sub{font-size:11px;color:var(--t2);margin-bottom:10px}
+.prog-bar-wrap{background:var(--bd);border-radius:20px;height:8px;overflow:hidden;margin-bottom:8px}
+.prog-bar{height:100%;background:var(--ac);border-radius:20px;transition:width .4s ease;width:0%}
+.prog-items{display:flex;flex-direction:column;gap:5px}
+.prog-item{display:flex;align-items:center;gap:8px;font-size:12px}
+.prog-item-num{width:20px;height:20px;border-radius:50%;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.prog-item.waiting .prog-item-num{background:var(--s2);color:var(--t3);border:1.5px solid var(--bd)}
+.prog-item.loading .prog-item-num{background:var(--wl);color:var(--wn);border:1.5px solid var(--wn)}
+.prog-item.done    .prog-item-num{background:var(--al);color:var(--ad);border:1.5px solid var(--ac)}
+.prog-item.error   .prog-item-num{background:var(--dl);color:var(--dg);border:1.5px solid var(--dg)}
+.prog-item-lbl{flex:1;color:var(--t2)}
+.prog-item.done    .prog-item-lbl{color:var(--ad)}
+.prog-item.loading .prog-item-lbl{color:var(--wn)}
+.prog-spin{width:14px;height:14px;border:2px solid rgba(232,160,32,.3);border-top-color:var(--wn);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Med list */
+.medlist-section{border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden}
+.medlist-header{padding:9px 12px;background:var(--s2);display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--bd)}
+.medlist-title{font-size:12px;font-weight:600;flex:1}
+.med-badge{font-size:10px;font-weight:500;padding:1px 8px;border-radius:20px;background:var(--s2);color:var(--t3)}
+.med-badge.has{background:var(--al);color:var(--ad)}
+.medlist-empty{padding:20px 16px;text-align:center}
+.medlist-body{padding:8px}
+.mchip{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r1);margin-bottom:5px;transition:all .2s}
+.mchip:last-child{margin-bottom:0}
+.mchip.cur{border-color:var(--ac);background:var(--al)}
+.mcdot{width:7px;height:7px;border-radius:50%;background:var(--t3);flex-shrink:0}.mchip.cur .mcdot{background:var(--ac)}
+.mcinfo{flex:1}.mcnm{font-size:12px;font-weight:500;color:var(--t1)}.mcsb{font-size:10px;color:var(--t3);margin-top:1px}
+.mcrem{width:20px;height:20px;border-radius:50%;background:var(--dl);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dg);font-size:16px;font-weight:300;flex-shrink:0;line-height:1;font-family:inherit;transition:all .15s}
+.mcrem:hover{background:var(--dg);color:#fff}
+
+/* Result (OCR detail + schedule) */
+.result{display:none;flex-direction:column;gap:13px}.result.on{display:flex;animation:fu .4s ease}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Confidence */
+.cbar{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--r2)}
+.cbar.ok{background:var(--al)}.cbar.warn{background:var(--wl)}
+.cdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cdot.hi{background:var(--ac)}.cdot.mid{background:var(--wn)}.cdot.lo{background:var(--dg)}
+.ctxt{flex:1}.ctxt h3{font-size:12px;font-weight:600}.ctxt p{font-size:11px;color:var(--t2);margin-top:1px}
+.cpill{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.cpill.hi{background:var(--ac);color:#fff}.cpill.mid{background:var(--wn);color:#fff}
+
+/* Drug cards (one per scanned bag) */
+.dcard-wrap{display:flex;flex-direction:column;gap:10px}
+.dcard{background:var(--sf);border:1.5px solid var(--bd);border-radius:var(--r2);overflow:hidden}
+.dcard.ok{border-color:var(--ac)}
+.dcard.warn{border-color:var(--wn)}
+.dc-hd{padding:9px 13px;display:flex;align-items:center;gap:8px}
+.dcard.ok .dc-hd{background:var(--ac)}.dcard.warn .dc-hd{background:var(--wl)}.dcard:not(.ok):not(.warn) .dc-hd{background:var(--s2)}
+.dc-thumb{width:38px;height:38px;border-radius:6px;object-fit:cover;flex-shrink:0;border:1px solid rgba(255,255,255,.3)}
+.dc-nm{font-size:14px;font-weight:600}.dcard.ok .dc-nm{color:#fff}.dcard.warn .dc-nm{color:var(--wn)}
+.dc-ds{font-size:11px;margin-top:1px}.dcard.ok .dc-ds{color:rgba(255,255,255,.8)}.dcard.warn .dc-ds{color:var(--t2)}
+.dc-conf{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:auto;flex-shrink:0}
+.dcard.ok .dc-conf{background:rgba(255,255,255,.25);color:#fff}.dcard.warn .dc-conf{background:var(--wn);color:#fff}
+.dc-bd{padding:10px 13px;display:flex;flex-direction:column;gap:7px}
+.ir{display:flex;align-items:center;gap:7px}
+.ii{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.ii.g{background:var(--al)}.ii.b{background:var(--bll)}.ii.w{background:var(--wl)}.ii.p{background:var(--pl)}
+.ilbl{font-size:10px;color:var(--t3)}
+.ied{font-size:12px;font-weight:500;color:var(--t1);border:none;background:transparent;font-family:inherit;width:100%;border-bottom:1.5px solid transparent;transition:border-color .2s;padding:0}
+.ied:focus{outline:none;border-bottom-color:var(--ac)}
+.ttbadge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;margin-top:3px}
+.ttbadge.meal{background:var(--al);color:var(--ad)}.ttbadge.interval{background:var(--bll);color:#1E3A8A}
+.ttbadge.fixed{background:var(--pl);color:var(--pp)}.ttbadge.special{background:var(--s2);color:var(--t2)}
+
+/* Interval prompt */
+.iprompt{background:var(--bll);border:1px solid #BFDBFE;border-radius:var(--r2);padding:10px 12px}
+.ipt{font-size:12px;font-weight:600;color:#1E3A8A;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.ipr{display:flex;align-items:center;gap:9px}
+.iplbl{font-size:12px;color:var(--t1);flex:1}
+.ipinp{border:1.5px solid #93C5FD;border-radius:var(--r1);padding:6px 9px;font-size:12px;font-family:inherit;font-weight:500;color:var(--t1);background:var(--sf);width:106px}
+.ipinp:focus{outline:none;border-color:var(--bl)}
+
+/* 4-Period grid */
+.sched-section{display:flex;flex-direction:column;gap:10px}
+.stitle{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.sumbar{background:var(--s2);border-radius:var(--r2);padding:9px 14px;display:flex;align-items:center;justify-content:space-around}
+.si{text-align:center;flex:1}.sn{font-size:17px;font-weight:600}.slb{font-size:10px;color:var(--t3);margin-top:1px}
+.sdiv{width:1px;height:26px;background:var(--bd)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pc{border-radius:12px;overflow:hidden;border:1px solid var(--bd)}
+.pc-hd{padding:8px 10px 6px;display:flex;align-items:center;gap:7px}
+.pc-ic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.pc-lb{font-size:12px;font-weight:600;line-height:1.2}.pc-tm{font-size:10px;margin-top:1px;font-weight:500}
+.pc-dgs{padding:0 7px 7px;display:flex;flex-direction:column;gap:3px}
+.pc.morning .pc-hd{background:#FEF9EC}.pc.morning .pc-ic{background:#FDE68A}.pc.morning .pc-lb{color:#92400E}.pc.morning .pc-tm{color:#B45309}
+.pc.noon .pc-hd{background:var(--bll)}.pc.noon .pc-ic{background:#BFDBFE}.pc.noon .pc-lb{color:#1E3A8A}.pc.noon .pc-tm{color:#3B82F6}
+.pc.evening .pc-hd{background:#FFF7ED}.pc.evening .pc-ic{background:#FED7AA}.pc.evening .pc-lb{color:#7C2D12}.pc.evening .pc-tm{color:#EA580C}
+.pc.night .pc-hd{background:var(--pl)}.pc.night .pc-ic{background:#DDD6FE}.pc.night .pc-lb{color:#3730A3}.pc.night .pc-tm{color:#6D28D9}
+.dpill{display:flex;align-items:center;gap:4px;padding:4px 6px;border-radius:6px}
+.dp-d{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.dp-i{flex:1;min-width:0}
+.dp-n{font-size:11px;font-weight:500;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-s{font-size:9px;margin-top:1px}.dp-c{font-size:10px;font-weight:600;padding:1px 5px;border-radius:7px;white-space:nowrap;flex-shrink:0}
+.dpill.before{background:#FEF3C7}.dpill.before .dp-d{background:#D97706}.dpill.before .dp-s{color:#92400E}.dpill.before .dp-c{background:#D97706;color:#fff}
+.dpill.after{background:#ECFDF5}.dpill.after .dp-d{background:#059669}.dpill.after .dp-s{color:#065F46}.dpill.after .dp-c{background:#059669;color:#fff}
+.dpill.with{background:var(--bll)}.dpill.with .dp-d{background:var(--bl)}.dpill.with .dp-s{color:#1E3A8A}.dpill.with .dp-c{background:var(--bl);color:#fff}
+.dpill.fixed{background:var(--pl)}.dpill.fixed .dp-d{background:var(--pp)}.dpill.fixed .dp-s{color:#4C1D95}.dpill.fixed .dp-c{background:var(--pp);color:#fff}
+.iv-card{border:1px solid #BFDBFE;border-radius:var(--r2);overflow:hidden;margin-top:7px}
+.iv-hd{background:var(--bll);padding:7px 11px;display:flex;align-items:center;gap:7px}
+.iv-lb{font-size:12px;font-weight:600;color:#1E3A8A;flex:1}.iv-cnt{font-size:10px;font-weight:500;background:var(--bl);color:#fff;padding:2px 6px;border-radius:9px}
+.iv-slots{padding:6px;display:flex;flex-direction:column;gap:3px;background:var(--sf)}
+.islot{display:flex;align-items:center;gap:6px;padding:4px 7px;background:var(--bll);border-radius:5px}
+.islot-t{font-size:12px;font-weight:600;color:#1D4ED8;width:45px;flex-shrink:0}.islot-l{font-size:10px;color:#3B82F6;flex:1}.islot-c{font-size:10px;font-weight:600;background:var(--bl);color:#fff;padding:1px 6px;border-radius:7px;margin-left:auto}
+.prn-card{border:1px solid var(--bd);border-radius:var(--r2);padding:8px 11px;display:flex;align-items:center;gap:8px;background:var(--s2);margin-top:7px}
+.legend{display:flex;gap:9px;flex-wrap:wrap;padding:2px;margin-top:5px}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)}
+.leg-d{width:6px;height:6px;border-radius:50%}
+
+/* Refill card */
+.refill-card{border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden}
+.rfhd{padding:8px 11px;background:var(--s2);font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;border-bottom:1px solid var(--bd)}
+.rfbd{padding:8px 11px;display:flex;flex-direction:column;gap:5px}
+.rfrow{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.rfrow .key{color:var(--t2)}.rfrow .val{font-weight:500}.rfrow .val.warn{color:var(--wn)}.rfrow .val.ok{color:var(--ac)}
+
+/* Doctor */
+.docrow{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--s2);border-radius:var(--r2);border:1px solid var(--bd)}
+.docav{width:30px;height:30px;border-radius:50%;background:var(--bll);color:var(--bl);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.docnm{font-size:12px;font-weight:500}.dochp{font-size:10px;color:var(--t3);margin-top:1px}
+
+/* Warn strip */
+.wstrip{background:var(--wl);border:1px solid var(--wn);border-radius:var(--r2);padding:8px 11px;font-size:11px;color:var(--t2);display:flex;align-items:flex-start;gap:6px}
+.wstrip svg{width:13px;height:13px;color:var(--wn);flex-shrink:0;margin-top:1px}
+
+/* Action row */
+.actrow{display:flex;gap:8px}
+.btn-sec{flex:1;padding:11px;border:1.5px solid var(--bd);border-radius:var(--r2);background:var(--sf);font-family:inherit;font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .2s}
+.btn-sec:hover{border-color:var(--t2);color:var(--t1)}
+.btn-ok{flex:2;padding:11px;border:none;border-radius:var(--r2);background:var(--ac);font-family:inherit;font-size:13px;font-weight:600;color:#fff;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-ok:hover{background:var(--ad)}.btn-ok svg{width:15px;height:15px}
+
+/* Photo popup */
+.mbk{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-end;justify-content:center}.mbk.on{display:flex}
+.bs{background:var(--sf);border-radius:var(--r4) var(--r4) 0 0;padding:0 0 26px;width:100%;max-width:480px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.bs-handle{padding:10px 0 6px;display:flex;justify-content:center}.bs-bar{width:36px;height:4px;background:var(--bd);border-radius:2px}
+.bs-body{padding:0 15px}
+.bs-title{font-size:14px;font-weight:600;margin-bottom:3px}.bs-sub{font-size:12px;color:var(--t2);margin-bottom:12px}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:10px}
+.photo-type{border:1.5px solid var(--bd);border-radius:var(--r2);padding:9px;cursor:pointer;transition:all .2s;background:var(--sf)}
+.photo-type:hover{border-color:var(--ac);background:var(--al)}.photo-type.selected{border-color:var(--ac);background:var(--al)}
+.pt-icon{font-size:20px;margin-bottom:4px}.pt-name{font-size:12px;font-weight:500}.pt-desc{font-size:10px;color:var(--t2);margin-top:1px}
+.pt-btn{margin-top:6px;background:var(--sf);border:1px solid var(--bd);border-radius:5px;padding:4px;display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px;color:var(--t2);cursor:pointer;font-family:inherit;width:100%;transition:all .2s}
+.photo-type.selected .pt-btn{border-color:var(--ac);color:var(--ac);background:#fff}
+.btn-skip{width:100%;padding:9px;border:none;background:transparent;font-family:inherit;font-size:12px;color:var(--t3);cursor:pointer;text-align:center}
+
+/* API Modal */
+.api-modal{background:var(--sf);border-radius:var(--r4) var(--r4) 0 0;padding:18px 15px 26px;width:100%;max-width:480px;animation:slideUp .3s ease}
+.api-modal h3{font-size:14px;font-weight:600;margin-bottom:5px}.api-modal p{font-size:12px;color:var(--t2);margin-bottom:12px;line-height:1.5}
+.api-modal input{width:100%;padding:10px 11px;border:1.5px solid var(--bd);border-radius:var(--r2);font-family:inherit;font-size:12px;color:var(--t1);margin-bottom:10px;transition:border-color .2s}
+.api-modal input:focus{outline:none;border-color:var(--ac)}
+.mbtns{display:flex;gap:8px}
+.mb-c{flex:1;padding:10px;border:1.5px solid var(--bd);border-radius:var(--r2);background:var(--sf);font-family:inherit;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer}
+.mb-s{flex:2;padding:10px;border:none;border-radius:var(--r2);background:var(--ac);font-family:inherit;font-size:12px;font-weight:600;color:#fff;cursor:pointer}
+
+/* Toast */
+.toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--t1);color:#fff;padding:9px 16px;border-radius:30px;font-size:12px;font-weight:500;z-index:200;white-space:nowrap}
+.toast.on{display:block;animation:ti .3s ease}
+@keyframes ti{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Success */
+.succ{display:none;flex-direction:column;align-items:center;gap:12px;padding:40px 18px;text-align:center;pointer-events:none}
+.succ.on{display:flex;animation:fu .5s ease;pointer-events:auto}
+.succ-ck{width:62px;height:62px;border-radius:50%;background:var(--ac);display:flex;align-items:center;justify-content:center}
+.succ-ck svg{width:30px;height:30px;color:#fff}
+.succ-title{font-size:18px;font-weight:600}.succ-sub{font-size:13px;color:var(--t2);line-height:1.7;max-width:280px}
+.succ-refill{background:var(--wl);border:1px solid var(--wn);border-radius:var(--r2);padding:9px 14px;width:100%;max-width:300px;text-align:left}
+.btn-done{padding:12px 32px;background:var(--ac);color:#fff;border:none;border-radius:var(--r2);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px}
+.btn-done:hover{background:var(--ad)}
+#fi{display:none}
+
+/* ══ APPOINTMENT FLOW ══ */
+.appt-screen{display:none;flex-direction:column;gap:12px}
+.appt-screen.on{display:flex;animation:fu .35s ease}
+
+/* Step bar */
+.appt-steps{display:flex;align-items:center;gap:3px;margin-bottom:4px}
+.appt-step{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--t3);flex:1}
+.appt-step.active{color:var(--bl)}.appt-step.done{color:var(--ac)}
+.astep-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;background:var(--sf);flex-shrink:0;transition:all .3s}
+.appt-step.active .astep-dot{border-color:var(--bl);color:var(--bl)}
+.appt-step.done .astep-dot{background:var(--ac);border-color:var(--ac);color:#fff}
+.astep-line{flex:1;height:1px;background:var(--bd);margin:0 2px}.astep-line.done{background:var(--ac)}
+
+/* Screen 1 – scan */
+.appt-scan-zone{background:var(--s2);border:2px dashed var(--bd);border-radius:var(--r3);min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:border-color .2s;padding:20px;text-align:center}
+.appt-scan-zone:hover{border-color:var(--bl)}
+.appt-scan-zone.has{border-style:solid;border-color:var(--bl);background:var(--bll)}
+.appt-preview-img{width:100%;max-height:200px;object-fit:contain;border-radius:var(--r2);display:none}
+.appt-preview-img.on{display:block}
+.appt-scan-actions{display:flex;gap:8px}
+.appt-scan-act{flex:1;padding:10px 6px;border-radius:var(--r2);border:1.5px solid var(--bd);background:var(--sf);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t2);display:flex;align-items:center;justify-content:center;gap:5px;transition:all .2s}
+.appt-scan-act.primary{background:var(--bl);color:#fff;border-color:var(--bl)}
+.appt-scan-act:hover:not(.primary){border-color:var(--bl);color:var(--bl)}
+
+/* Screen 2 – AI result */
+.ai-result-card{background:var(--sf);border:1.5px solid var(--bl);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
+.ai-result-header{background:var(--bll);padding:10px 14px;display:flex;align-items:center;gap:8px}
+.ai-result-header-ico{width:28px;height:28px;background:var(--bl);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ai-result-title{font-size:13px;font-weight:700;color:var(--bl)}
+.ai-conf{margin-left:auto;font-size:10px;font-weight:700;background:var(--ac);color:#fff;padding:2px 8px;border-radius:10px}
+.ai-field-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:12px 14px}
+.ai-field-lbl{font-size:11px;color:var(--t3);padding-top:2px}
+.ai-field-val{font-size:13px;font-weight:500;color:var(--t1)}
+.ai-field-val.hi{color:var(--bl);font-weight:700}
+.ai-instrs{padding:0 14px 12px;display:flex;flex-direction:column;gap:5px}
+.ai-instr-item{background:var(--wl);border-left:3px solid var(--wn);padding:6px 10px;border-radius:0 var(--r1) var(--r1) 0;font-size:12px;color:var(--t1)}
+.reminder-row{background:var(--s2);border-radius:var(--r2);padding:12px 14px}
+.reminder-title{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:8px}
+.reminder-chips{display:flex;gap:6px;flex-wrap:wrap}
+.rchip{padding:5px 12px;border-radius:20px;border:1.5px solid var(--bd);background:var(--sf);font-size:12px;font-weight:500;cursor:pointer;color:var(--t2);transition:all .2s;font-family:inherit}
+.rchip.on{background:var(--bl);border-color:var(--bl);color:#fff}
+
+/* Screen 3 – Calendar */
+.cal-wrap{background:var(--sf);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
+.cal-header{background:var(--bl);padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.cal-month{color:#fff;font-size:15px;font-weight:700}
+.cal-nav{background:rgba(255,255,255,.2);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:background .2s}
+.cal-nav:hover{background:rgba(255,255,255,.35)}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bll);padding:4px 0}
+.cal-dow span{text-align:center;font-size:10px;font-weight:700;color:var(--bl);padding:3px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);padding:4px 6px 8px}
+.cal-day{text-align:center;padding:3px 0;font-size:12px;cursor:pointer;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin:2px auto;position:relative;color:var(--t1);transition:all .15s}
+.cal-day:hover{background:var(--s2)}
+.cal-day.other{color:var(--t3)}
+.cal-day.today{background:var(--s2);font-weight:700;color:var(--t1)}
+.cal-day.has-appt{background:var(--bll);color:var(--bl);font-weight:700}
+.cal-day.has-appt::after{content:'';position:absolute;bottom:1px;width:5px;height:5px;border-radius:50%;background:var(--bl)}
+.cal-day.has-med{background:var(--al)!important;color:var(--ac)!important;font-weight:700}
+.cal-day.has-med::after{background:var(--ac)!important}
+.cal-day.has-both{background:linear-gradient(135deg,var(--al) 50%,var(--bll) 50%)!important;color:var(--t1)!important}
+.cal-legend{display:flex;gap:12px;padding:6px 14px 10px;flex-wrap:wrap}
+.cal-legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t2)}
+.cal-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cal-events{display:flex;flex-direction:column;gap:8px}
+.cal-event-card{background:var(--sf);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh);border-left:4px solid transparent;display:flex;align-items:stretch}
+.cal-event-card.appt{border-left-color:var(--bl)}
+.cal-event-card.med{border-left-color:var(--ac)}
+.cal-event-card.lab{border-left-color:var(--wn)}
+.cal-event-inner{padding:10px 12px;flex:1}
+.cal-event-title{font-size:13px;font-weight:600;color:var(--t1)}
+.cal-event-sub{font-size:11px;color:var(--t2);margin-top:2px}
+.cal-event-days{background:var(--s2);padding:4px 8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--t2);min-width:44px;font-family:monospace}
+.cal-event-days.near{background:var(--wl);color:var(--wn)}
+.cal-event-days.today-ev{background:var(--dl);color:var(--dg)}
+
+/* LINE preview */
+.line-preview{background:#C0E0C0;border-radius:var(--r2);overflow:hidden}
+.line-head{background:#06C755;padding:8px 12px;display:flex;align-items:center;gap:8px}
+.line-head-ico{width:28px;height:28px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:14px}
+.line-head-name{color:#fff;font-size:13px;font-weight:700}
+.line-body{padding:10px}
+.line-msg{background:#fff;border-radius:4px 12px 12px 12px;padding:10px 12px;max-width:80%;font-size:12px;line-height:1.6;color:var(--t1);margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.line-qr-row{display:flex;gap:6px;flex-wrap:wrap}
+.line-qr-btn{background:#fff;border:1.5px solid #06C755;color:#06C755;padding:5px 12px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.line-qr-btn:active{background:#06C755;color:#fff}
+
+/* ── SCAN FIX ── */
+.uprow{display:flex;gap:8px;margin-top:8px}
+.upbtn{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 12px;border-radius:var(--r2);border:1.5px solid var(--bd);background:var(--sf);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t2);transition:all .2s;flex:1;pointer-events:auto !important;user-select:none}
+.upbtn:active{transform:scale(.96);background:var(--s2)}
+label.upbtn{cursor:pointer}
+.btn-analyze{pointer-events:auto !important}
+#btnAddPhoto{pointer-events:auto !important}
+.iab{pointer-events:auto !important;cursor:pointer}
+.sz{pointer-events:auto !important;cursor:pointer}
+
+/* ── FIRST DOSE TIME ── */
+.first-dose-row{display:flex;align-items:center;gap:9px;padding:5px 0;border-top:1px dashed var(--bd);margin-top:6px}
+.first-dose-lbl{font-size:12px;font-weight:600;color:var(--t2);flex:1;display:flex;align-items:center;gap:5px}
+.first-dose-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px}
+.fdb-interval{background:#DBEAFE;color:#1E3A8A}
+.fdb-skip{background:#EDE9FE;color:#5B21B6}
+.first-dose-hint{font-size:10px;color:var(--t3);margin-top:2px;padding-left:2px}
+
+.queue-wrap{margin-bottom:4px}
+.queue-hdr{padding:4px 0 6px;font-size:13px;font-weight:600;color:var(--t2)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:5px;cursor:pointer;flex-shrink:0;min-width:0" onclick="location.href='medtrack-home.html'">
+      <span style="color:rgba(255,255,255,.6);font-size:20px;font-weight:300;line-height:1">‹</span>
+      <div class="hlogo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+      <div><div class="htitle">MedTrack</div><div class="hsub" id="hSub">สแกนซองยา</div></div>
+    </div>
+
+    <button class="apib" id="apibAppt" onclick="showApptTab()" style="background:var(--bll);color:var(--bl);border-color:var(--bl)">📅 นัดแพทย์</button>
+    <button class="apib" id="apib" onclick="openApiModal()">⚙</button>
+  </div>
+
+  <div class="cnt" id="mainCnt">
+
+    <!-- Steps -->
+    <div class="steps">
+      <div class="step active" id="s1"><div class="sdot" id="d1">1</div><span id="sl1">ถ่ายรูป</span></div>
+      <div class="sline" id="sl1line"></div>
+      <div class="step" id="s2"><div class="sdot" id="d2">2</div><span id="sl2">วิเคราะห์</span></div>
+      <div class="sline" id="sl2line"></div>
+      <div class="step" id="s3"><div class="sdot" id="d3">3</div><span id="sl3">บันทึก</span></div>
+    </div>
+
+    <!-- Queue -->
+    <div class="queue-wrap">
+      <div class="queue-hdr" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span id="queueTitle">ซองยาที่ถ่ายไว้</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button id="btnClearAll" onclick="clearAllQueue()" style="display:none;background:none;border:none;font-size:11px;color:#EF4444;font-weight:600;cursor:pointer;font-family:inherit;padding:2px 6px">ล้างทั้งหมด</button>
+          <span class="med-badge" id="queueBadge">0 ซอง</span>
+        </div>
+      </div>
+      <div class="queue-grid" id="queueGrid">
+        <div class="queue-empty" id="queueEmpty">
+          <div style="font-size:24px;margin-bottom:6px">📷</div>
+          <div id="queueEmptyTxt">กดปุ่มด้านล่างเพื่อถ่ายรูปซองยา</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scan zone -->
+    <div class="sz-wrap" id="szWrap">
+      <div class="sz" id="sz" ondragover="dov(event)" ondragleave="dol()" ondrop="ddr(event)" onclick="szClick(event)">
+        <div class="sz-ov" id="sov"><div class="sc-c"></div><div class="sc-c2"></div><div class="sc-ln"></div>
+          <div class="ov-t" id="ovT">กำลังเพิ่มรูป...</div><div class="ov-s">เลือกรูปถัดไปได้เลย</div>
+        </div>
+        <div class="sz-ph">
+          <div class="sz-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2"/></svg></div>
+          <div class="sz-h1" id="szH1">ถ่ายรูปหรือลากวางซองยา</div>
+          <div class="sz-h2" id="szH2">JPG, PNG ขนาดไม่เกิน 5 MB</div>
+        </div>
+        <img id="prev" alt="preview">
+        <div class="img-acts">
+          <button class="iab" onclick="cancelAddPhoto()" style="min-width:80px">✕ ยกเลิก</button>
+          <button class="iab p" id="btnConfirmAdd" onclick="confirmAddPhoto()" style="min-width:100px">✅ เพิ่มรูปนี้</button>
+        </div>
+      </div>
+      <div class="uprow" style="margin-top:8px">
+        <label class="upbtn" for="fiCamera" style="background:var(--ac);color:#fff;border-color:var(--ac);flex:1.2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:17px;height:17px;flex-shrink:0"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span id="btnCamera">📸 กล้อง</span>
+        </label>
+        <label class="upbtn" for="fi">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span id="btnPick">รูปภาพ</span>
+        </label>
+        <button class="upbtn" onclick="useDemo()" style="flex:0.8">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span id="btnDemo">ตัวอย่าง</span>
+        </button>
+      </div>
+    </div>
+
+    <input type="file" id="fiCamera" accept="image/*" capture="environment" onchange="onFile(event)" style="display:none">
+    <input type="file" id="fi" accept="image/*" onchange="onFile(event)" style="display:none">
+
+    <!-- Add photo button -->
+    <button class="btn-analyze" id="btnAddPhoto" onclick="openAddPhoto()" style="background:var(--s2);color:var(--t1);border:1.5px dashed var(--bd)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <span id="btnAddPhotoTxt">+ ถ่ายรูปซองยา</span>
+    </button>
+
+    <!-- Meal config -->
+    <div class="mcfg">
+      <div class="cfgtitle"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span id="mCfgT">เวลาอาหาร</span></div>
+      <div class="mrow"><div class="mlbl"><span style="font-size:14px">🌅</span><span id="lbBk">เช้า</span></div><input class="mtime" type="time" id="mb" value="07:00" oninput="rebundleIfReady()"></div>
+      <div class="mrow"><div class="mlbl"><span style="font-size:14px">☀️</span><span id="lbLn">กลางวัน</span></div><input class="mtime" type="time" id="ml" value="12:00" oninput="rebundleIfReady()"></div>
+      <div class="mrow"><div class="mlbl"><span style="font-size:14px">🌆</span><span id="lbDn">เย็น</span></div><input class="mtime" type="time" id="md" value="18:00" oninput="rebundleIfReady()"></div>
+      <div class="first-dose-row" id="firstDoseRow">
+        <div style="flex:1">
+          <div class="first-dose-lbl">⏱️ เริ่มกินมื้อแรกกี่โมง? <span class="first-dose-badge fdb-interval">ทุก X ชม.</span><span class="first-dose-badge fdb-skip">วันเว้นวัน</span></div>
+          <div class="first-dose-hint">ระบบคำนวณเวลากินครั้งถัดไปให้อัตโนมัติ</div>
+        </div>
+        <input class="mtime" type="time" id="ivStart" value="08:00" oninput="rebundleIfReady()" style="width:100px;font-weight:600;border-color:var(--ac)">
+      </div>
+    </div>
+
+    <!-- Analyze button -->
+    <button class="btn-analyze" id="btnAnalyze" onclick="analyzeAll()" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+        <path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/>
+        <rect x="7" y="7" width="10" height="10" rx="1"/>
+      </svg>
+      <span id="btnAnalyzeTxt">วิเคราะห์ซองยา (0 ซอง)</span>
+    </button>
+
+    <!-- Progress -->
+    <div class="progress-section" id="progressSection">
+      <div class="prog-title" id="progTitle">กำลังวิเคราะห์...</div>
+      <div class="prog-sub" id="progSub">AI กำลังอ่านข้อมูลยาทีละซอง</div>
+      <div class="prog-bar-wrap"><div class="prog-bar" id="progBar"></div></div>
+      <div class="prog-items" id="progItems"></div>
+    </div>
+
+    <!-- Med list -->
+    <div class="medlist-section" id="medlistSection" style="display:none">
+      <div class="medlist-header">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linecap="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span class="medlist-title" id="sMedT">ยาทั้งหมดในรายการ</span>
+        <span class="med-badge" id="medBadge">0 ตัว</span>
+      </div>
+      <div class="medlist-body" id="medList"></div>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+      <div class="dcard-wrap" id="dcardWrap"></div>
+      <!-- first dose moved to mcfg -->
+      <div class="sched-section">
+        <div class="stitle">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span id="sSchT">ตารางกินยาต่อวัน</span>
+        </div>
+        <div class="sumbar" id="sumbar" style="display:none">
+          <div class="si"><div class="sn" id="snDrugs" style="color:var(--ac)">0</div><div class="slb" id="slDrugs">ตัวยา</div></div>
+          <div class="sdiv"></div>
+          <div class="si"><div class="sn" id="snBags" style="color:var(--bl)">0</div><div class="slb" id="slBags">ซอง</div></div>
+          <div class="sdiv"></div>
+          <div class="si"><div class="sn" id="snAlerts">0</div><div class="slb" id="slAlerts">แจ้งเตือน/วัน</div></div>
+        </div>
+        <div class="legend" id="legend" style="display:none">
+          <div class="lg-item"><div class="lg-d before"></div><span id="lgBf">ก่อนอาหาร</span></div>
+          <div class="lg-item"><div class="lg-d after"></div><span id="lgAf">หลังอาหาร</span></div>
+          <div class="lg-item"><div class="lg-d with"></div><span id="lgWt">พร้อมอาหาร</span></div>
+          <div class="lg-item"><div class="lg-d fixed"></div><span id="lgNt">ก่อนนอน</span></div>
+        </div>
+        <div class="pgrid" id="pgrid"></div>
+        <div id="ivcards"></div>
+        <div id="prncards"></div>
+      </div>
+      <div class="refill-card" id="refillCard" style="display:none">
+        <div class="rf-title" id="rfTitle">⏰ แจ้งเตือน Refill</div>
+        <div id="rfBody"></div>
+      </div>
+      <div class="docrow" id="docrow" style="display:none">
+        <div class="docav" id="docav">MD</div>
+        <div><div class="docnm" id="docnm">—</div><div class="dochp" id="dochp">—</div></div>
+      </div>
+      <div class="actrow">
+        <button class="btn-sec" id="btnReset" onclick="resetAll()">เริ่มใหม่</button>
+        <button class="btn-ok" id="btnSave" onclick="save()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="btnSaveTxt">ครบแล้ว — บันทึก</span>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /cnt -->
+
+  <!-- Success -->
+  <div class="succ" id="succ" style="pointer-events:none">
+    <div class="succ-ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="succ-title" id="succT">บันทึกสำเร็จ!</div>
+    <div class="succ-sub" id="succMsg">—</div>
+    <div class="succ-refill" id="succRefill" style="display:none">
+      <div style="font-size:12px;font-weight:600;color:var(--wn);margin-bottom:4px" id="srTitle">⏰ แจ้งเตือน Refill</div>
+      <div style="font-size:12px;color:var(--t1)" id="srBody">—</div>
+    </div>
+    <button class="btn-done" id="btnDone" onclick="resetAll()">สแกนซองยาเพิ่ม</button>
+  </div>
+
+<!-- /app -->
+
+<!-- Photo popup (medicine cabinet) -->
+<div class="mbk" id="photoBk">
+  <div class="bs">
+    <div class="bs-handle"><div class="bs-bar"></div></div>
+    <div class="bs-body">
+      <div class="bs-title" id="photoTitle">ถ่ายรูปยาเก็บไว้ไหม?</div>
+      <div class="bs-sub" id="photoSub">เผื่อซื้อยาเองหรือส่งให้คนอื่น — ข้ามได้</div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <button class="btn-skip" id="btnSkip" onclick="skipPhoto()">ข้ามได้ — ถ่ายภายหลังก็ได้</button>
+    </div>
+  </div>
+</div>
+
+<!-- API Modal -->
+<div class="mbk" id="apiBk">
+  <div class="api-modal">
+    <h3 id="apiT">ตั้งค่า Claude API Key</h3>
+    <p id="apiDesc">ใส่ API Key เพื่อให้ AI อ่านซองยาได้จริง ถ้าไม่มีระบบจะใช้ข้อมูลจำลอง</p>
+    <input type="password" id="akIn" placeholder="sk-ant-api03-..." autocomplete="off">
+    <div class="mbtns">
+      <button class="mb-c" id="apiCan" onclick="closeApiModal()">ยกเลิก</button>
+      <button class="mb-s" id="apiSav" onclick="saveKey()">บันทึก</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+
+// ── MedTrack Config ──
+const MEDTRACK_BACKEND = 'https://medtrack-backend-production-9bfb.up.railway.app';
+const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
+
+/* ═══════════════════════════
+   i18n
+═══════════════════════════ */
+const L={
+th:{
+  sub:'สแกนซองยา',s1:'ถ่ายรูป',s2:'วิเคราะห์',s3:'บันทึก',
+  queueTitle:'ซองยาที่ถ่ายไว้',queueEmptyTxt:'กดปุ่มด้านล่างเพื่อถ่ายรูปซองยา',
+  bagCount:n=>n+' ซอง',
+  szH1:'ถ่ายรูปหรือลากวางซองยา',szH2:'JPG, PNG ขนาดไม่เกิน 5 MB',
+  btnPick:'รูปภาพ',btnDemo:'ตัวอย่าง',btnCamera:'📸 กล้อง',
+  btnAddPhotoTxt:'+ ถ่ายรูปซองยา',
+  mCfgT:'เวลาอาหาร',lbBk:'เช้า',lbLn:'กลางวัน',lbDn:'เย็น',
+  analyzeBtn:n=>`วิเคราะห์ซองยา (${n} ซอง)`,analyzeBtnWait:'ถ่ายรูปซองยาก่อน',
+  progTitle:'กำลังวิเคราะห์...',progSub:'AI กำลังอ่านข้อมูลยาทีละซอง',
+  progWaiting:'รอวิเคราะห์',progLoading:'กำลังอ่าน...',progDone:'อ่านสำเร็จ',progError:'อ่านไม่ได้',
+  sMedT:'ยาทั้งหมดในรายการ',drugCount:n=>n+' ตัว',
+  sSchT:'ตารางกินยาต่อวัน',
+  slDrugs:'ตัวยา',slBags:'ซอง',slAlerts:'แจ้งเตือน/วัน',
+  periods:['เช้า','กลางวัน','เย็น','ค่ำ/ก่อนนอน'],pIcons:['🌅','☀️','🌆','🌙'],
+  tBefore:'ก่อนอาหาร',tAfter:'หลังอาหาร',tWith:'พร้อมอาหาร',tNight:'ก่อนนอน',
+  bMeal:'📅 ผูกกับมื้ออาหาร',bInterval:'⏱️ interval',bFixed:'🌙 fixed',bSpecial:'💊 as needed',
+  ipT:'กำหนดเวลากินมื้อแรก',ipL:'เริ่มกินยามื้อแรกกี่โมง?',
+  ivTitle:'ทุก {h} ชั่วโมง',ivDose:'มื้อที่',ivUnit:'เม็ด',
+  prnSub:'ไม่มีการแจ้งเตือนอัตโนมัติ',
+  rfTitle:'ข้อมูล Refill',rfDays:'วัน',
+  lgBf:'ก่อนอาหาร',lgAf:'หลังอาหาร',lgWt:'พร้อมอาหาร',lgNt:'ก่อนนอน',
+  btnReset:'เริ่มใหม่',btnSaveTxt:'ครบแล้ว — บันทึก',
+  succT:'บันทึกสำเร็จ!',btnDone:'สแกนซองยาเพิ่ม',
+  srTitle:'⏰ แจ้งเตือน Refill',
+  succMsgTpl:n=>`${n.bags} ซอง · ${n.drugs} ตัวยา · ${n.days} วัน · ${n.alerts} แจ้งเตือน/วัน`,
+  photoTitle:'ถ่ายรูปยาเก็บไว้ไหม?',photoSub:'เผื่อซื้อยาเองหรือส่งให้คนอื่น — ข้ามได้',btnSkip:'ข้ามได้ — ถ่ายภายหลังก็ได้',
+  photoTypes:[{k:'pill',ico:'💊',nm:'เม็ดยา',desc:'สี/ขนาด/รูปร่าง'},{k:'blister',ico:'🗂️',nm:'แผงยา',desc:'ชื่อแบรนด์'},{k:'box',ico:'📦',nm:'กล่องยา',desc:'ข้อมูลครบ'},{k:'bag',ico:'🧾',nm:'ซองยา',desc:'ชื่อยาสั่ง'}],
+  ptBtn:'ถ่ายรูป',apiT:'ตั้งค่า Claude API Key',apiDesc:'ใส่ API Key เพื่อให้ AI อ่านซองยาได้จริง ถ้าไม่มีระบบจะใช้ข้อมูลจำลอง',apiCan:'ยกเลิก',apiSav:'บันทึก',
+  apiReady:'✓ API พร้อม',apiSet:'⚙',
+  unit:'เม็ด',timesDay:'วันละ {n} ครั้ง',noImg:'ไม่ระบุขนาด',
+  lTabs:'จำนวนต่อมื้อ',lFreq:'ความถี่',lTime:'วิธีกิน',lTotl:'จำนวน/วัน',lSpec:'คำแนะนำพิเศษ',
+  confOk:'อ่านสำเร็จ',confWarn:'ความมั่นใจต่ำ — ตรวจสอบด้วย',warnTpl:'AI มั่นใจ {p}% — กรุณาตรวจสอบ',
+  toastDemo:'โหลดตัวอย่าง: ',toastPhotoSaved:'บันทึกรูปแล้ว',
+},
+en:{
+  sub:'Scan Medicine',s1:'Photo',s2:'Analyze',s3:'Save',
+  queueTitle:'Medicine Bags',queueEmptyTxt:'Tap the button below to add photos',
+  bagCount:n=>n+' bag'+(n!==1?'s':''),
+  szH1:'Photo or drag & drop medicine bag',szH2:'JPG, PNG up to 5 MB',
+  btnPick:'Gallery',btnDemo:'Sample',btnCamera:'📸 Camera',
+  btnAddPhotoTxt:'+ Add Bag Photo',
+  mCfgT:'Meal Times',lbBk:'Breakfast',lbLn:'Lunch',lbDn:'Dinner',
+  analyzeBtn:n=>`Analyze All (${n} bag${n!==1?'s':''})`,analyzeBtnWait:'Add bag photos first',
+  progTitle:'Analyzing...',progSub:'AI is reading each bag one by one',
+  progWaiting:'Waiting',progLoading:'Reading...',progDone:'Done',progError:'Failed',
+  sMedT:'All Medications',drugCount:n=>n+' drug'+(n!==1?'s':''),
+  sSchT:'Daily Schedule',
+  slDrugs:'Drugs',slBags:'Bags',slAlerts:'Alerts/day',
+  periods:['Morning','Noon','Evening','Night'],pIcons:['🌅','☀️','🌆','🌙'],
+  tBefore:'Before meal',tAfter:'After meal',tWith:'With meal',tNight:'Bedtime',
+  bMeal:'📅 Meal-based',bInterval:'⏱️ Interval',bFixed:'🌙 Fixed',bSpecial:'💊 As needed',
+  ipT:'Set First Dose Time',ipL:'When is your first dose?',
+  ivTitle:'Every {h} hrs',ivDose:'Dose ',ivUnit:'tab',
+  prnSub:'No automatic reminders',
+  rfTitle:'Refill Info',rfDays:'days',
+  lgBf:'Before',lgAf:'After',lgWt:'With',lgNt:'Bedtime',
+  btnReset:'Start Over',btnSaveTxt:'Done — Save All',
+  succT:'Saved!',btnDone:'Scan More',srTitle:'⏰ Refill Reminder',
+  succMsgTpl:n=>`${n.bags} bag${n.bags!==1?'s':''} · ${n.drugs} drug${n.drugs!==1?'s':''} · ${n.days} days · ${n.alerts} alerts/day`,
+  photoTitle:'Save a photo of the medicine?',photoSub:'For buying or sharing — skip if needed',btnSkip:'Skip — add photos later',
+  photoTypes:[{k:'pill',ico:'💊',nm:'Pill',desc:'Color/size/shape'},{k:'blister',ico:'🗂️',nm:'Blister',desc:'Brand name'},{k:'box',ico:'📦',nm:'Box',desc:'Full info'},{k:'bag',ico:'🧾',nm:'Bag',desc:'Prescription name'}],
+  ptBtn:'Take Photo',apiT:'Set Claude API Key',apiDesc:'Enter API Key for real AI. Without it, demo data is used.',apiCan:'Cancel',apiSav:'Save',
+  apiReady:'✓ Ready',apiSet:'⚙',
+  unit:'tab',timesDay:'{n}x/day',noImg:'No dose info',
+  lTabs:'Qty/dose',lFreq:'Frequency',lTime:'Timing',lTotl:'Total/Days',lSpec:'Special Instructions',
+  confOk:'Read successfully',confWarn:'Low confidence — please verify',warnTpl:'Confidence {p}% — please verify',
+  toastDemo:'Loaded: ',toastPhotoSaved:'Photo saved',
+},
+zh:{
+  sub:'扫描药袋',s1:'拍照',s2:'分析',s3:'保存',
+  queueTitle:'待分析药袋',queueEmptyTxt:'点击下方按钮添加药袋照片',
+  bagCount:n=>n+'个药袋',
+  szH1:'拍照或拖拽药袋至此',szH2:'JPG, PNG 最大 5 MB',
+  btnPick:'相册',btnDemo:'示例',btnCamera:'📸 拍照',
+  btnAddPhotoTxt:'+ 添加药袋',
+  mCfgT:'用餐时间',lbBk:'早餐',lbLn:'午餐',lbDn:'晚餐',
+  analyzeBtn:n=>`分析全部（${n}个药袋）`,analyzeBtnWait:'请先添加药袋照片',
+  progTitle:'正在分析...',progSub:'AI 正在逐个读取药袋信息',
+  progWaiting:'等待中',progLoading:'读取中...',progDone:'完成',progError:'失败',
+  sMedT:'全部药品',drugCount:n=>n+'种',
+  sSchT:'每日用药计划',
+  slDrugs:'种药',slBags:'个袋',slAlerts:'提醒/天',
+  periods:['早晨','中午','傍晚','晚上'],pIcons:['🌅','☀️','🌆','🌙'],
+  tBefore:'饭前',tAfter:'饭后',tWith:'随餐',tNight:'睡前',
+  bMeal:'📅 随餐',bInterval:'⏱️ 间隔',bFixed:'🌙 固定',bSpecial:'💊 按需',
+  ipT:'设置首次服药时间',ipL:'首次服药时间？',
+  ivTitle:'每{h}小时',ivDose:'第',ivUnit:'片',
+  prnSub:'无自动提醒',
+  rfTitle:'补药信息',rfDays:'天',
+  lgBf:'饭前',lgAf:'饭后',lgWt:'随餐',lgNt:'睡前',
+  btnReset:'重新开始',btnSaveTxt:'完成 — 全部保存',
+  succT:'保存成功！',btnDone:'扫描更多',srTitle:'⏰ 补药提醒',
+  succMsgTpl:n=>`${n.bags}个药袋 · ${n.drugs}种药 · ${n.days}天 · ${n.alerts}次提醒/天`,
+  photoTitle:'要保存药品照片吗？',photoSub:'方便自购或发给他人 — 可跳过',btnSkip:'跳过 — 稍后添加',
+  photoTypes:[{k:'pill',ico:'💊',nm:'药片',desc:'颜色/大小'},{k:'blister',ico:'🗂️',nm:'铝箔包装',desc:'品牌名称'},{k:'box',ico:'📦',nm:'药盒',desc:'完整信息'},{k:'bag',ico:'🧾',nm:'药袋',desc:'处方名称'}],
+  ptBtn:'拍照',apiT:'设置 API Key',apiDesc:'输入 API Key 启用真实分析，否则使用演示数据。',apiCan:'取消',apiSav:'保存',
+  apiReady:'✓ 就绪',apiSet:'⚙',
+  unit:'片',timesDay:'每天{n}次',noImg:'未指定剂量',
+  lTabs:'每次剂量',lFreq:'频率',lTime:'服药方式',lTotl:'总量/天数',lSpec:'特殊说明',
+  confOk:'读取成功',confWarn:'置信度低 — 请核对',warnTpl:'置信度{p}% — 请核对',
+  toastDemo:'已加载：',toastPhotoSaved:'照片已保存',
+}};
+
+/* ═══════════════════════════
+   STATE
+═══════════════════════════ */
+let lang = localStorage.getItem('mtl') || 'th';
+let AK   = localStorage.getItem('mk')  || '';
+/*
+  photoQueue = [{ id, dataUrl, base64, mime, status:'waiting'|'loading'|'done'|'error', result }]
+  meds       = [ result objects from OCR ]
+  medPhotos  = { drug_name: { pill, blister, box, bag } }
+*/
+let photoQueue = [];
+let meds       = [];
+let medPhotos  = {};
+let pendingB64 = null, pendingMime = 'image/jpeg'; // current photo being previewed
+
+/* ═══════════════════════════
+   LANG
+═══════════════════════════ */
+const IDS=['hSub','sl1','sl2','sl3','queueTitle','queueEmptyTxt','szH1','szH2','btnPick','btnCamera','btnDemo','mCfgT','lbBk','lbLn','lbDn','sMedT','sSchT','slDrugs','slBags','slAlerts','lgBf','lgAf','lgWt','lgNt','rfTitle','btnReset','btnSaveTxt','succT','btnDone','srTitle','ipT','ipL','photoTitle','photoSub','btnSkip','apiT','apiDesc','apiCan','apiSav'];
+
+function setLang(l){
+  lang=l;localStorage.setItem('mtl',l);
+  document.documentElement.lang=l==='zh'?'zh-Hans':l;
+  if(l==='zh'){const e=document.getElementById('zhf');if(!e){const k=document.createElement('link');k.id='zhf';k.rel='stylesheet';k.href='https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap';document.head.appendChild(k);}}
+  ['TH','EN','ZH'].forEach(c=>document.getElementById('b'+c).classList.toggle('on',c.toLowerCase()===l));
+  const tl=L[l];
+  IDS.forEach(id=>{const el=document.getElementById(id);if(el&&tl[id])el.textContent=typeof tl[id]==='function'?tl[id](0):tl[id];});
+  updateAnalyzeBtn();updateBadge();
+  if(meds.length)renderMedList();
+  rebuildPhotoGrid();
+}
+function t(k,...a){const v=L[lang][k];return typeof v==='function'?v(...a):v||k;}
+
+/* ═══════════════════════════
+   API KEY
+═══════════════════════════ */
+function openApiModal(){document.getElementById('akIn').value=AK;document.getElementById('apiBk').classList.add('on');}
+function closeApiModal(){document.getElementById('apiBk').classList.remove('on');}
+function saveKey(){AK=document.getElementById('akIn').value.trim();AK?localStorage.setItem('mk',AK):localStorage.removeItem('mk');updateBadge();closeApiModal();}
+
+function highlightLang(){
+  ['bTH2','bEN2','bZH2'].forEach(id=>{
+    const b=document.getElementById(id);
+    if(b) b.classList.remove('on');
+  });
+  const map={th:'bTH2',en:'bEN2',zh:'bZH2'};
+  const b=document.getElementById(map[lang]);
+  if(b) b.classList.add('on');
+}
+
+function updateBadge(){const b=document.getElementById('apib');AK?(b.textContent=t('apiReady'),b.classList.add('on')):(b.textContent=t('apiSet'),b.classList.remove('on'));}
+document.getElementById('apiBk').addEventListener('click',e=>{if(e.target===document.getElementById('apiBk'))closeApiModal();});
+
+/* ═══════════════════════════
+   PHOTO QUEUE
+═══════════════════════════ */
+function openAddPhoto(){
+  pendingB64=null;
+  document.getElementById('prev').src='';
+  document.getElementById('sz').classList.remove('has');
+  const fi=document.getElementById('fi');
+  if(fi) fi.value='';
+  const fc=document.getElementById('fiCamera');
+  if(fc) fc.value='';
+  document.getElementById('szWrap').classList.add('on');
+  setTimeout(()=>{
+    document.getElementById('szWrap').scrollIntoView({behavior:'smooth',block:'nearest'});
+  },100);
+}
+function cancelAddPhoto(){
+  pendingB64=null;
+  document.getElementById('szWrap').classList.remove('on');
+  document.getElementById('sz').classList.remove('has');
+}
+function confirmAddPhoto(){
+  if(!pendingB64)return;
+  const id='q_'+Date.now();
+  photoQueue.push({id,dataUrl:'data:'+pendingMime+';base64,'+pendingB64,base64:pendingB64,mime:pendingMime,status:'waiting',result:null});
+  pendingB64=null;
+  document.getElementById('szWrap').classList.remove('on');
+  document.getElementById('sz').classList.remove('has');
+  document.getElementById('prev').src='';
+  renderQueue();updateAnalyzeBtn();
+}
+
+function szClick(e){
+  // ถ้ากด button หรือ child ของ button → ไม่ทำอะไร
+  if(e.target.tagName==='BUTTON'||e.target.closest('button'))return;
+  if(e.target.classList.contains('iab'))return;
+  // ถ้ามีรูปแล้ว → ไม่เปิด file picker อีก (ให้กดปุ่มในรูปแทน)
+  if(document.getElementById('sz').classList.contains('has'))return;
+  document.getElementById('fi').click();
+}
+function onFile(e){const f=e.target.files[0];if(f)loadFile(f);}
+function dov(e){e.preventDefault();document.getElementById('sz').classList.add('drag');}
+function dol(){document.getElementById('sz').classList.remove('drag');}
+function ddr(e){e.preventDefault();dol();const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))loadFile(f);}
+
+function loadFile(f){
+  if(f.size>5*1024*1024){toast('⚠ >5MB');return;}
+  pendingMime=f.type;
+  const r=new FileReader();
+  r.onload=ev=>{
+    pendingB64=ev.target.result.split(',')[1];
+    document.getElementById('prev').src=ev.target.result;
+    document.getElementById('sz').classList.add('has');
+  };r.readAsDataURL(f);
+}
+
+const DEMOS=[
+  {n:'Paracetamol 500mg',    l1:'กินเมื่อมีไข้หรือปวด ทุก 4-6 ชั่วโมง',   l2:'15 เม็ด (5 วัน)',                    c:'#1a5276'},
+  {n:'Amlodipine 5mg',       l1:'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง',   l2:'หลังอาหารเช้า  30 เม็ด',             c:'#145a32'},
+  {n:'Prednisolone 5mg',     l1:'รับประทานครั้งละ 4 เม็ด (20mg)',           l2:'วันเว้นวัน จ.พ.ศ.  60 เม็ด',         c:'#7b241c'},
+  {n:'Metformin 500mg',      l1:'รับประทานครั้งละ 1 เม็ด วันละ 2 ครั้ง',   l2:'พร้อมอาหาร เช้า-เย็น  60 เม็ด',     c:'#6e2f0e'},
+  {n:'Ibuprofen 400mg',      l1:'รับประทานครั้งละ 1 เม็ด ทุก 4 ชั่วโมง',   l2:'หลังอาหาร  24 เม็ด',                 c:'#922b21'},
+  {n:'Amoxicillin 500mg',    l1:'รับประทานครั้งละ 1 เม็ด ทุก 8 ชั่วโมง',   l2:'กินให้ครบ 7 วัน  21 เม็ด',          c:'#1b4f72'},
+  {n:'Fluconazole 150mg',    l1:'รับประทานครั้งละ 1 แคปซูล ทุก 2 วัน',     l2:'กินให้ครบ 14 วัน  7 แคปซูล',        c:'#4a235a'},
+  {n:'Omeprazole 20mg',      l1:'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง',   l2:'ก่อนอาหารเช้า 30 นาที  30 เม็ด',    c:'#1f618d'},
+];
+function useDemo(){
+  // ใช้ index เดียวกับ DEMO_OCR
+  const idx = photoQueue.length % DEMOS.length;
+  const d = DEMOS[idx];
+  const ocr = DEMO_OCR[idx];
+
+  const cv=document.createElement('canvas');cv.width=600;cv.height=420;
+  const x=cv.getContext('2d');
+  // background
+  x.fillStyle='#f9f6f0';x.fillRect(0,0,600,420);
+  x.strokeStyle='#ccc';x.lineWidth=2;x.strokeRect(8,8,584,404);
+  // header
+  x.fillStyle=d.c;x.fillRect(0,0,600,72);
+  x.fillStyle='#fff';x.font='bold 18px sans-serif';x.fillText('รพ. รามาธิบดี',16,30);
+  x.font='12px sans-serif';x.fillText('ฝ่ายเภสัชกรรม',16,50);
+  // patient
+  x.fillStyle='#444';x.font='12px sans-serif';
+  x.fillText('ผู้ป่วย: นาย สมชาย ใจดี  HN: 12345678  วันที่: 4 เม.ย. 2569',16,90);
+  // drug name
+  x.fillStyle='#111';x.font='bold 24px sans-serif';x.fillText(d.n,16,130);
+  // instruction box
+  x.strokeStyle=d.c;x.lineWidth=3;x.strokeRect(14,148,572,90);
+  x.fillStyle=d.c;x.fillRect(14,148,4,90);
+  x.fillStyle='#111';x.font='bold 15px sans-serif';x.fillText(d.l1,26,172);
+  x.fillStyle=d.c;x.font='bold 16px sans-serif';x.fillText(d.l2,26,200);
+  // quantity
+  x.fillStyle='#1a5276';x.font='bold 14px sans-serif';
+  x.fillText('จำนวน: '+(ocr?.total_tablets||'—')+' '+(ocr?.dose_unit==='mL'?'mL':'เม็ด'),16,268);
+  // doctor
+  x.fillStyle='#555';x.font='13px sans-serif';
+  x.fillText('แพทย์: '+(ocr?.doctor_name||'นพ. วิชัย รักสุขภาพ'),16,294);
+  x.fillText('โรงพยาบาล: '+(ocr?.hospital_name||'รพ. รามาธิบดี'),16,316);
+  // warning
+  x.fillStyle='#fef9e7';x.fillRect(14,334,572,40);
+  x.strokeStyle='#c00';x.lineWidth=1;x.strokeRect(14,334,572,40);
+  x.fillStyle='#c00';x.font='bold 11px sans-serif';
+  const warn=ocr?.course_completion_warning||ocr?.special_instructions||'เก็บให้พ้นมือเด็ก ⚠ หมดอายุ: 03/2028';
+  x.fillText('⚠ '+warn.substring(0,70),20,358);
+
+  const dataUrl=cv.toDataURL('image/jpeg',.9);
+  pendingB64=dataUrl.split(',')[1];pendingMime='image/jpeg';
+
+  // แสดงรูปใน preview ให้ user เห็น แล้วกด "เพิ่มรูปนี้"
+  const szWrap = document.getElementById('szWrap');
+  szWrap.classList.add('on');
+  szWrap.style.display = 'block';
+
+  const prev = document.getElementById('prev');
+  prev.src = dataUrl;
+  document.getElementById('sz').classList.add('has');
+
+  setTimeout(()=>{
+    szWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 100);
+
+  toast('💊 ซอง '+d.n.split(' ')[0]+' — กด "เพิ่มรูปนี้" ครับ');
+}
+
+
+function clearAllQueue(){
+  if(!photoQueue.length) return;
+  photoQueue=[];
+  pendingB64=null;
+  document.getElementById('prev').src='';
+  document.getElementById('sz').classList.remove('has');
+  document.getElementById('szWrap').classList.remove('on');
+  renderQueue();updateAnalyzeBtn();
+}
+
+function renderQueue(){
+  const grid=document.getElementById('queueGrid');
+  const empty=document.getElementById('queueEmpty');
+  // ย้าย queueEmpty ออกจาก grid ก่อน แล้วค่อย clear
+  // เพื่อป้องกัน element หายเมื่อ innerHTML=''
+  if(empty.parentNode===grid) document.body.appendChild(empty);
+  grid.innerHTML='';
+  const badge=document.getElementById('queueBadge');
+  if(!photoQueue.length){
+    empty.style.display='flex';
+    badge.textContent=t('bagCount',0);
+    badge.style.background='var(--s2)';
+    badge.style.color='var(--t3)';
+    grid.appendChild(empty);
+    return;
+  }
+  empty.style.display='none';
+  photoQueue.forEach((q,i)=>{
+    const div=document.createElement('div');div.className='q-thumb';
+    const statusIcon={waiting:'',loading:'⏳',done:'✅',error:'❌'}[q.status];
+    div.innerHTML=`<img src="${q.dataUrl}"><span class="q-num">${i+1}</span><button class="q-del" onclick="removeFromQueue(${i})">×</button>`;
+    if(q.status!=='waiting')div.innerHTML+=`<div style="position:absolute;bottom:2px;right:3px;font-size:11px">${statusIcon}</div>`;
+    grid.appendChild(div);
+  });
+  badge.textContent=t('bagCount',photoQueue.length);
+  badge.style.background='var(--al)';badge.style.color='var(--ad)';
+  const bca=document.getElementById('btnClearAll');
+  if(bca) bca.style.display=photoQueue.length>0?'block':'none';
+}
+
+function removeFromQueue(i){
+  photoQueue.splice(i,1);
+  renderQueue();updateAnalyzeBtn();
+  if(!photoQueue.length&&meds.length){meds=[];renderMedList();document.getElementById('result').classList.remove('on');document.getElementById('medlistSection').style.display='none';}
+}
+
+function updateAnalyzeBtn(){
+  const btn=document.getElementById('btnAnalyze');
+  const n=photoQueue.length;
+  const szOpen=document.getElementById('szWrap')?.classList.contains('on');
+  if(n===0){
+    btn.disabled=true;
+    document.getElementById('btnAnalyzeTxt').textContent=t('analyzeBtnWait');
+  } else if(szOpen){
+    // szWrap เปิดอยู่ = กำลังเพิ่มรูป ยังวิเคราะห์ไม่ได้
+    btn.disabled=true;
+    document.getElementById('btnAnalyzeTxt').textContent='เพิ่มรูปให้เสร็จก่อนครับ';
+  } else {
+    btn.disabled=false;
+    document.getElementById('btnAnalyzeTxt').textContent=t('analyzeBtn',n);
+  }
+}
+
+/* ═══════════════════════════
+   BATCH ANALYZE
+═══════════════════════════ */
+const DEMO_OCR=[
+  // [0] PRN — Paracetamol กินเมื่อมีอาการ
+  {drug_name:'Paracetamol',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:3,
+   timing_type:'prn',meal_relation:'after',meal_anchor:'all',offset_minutes:15,
+   interval_hours:null,skip_days:0,timing_label:'เมื่อมีอาการ ทุก 4-6 ชม.',
+   total_tablets:15,total_days:5,special_instructions:'กินเมื่อมีไข้หรือปวด',
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.94,
+   drug_type:'prn',must_complete_course:false,is_continuous:false,is_prn:true,
+   prn_min_interval_hours:4,prn_max_per_day:4,first_dose_time:null,course_completion_warning:null},
+
+  // [1] Meal-based — Amlodipine วันละครั้ง
+  {drug_name:'Amlodipine',dose_mg:5,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
+   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
+   interval_hours:null,skip_days:0,timing_label:'หลังอาหารเช้า',
+   total_tablets:30,total_days:30,special_instructions:null,
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.96,
+   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
+   first_dose_time:'07:00',course_completion_warning:null},
+
+  // [2] Skip วันเว้นวัน — Prednisolone
+  {drug_name:'Prednisolone',dose_mg:5,dose_unit:'mg',tablets_per_dose:4,frequency_per_day:1,
+   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
+   interval_hours:null,skip_days:1,timing_label:'วันเว้นวัน ตอนเช้าหลังอาหาร',
+   total_tablets:60,total_days:35,special_instructions:'รับประทานวัน จ.พ.ศ. เท่านั้น ห้ามหยุดยาเองโดยไม่ปรึกษาแพทย์',
+   doctor_name:'นพ. อดิศร โลหิตดี',hospital_name:'รพ. รามาธิบดี',confidence:.95,
+   drug_type:'steroid',must_complete_course:false,is_continuous:true,is_prn:false,
+   first_dose_time:'07:15',course_completion_warning:'ห้ามหยุดยาสเตียรอยด์เองโดยไม่ปรึกษาแพทย์'},
+
+  // [3] Meal-based — Metformin วันละ 2 ครั้ง
+  {drug_name:'Metformin',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:2,
+   timing_type:'meal_based',meal_relation:'with',meal_anchor:'all',offset_minutes:0,
+   interval_hours:null,skip_days:0,timing_label:'พร้อมอาหาร เช้า-เย็น',
+   total_tablets:60,total_days:30,special_instructions:'กินพร้อมอาหารเท่านั้น',
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.91,
+   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
+   first_dose_time:'07:00',course_completion_warning:null},
+
+  // [4] Interval ทุก 4 ชม. — Ibuprofen PRN
+  {drug_name:'Ibuprofen',dose_mg:400,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:4,
+   timing_type:'interval',meal_relation:'after',meal_anchor:null,offset_minutes:null,
+   interval_hours:4,skip_days:0,timing_label:'ทุก 4 ชม. หลังอาหาร',
+   total_tablets:24,total_days:4,special_instructions:'กินพร้อมอาหารหรือนม ไม่เกินวันละ 6 ครั้ง',
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.93,
+   drug_type:'prn',must_complete_course:false,is_continuous:false,is_prn:false,
+   prn_min_interval_hours:4,prn_max_per_day:6,first_dose_time:'08:00',course_completion_warning:null},
+
+  // [5] Interval ทุก 8 ชม. + Must Complete — Amoxicillin
+  {drug_name:'Amoxicillin',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:3,
+   timing_type:'interval',meal_relation:null,meal_anchor:null,offset_minutes:null,
+   interval_hours:8,skip_days:0,timing_label:'ทุก 8 ชม.',
+   total_tablets:21,total_days:7,special_instructions:'กินให้ครบ 7 วัน',
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.93,
+   drug_type:'antibiotic',must_complete_course:true,
+   must_complete_reason:'ยาปฏิชีวนะต้องกินให้ครบคอร์ส',is_continuous:false,is_prn:false,
+   course_completion_warning:'กินให้ครบ 7 วัน ห้ามหยุดเองแม้อาการดีขึ้น',first_dose_time:'08:00'},
+
+  // [6] Skip ทุก 2 วัน — Fluconazole
+  {drug_name:'Fluconazole',dose_mg:150,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
+   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
+   interval_hours:null,skip_days:2,timing_label:'ทุก 2 วัน ตอนเช้า',
+   total_tablets:7,total_days:14,special_instructions:'กินให้ครบ 14 วัน',
+   doctor_name:'พญ. วรรณา ผิวดี',hospital_name:'รพ. รามาธิบดี',confidence:.92,
+   drug_type:'antifungal',must_complete_course:true,is_continuous:false,is_prn:false,
+   course_completion_warning:'ยาต้านเชื้อรา กินให้ครบ 14 วัน',first_dose_time:'07:00'},
+
+  // [7] Omeprazole ก่อนอาหาร
+  {drug_name:'Omeprazole',dose_mg:20,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
+   timing_type:'meal_based',meal_relation:'before',meal_anchor:'breakfast',offset_minutes:-30,
+   interval_hours:null,skip_days:0,timing_label:'ก่อนอาหารเช้า 30 นาที',
+   total_tablets:30,total_days:30,special_instructions:null,
+   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.89,
+   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
+   first_dose_time:'06:30',course_completion_warning:null},
+];
+
+
+/* ── FIX TOTAL DAYS CALCULATION ── */
+function fixTotalDays(med){
+  if(!med) return med;
+  const tabs = parseInt(med.total_tablets)||0;
+  const tpd  = parseInt(med.tablets_per_dose)||1;
+  const fpd  = parseInt(med.frequency_per_day)||1;
+  const skip = parseInt(med.skip_days)||0;
+
+  if(!tabs) return med;
+
+  const totalDoses = tabs / tpd; // จำนวนครั้งทั้งหมด
+
+  if(skip===0){
+    // กินทุกวัน: total_days = totalDoses / fpd
+    med.total_days = Math.round(totalDoses / fpd);
+
+  } else if(skip===1){
+    // วันเว้นวัน: กิน 3 หรือ 4 วัน/สัปดาห์ขึ้นอยู่กับ pattern
+    // default วันเว้นวัน = 3.5 วัน/สัปดาห์ ≈ ทุก 2 วัน
+    const daysPerWeek = 3.5; // เฉลี่ย จ.พ.ศ. = 3 วัน, หรือวันเว้นวัน = 3.5
+    const weeks = totalDoses / fpd / daysPerWeek;
+    med.total_days = Math.round(weeks * 7);
+
+  } else if(skip===2){
+    // ทุก 2 วัน: กิน 1 วัน เว้น 2 วัน = ทุก 3 วัน
+    med.total_days = Math.round(totalDoses / fpd * 3);
+
+  } else {
+    // ทุก N วัน: กิน 1 วัน เว้น skip วัน
+    med.total_days = Math.round(totalDoses / fpd * (skip + 1));
+  }
+
+  return med;
+}
+
+async function analyzeAll(){
+  if(!photoQueue.length)return;
+  document.getElementById('btnAnalyze').disabled=true;
+  document.getElementById('btnAddPhoto').disabled=true;
+
+  // show progress
+  const ps=document.getElementById('progressSection');ps.classList.add('on');
+  ps.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('progTitle').textContent=t('progTitle');
+  document.getElementById('progSub').textContent=t('progSub');
+  renderProgItems();
+  goStep(2);
+
+  // analyze one by one
+  meds=[];
+  for(let i=0;i<photoQueue.length;i++){
+    photoQueue[i].status='loading';
+    renderQueue();renderProgItems();
+    updateProgBar(i,photoQueue.length);
+    try{
+      let result;
+      if(AK){
+        // มี API Key — เรียก Claude API จริง พร้อม timeout 30 วินาที
+        const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000));
+        result = await Promise.race([callAPI(photoQueue[i].base64,photoQueue[i].mime), timeoutPromise]);
+      } else {
+        // ไม่มี API Key — ใช้ Demo OCR
+        await wait(800+Math.random()*400);
+        result = DEMO_OCR[i%DEMO_OCR.length];
+      }
+      photoQueue[i].result=result;photoQueue[i].status='done';
+      meds.push(fixTotalDays(result));
+    }catch(e){
+      console.error('Analyze error:',e);
+      photoQueue[i].status='error';
+      photoQueue[i].result=null;
+      // ถ้า error ให้ใช้ demo แทน ไม่ค้าง
+      if(!AK){
+        const fallback = DEMO_OCR[i%DEMO_OCR.length];
+        photoQueue[i].result=fallback;
+        photoQueue[i].status='done';
+        meds.push(fixTotalDays(fallback));
+      }
+    }
+    renderQueue();renderProgItems();
+  }
+  updateProgBar(photoQueue.length,photoQueue.length);
+
+  // show results
+  if(meds.length){
+    renderMedList();
+    renderDcards();
+    rebundleIfReady();
+    renderRefillCard();
+    renderDoctor();
+    document.getElementById('result').classList.add('on');
+    document.getElementById('medlistSection').style.display='block';
+    document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
+    goStep(3);
+    // check interval
+    const hasInterval=meds.some(m=>m.timing_type==='interval');
+    document.getElementById('iprompt').style.display=hasInterval?'block':'none';
+  }
+  document.getElementById('btnAddPhoto').disabled=false;
+}
+
+function renderProgItems(){
+  const el=document.getElementById('progItems');el.innerHTML='';
+  photoQueue.forEach((q,i)=>{
+    const div=document.createElement('div');
+    div.className='prog-item '+q.status;
+    const lbl={waiting:t('progWaiting'),loading:t('progLoading'),done:t('progDone'),error:t('progError')}[q.status];
+    div.innerHTML=`<div class="prog-item-num">${i+1}</div><div class="prog-item-lbl">${t('sl1')} ${i+1} — ${lbl}</div>${q.status==='loading'?'<div class="prog-spin"></div>':''}`;
+    el.appendChild(div);
+  });
+}
+function updateProgBar(done,total){
+  document.getElementById('progBar').style.width=(total?Math.round(done/total*100):0)+'%';
+}
+
+async function callAPI(b64,mime){
+  const prompt=`You are a Thai pharmacy AI. Read this medication bag/label carefully.
+Reply ONLY valid JSON (no backticks, no explanation):
+{
+  "drug_name": "ชื่อยาภาษาไทยหรืออังกฤษ",
+  "dose_mg": null,
+  "dose_unit": "mg",
+  "tablets_per_dose": 1,
+  "frequency_per_day": 1,
+  "timing_type": "meal_based|interval|prn|tapering|patch|cyclical",
+  "meal_relation": "before|with|after|empty_stomach|bedtime|null",
+  "meal_anchor": "breakfast|lunch|dinner|all|null",
+  "offset_minutes": 0,
+  "interval_hours": null,
+  "first_dose_time": null,
+  "skip_days": 0,
+  "timing_label": "คำอธิบายเวลากิน",
+  "total_tablets": null,
+  "total_days": null,
+  "special_instructions": null,
+  "doctor_name": null,
+  "hospital_name": null,
+  "drug_type": "antibiotic|chronic|prn|steroid|antifungal|antiviral|vitamin|other",
+  "must_complete_course": false,
+  "must_complete_reason": null,
+  "is_continuous": false,
+  "is_prn": false,
+  "prn_min_interval_hours": null,
+  "prn_max_per_day": null,
+  "is_tapering": false,
+  "tapering_instructions": null,
+  "is_patch": false,
+  "patch_change_hours": null,
+  "course_completion_warning": null,
+  "confidence": 0.95
+}
+
+Rules:
+- drug_type antibiotic/antifungal/antiviral/antituberculosis = must_complete_course:true
+- Antibiotics (Amoxicillin,Azithromycin,Cloxacillin,Doxycycline,Metronidazole,Augmentin etc) = must_complete_course:true, course_completion_warning:"กินให้ครบคอร์ส ห้ามหยุดเองแม้อาการดีขึ้น"
+- Chronic drugs (Metformin,Amlodipine,Atorvastatin,Losartan,Aspirin etc) = is_continuous:true, must_complete_course:false
+- Pain/fever/allergy relief = is_prn:true, timing_type:prn
+- Steroids (Prednisolone,Dexamethasone) = is_tapering:true (if tapering instructions found)
+- Patch medications = is_patch:true, patch_change_hours:24 or 72
+- interval_hours: fill if label says every X hours (Q4H=4, Q6H=6, Q8H=8, Q12H=12)
+- first_dose_time: suggest based on timing (morning meds=07:00, evening=18:00, bedtime=21:00)
+- IMPORTANT total_days calculation:
+  * Normal (skip_days=0): total_days = total_tablets / (frequency_per_day * tablets_per_dose)
+  * วันเว้นวัน (skip_days=1, 3 times/week): total_days = (total_tablets / tablets_per_dose) / doses_per_week * 7
+    Example: 60 tablets, 4 tabs/dose, วันเว้นวัน (จ.พ.ศ. = 3 days/week) = (60/4)/3*7 = 35 days
+  * ทุก 2 วัน (skip_days=2): total_days = (total_tablets / tablets_per_dose) * 3
+  * Always calculate actual calendar days, not just dose count
+- Read Thai text carefully: วันละ=per day, ครั้ง=time, เม็ด=tablet, ก่อนอาหาร=before meal, หลังอาหาร=after meal, พร้อมอาหาร=with meal, ก่อนนอน=bedtime
+`;
+  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:prompt}]}]})});
+  if(!res.ok){const er=await res.json().catch(()=>({}));throw new Error(er.error?.message||`HTTP ${res.status}`);}
+  const j=await res.json();
+  return JSON.parse(j.content[0]?.text.replace(/```json|```/g,'').trim()||'{}');
+}
+
+/* ═══════════════════════════
+   RENDER RESULTS
+═══════════════════════════ */
+function renderMedList(){
+  const el=document.getElementById('medList');el.innerHTML='';
+  const badge=document.getElementById('medBadge');
+  badge.textContent=t('drugCount',meds.length);badge.className='med-badge'+(meds.length?' has':'');
+  meds.forEach((m,i)=>{
+    const ds=m.dose_mg?`${m.dose_mg}${m.dose_unit}`:'';
+    // course completion warning badge
+    const courseTag = m.must_complete_course
+      ? '<span style="background:#FEF2F2;color:#DC2626;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">⚠️ กินให้ครบ</span>'
+      : m.is_continuous
+      ? '<span style="background:#E0FFF6;color:#077A5F;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">🔄 ต่อเนื่อง</span>'
+      : m.is_prn
+      ? '<span style="background:#FFFBEB;color:#92400E;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">💊 เมื่อมีอาการ</span>'
+      : '';
+    const sub=[ds,t('timesDay').replace('{n}',m.frequency_per_day),m.timing_label,m.total_days?m.total_days+' '+t('rfDays'):''].filter(Boolean).join(' · ');
+    const c=document.createElement('div');c.className='mchip';
+    c.innerHTML=`<div class="mcdot" style="background:var(--ac)"></div><div class="mcinfo"><div class="mcnm">${m.drug_name}${courseTag}</div><div class="mcsb">${sub}</div></div><button class="mcrem" onclick="removeMed(${i})">×</button>`;
+    el.appendChild(c);
+  });
+}
+
+function removeMed(i){
+  meds.splice(i,1);photoQueue.splice(i,1);
+  renderQueue();renderMedList();renderDcards();rebundleIfReady();renderRefillCard();renderDoctor();updateAnalyzeBtn();
+  if(!meds.length){document.getElementById('result').classList.remove('on');document.getElementById('medlistSection').style.display='none';}
+}
+
+function renderDcards(){
+  const wrap=document.getElementById('dcardWrap');wrap.innerHTML='';
+  meds.forEach((m,i)=>{
+    const q=photoQueue[i];
+    const pct=Math.round((m.confidence||0)*100);
+    const ok=pct>=75;
+    const unit=t('unit');
+    const card=document.createElement('div');card.className='dcard'+(ok?' ok':' warn');
+    const bmap={meal_based:'Meal',interval:'Interval',fixed:'Fixed',special:'Special'};
+    const bdgKey='b'+(bmap[m.timing_type]||'Meal');
+    card.innerHTML=`
+      <div class="dc-hd">
+        ${q?`<img class="dc-thumb" src="${q.dataUrl}">`:'' }
+        <div style="flex:1">
+          <div class="dc-nm">${m.drug_name||'—'}</div>
+        ${m.must_complete_course?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#DC2626;line-height:1.5"><b>⚠️ ต้องกินให้ครบคอร์ส ${m.total_days||''}  วัน</b><br>${m.course_completion_warning||'ห้ามหยุดยาเองแม้อาการดีขึ้นแล้ว'}</div>`:''}
+        ${m.is_prn?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#92400E;line-height:1.5">💊 <b>กินเมื่อมีอาการ</b> · กินซ้ำได้ทุก ${m.prn_min_interval_hours||4} ชั่วโมง · ไม่เกิน ${m.prn_max_per_day||4} ครั้ง/วัน</div>`:''}
+        ${m.is_continuous?`<div style="background:#E0FFF6;border:1px solid #6EE7B7;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#065F46">🔄 <b>ยากินต่อเนื่อง</b> ห้ามหยุดยาเองโดยไม่ปรึกษาแพทย์</div>`:''}
+          <div class="dc-ds">${m.dose_mg?m.dose_mg+' '+m.dose_unit:t('noImg')}</div>
+        </div>
+        <div class="dc-conf">${pct}%</div>
+      </div>
+      ${!ok?`<div class="wstrip" style="margin:0 10px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${t('warnTpl').replace('{p}',pct)}</div>`:''}
+      <div class="dc-bd">
+        <div class="ir"><div class="ii g">💊</div><div style="flex:1"><div class="ilbl">${t('lTabs')}</div><input class="ied" value="${m.tablets_per_dose||1} ${unit}" oninput="meds[${i}].tablets_per_dose=parseInt(this.value)||1;rebundleIfReady()"></div></div>
+        <div class="ir"><div class="ii g">🔄</div><div style="flex:1"><div class="ilbl">${t('lFreq')}</div><input class="ied" value="${t('timesDay').replace('{n}',m.frequency_per_day)}" oninput="meds[${i}].frequency_per_day=parseInt(this.value)||1;rebundleIfReady()"></div></div>
+        <div class="ir"><div class="ii w">🍽️</div><div style="flex:1"><div class="ilbl">${t('lTime')}</div><input class="ied" value="${m.timing_label||'—'}"><div class="ttbadge ${bmap[m.timing_type]?.toLowerCase()||'meal'}">${t(bdgKey)}</div></div></div>
+        <div class="ir"><div class="ii b">📦</div><div style="flex:1"><div class="ilbl">${t('lTotl')}</div><input class="ied" value="${[m.total_tablets?m.total_tablets+' '+unit:null,m.total_days?m.total_days+' '+t('rfDays'):null].filter(Boolean).join(' / ')||'—'}"></div></div>
+        ${m.special_instructions?`<div class="ir"><div class="ii p">⚠️</div><div style="flex:1"><div class="ilbl">${t('lSpec')}</div><input class="ied" value="${m.special_instructions}"></div></div>`:''}
+      </div>`;
+    wrap.appendChild(card);
+  });
+}
+
+/* ═══════════════════════════
+   SCHEDULE
+═══════════════════════════ */
+function getMeals(){return{breakfast:document.getElementById('mb').value||'07:00',lunch:document.getElementById('ml').value||'12:00',dinner:document.getElementById('md').value||'18:00'};}
+function addMin(ts,off){const[h,m]=ts.split(':').map(Number);const tot=h*60+m+off;const nh=Math.floor(((tot%1440)+1440)%1440/60);const nm=((tot%60)+60)%60;return`${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;}
+
+function buildSchedule(medList,meals){
+  const periods=[{drugs:[]},{drugs:[]},{drugs:[]},{drugs:[]}];
+  const ivMeds=[],prnMeds=[],skipMeds=[];
+  const mKeys=['breakfast','lunch','dinner'],mAnch={breakfast:0,lunch:1,dinner:2};
+  const offMap={before:-30,after:15,with:0,empty_stomach:-60,bedtime:0};
+
+  medList.forEach(med=>{
+    // PRN / เมื่อมีอาการ
+    if(med.timing_type==='prn'||med.is_prn){prnMeds.push(med);return;}
+    if(med.timing_type==='special'){prnMeds.push(med);return;}
+
+    // Interval (ทุก X ชั่วโมง)
+    if(med.timing_type==='interval'){ivMeds.push(med);return;}
+
+    // Fixed (ก่อนนอน)
+    if(med.timing_type==='fixed'||med.meal_relation==='bedtime'){
+      periods[3].drugs.push({drug:med,time:'21:00',cls:'fixed',lbl:t('tNight')});return;
+    }
+
+    // วันเว้นวัน / ทุก N วัน (skip_days > 0)
+    const skipDays=parseInt(med.skip_days)||0;
+    if(skipDays>0){skipMeds.push(med);return;}
+
+    // meal_based ปกติ
+    const rel=med.meal_relation||'after';
+    const anch=med.meal_anchor||'all';
+    const off=parseInt(med.offset_minutes)||(offMap[rel]??15);
+    const cls=rel==='before'?'before':rel==='with'?'with':'after';
+    const lbl=t('t'+({before:'Before',after:'After',with:'With',empty_stomach:'Before'}[rel]||'After'));
+    const active=anch==='all'
+      ?(med.frequency_per_day>=3?mKeys:med.frequency_per_day===2?['breakfast','dinner']:['breakfast'])
+      :[anch];
+    active.forEach(mk=>{
+      const time=addMin(meals[mk],off);
+      const pi=mAnch[mk]??0;
+      periods[pi].drugs.push({drug:med,time,cls,lbl});
+    });
+  });
+
+  periods.forEach(p=>p.drugs.sort((a,b)=>a.time.localeCompare(b.time)));
+  return{periods,ivMeds,prnMeds,skipMeds};
+}
+
+function rebundleIfReady(){
+  if(!meds.length)return;
+  // อัปเดต label มื้อแรก ตามประเภทยา
+  const hasInterval = meds.some(m=>m.timing_type==='interval'&&!m.is_prn);
+  const hasSkip = meds.some(m=>(parseInt(m.skip_days)||0)>0);
+  const fdRow = document.getElementById('firstDoseRow');
+  if(fdRow){
+    const badges = fdRow.querySelectorAll('.first-dose-badge');
+    if(badges[0]) badges[0].style.display = hasInterval?'inline-flex':'none';
+    if(badges[1]) badges[1].style.display = hasSkip?'inline-flex':'none';
+    fdRow.style.borderTopColor = (hasInterval||hasSkip)?'var(--ac)':'var(--bd)';
+    fdRow.style.opacity = (hasInterval||hasSkip)?'1':'0.5';
+    const lbl = fdRow.querySelector('.first-dose-lbl');
+    if(lbl){
+      if(hasInterval&&hasSkip) lbl.childNodes[0].textContent='⏱️ เริ่มกินมื้อแรกกี่โมง? ';
+      else if(hasInterval) lbl.childNodes[0].textContent='⏱️ กินมื้อแรก (ทุก '+meds.find(m=>m.timing_type==='interval')?.interval_hours+'ชม.) กี่โมง? ';
+      else if(hasSkip) lbl.childNodes[0].textContent='⏱️ กินมื้อแรก (วันเว้นวัน) กี่โมง? ';
+      else lbl.childNodes[0].textContent='⏱️ เริ่มกินมื้อแรกกี่โมง? ';
+    }
+  }
+  const meals=getMeals();
+  const{periods,ivMeds,prnMeds,skipMeds}=buildSchedule(meds,meals);
+  const TL=L[lang],pC=['morning','noon','evening','night'];
+  const pg=document.getElementById('pgrid');pg.innerHTML='';
+  let totalAlerts=0;
+  periods.forEach((p,i)=>{
+    if(!p.drugs.length)return;totalAlerts++;
+    const times=[...new Set(p.drugs.map(d=>d.time))].sort().join(' · ');
+    const card=document.createElement('div');card.className=`pc ${pC[i]}`;
+    card.innerHTML=`<div class="pc-hd"><div class="pc-ic">${TL.pIcons[i]}</div><div><div class="pc-lb">${TL.periods[i]}</div><div class="pc-tm">${times}</div></div></div><div class="pc-dgs">${p.drugs.map(d=>`<div class="dpill ${d.cls}"><div class="dp-d"></div><div class="dp-i"><div class="dp-n">${d.drug.drug_name}</div><div class="dp-s">${d.lbl}${d.drug.dose_mg?' · '+d.drug.dose_mg+d.drug.dose_unit:''}</div></div><div class="dp-c">${d.drug.tablets_per_dose||1}</div></div>`).join('')}</div>`;
+    pg.appendChild(card);
+  });
+  const ivc=document.getElementById('ivcards');ivc.innerHTML='';
+  ivMeds.forEach(med=>{
+    const ih=med.interval_hours||8;const st=document.getElementById('ivStart')?.value||'08:00';
+    const[sh,sm]=st.split(':').map(Number);const stMin=sh*60+sm;const cnt=Math.round(24/ih);const slots=[];
+    for(let n=0;n<cnt;n++){const tot=stMin+n*ih*60;slots.push(`${String(Math.floor((tot%1440)/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);}
+    totalAlerts+=slots.length;
+    const card=document.createElement('div');card.className='iv-card';
+    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${med.drug_name}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${med.tablets_per_dose||1} ${t('ivUnit')}</div></div>`).join('')}</div>`;
+    ivc.appendChild(card);
+  });
+  const pc=document.getElementById('prncards');pc.innerHTML='';
+
+  // PRN cards — แสดง interval และจำนวนสูงสุด/วัน
+  prnMeds.forEach(med=>{
+    const minH=med.prn_min_interval_hours||4;
+    const maxDay=med.prn_max_per_day||4;
+    const prnDetail=`กินเมื่อมีอาการ · กินซ้ำได้ทุก ${minH} ชม. · ไม่เกิน ${maxDay} ครั้ง/วัน`;
+    const el=document.createElement('div');
+    el.className='prn-card';
+    el.style.cssText='border:1.5px solid #F59E0B;border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;background:#FFFBEB;margin-top:7px';
+    el.innerHTML=`
+      <div style="font-size:20px;flex-shrink:0">💊</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#111">${med.drug_name}${med.dose_mg?' '+med.dose_mg+med.dose_unit:''}</div>
+        <div style="font-size:11px;color:#92400E;margin-top:3px;line-height:1.5">${prnDetail}</div>
+        <div style="font-size:10px;color:#6B7280;margin-top:2px">ไม่มีตารางเวลาตายตัว — กดบันทึกเมื่อกิน</div>
+      </div>
+      <div style="background:#F59E0B;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;flex-shrink:0">PRN</div>
+    `;
+    pc.appendChild(el);
+  });
+
+  // Skip/Alternate day cards — วันเว้นวัน / ทุก N วัน
+  skipMeds.forEach(med=>{
+    const skip=parseInt(med.skip_days)||1;
+    const skipLabel=skip===1?'วันเว้นวัน':`ทุก ${skip+1} วัน`;
+    const rel=med.meal_relation||'after';
+    const anch=med.meal_anchor||'breakfast';
+    const mealLabel={breakfast:'เช้า',lunch:'กลางวัน',dinner:'เย็น',bedtime:'ก่อนนอน',all:'เช้า'}[anch]||'เช้า';
+    const relLabel={before:'ก่อนอาหาร',after:'หลังอาหาร',with:'พร้อมอาหาร',bedtime:'ก่อนนอน'}[rel]||'หลังอาหาร';
+    const off=parseInt(med.offset_minutes)||(rel==='before'?-30:15);
+    const mealTime=anch==='bedtime'?'21:00':addMin(getMeals()[anch==='all'?'breakfast':anch]||'07:00',off);
+    const el=document.createElement('div');
+    el.style.cssText='border:1.5px solid #7C3AED;border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;background:#F5F3FF;margin-top:7px';
+    el.innerHTML=`
+      <div style="font-size:20px;flex-shrink:0">📅</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:#111">${med.drug_name}${med.dose_mg?' '+med.dose_mg+med.dose_unit:''}</div>
+        <div style="font-size:12px;font-weight:600;color:#7C3AED;margin-top:3px">${skipLabel} · มื้อ${mealLabel} ${mealTime}</div>
+        <div style="font-size:11px;color:#6B7280;margin-top:2px">${relLabel} · ${med.tablets_per_dose||1} ${med.dose_unit==='mL'?'mL':'เม็ด'}</div>
+        ${med.must_complete_course?'<div style="font-size:10px;color:#DC2626;margin-top:3px;font-weight:600">⚠️ '+( med.course_completion_warning||'ห้ามหยุดยาเอง')+'</div>':''}
+      </div>
+      <div style="background:#7C3AED;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;flex-shrink:0">${skipLabel}</div>
+    `;
+    pc.appendChild(el);
+    totalAlerts++;
+  });
+  if(periods.some(p=>p.drugs.length)||ivMeds.length||prnMeds.length||skipMeds.length){
+    document.getElementById('sumbar').style.display='';
+    document.getElementById('snDrugs').textContent=meds.length;
+    document.getElementById('snBags').textContent=photoQueue.length;
+    document.getElementById('snAlerts').textContent=totalAlerts;
+    document.getElementById('legend').style.display='';
+  }
+}
+
+function renderRefillCard(){
+  if(!meds.length){document.getElementById('refillCard').style.display='none';return;}
+  const today=new Date();
+  const rows=meds.map(m=>{
+    if(!m.total_days)return null;
+    const end=new Date(today);end.setDate(end.getDate()+(parseInt(m.total_days)||0));
+    const dl=Math.ceil((end-today)/86400000);
+    const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    return`<div class="rfrow"><span class="key">${m.drug_name}</span><span class="val ${dl<=7?'warn':'ok'}">${fmt(end)} · ${dl} ${t('rfDays')}</span></div>`;
+  }).filter(Boolean);
+  if(!rows.length){document.getElementById('refillCard').style.display='none';return;}
+  document.getElementById('refillCard').style.display='block';
+  document.getElementById('rfBody').innerHTML=rows.join('');
+}
+
+function renderDoctor(){
+  const fd=meds.find(m=>m.doctor_name);
+  if(fd){document.getElementById('docrow').style.display='flex';document.getElementById('docnm').textContent=fd.doctor_name;document.getElementById('dochp').textContent=fd.hospital_name||'—';document.getElementById('docav').textContent=(fd.doctor_name||'').replace(/นพ\.\s*|พญ\.\s*/g,'').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase()||'MD';}
+  else document.getElementById('docrow').style.display='none';
+}
+
+/* ═══════════════════════════
+   PHOTO POPUP (medicine cabinet)
+═══════════════════════════ */
+let currentPhotoMed='';
+function save(){
+  if(!meds.length)return;
+  currentPhotoMed=meds[0]?.drug_name||'';
+  buildPhotoGrid(currentPhotoMed);
+  document.getElementById('photoBk').classList.add('on');
+}
+function skipPhoto(){document.getElementById('photoBk').classList.remove('on');showSuccessScreen();}
+document.getElementById('photoBk').addEventListener('click',e=>{if(e.target===document.getElementById('photoBk'))skipPhoto();});
+
+function buildPhotoGrid(drugName){
+  const pg=document.getElementById('photoGrid');pg.innerHTML='';
+  L[lang].photoTypes.forEach(pt=>{
+    const photos=medPhotos[drugName]||{};const hasPh=!!photos[pt.k];
+    const div=document.createElement('div');div.className='photo-type'+(hasPh?' selected':'');
+    div.innerHTML=`<div class="pt-icon">${pt.ico}</div><div class="pt-name">${pt.nm}</div><div class="pt-desc">${pt.desc}</div><label class="pt-btn" for="ptf_${pt.k}">${hasPh?'✓ '+t('ptBtn')+' อีกครั้ง':t('ptBtn')}</label>`;
+    const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.id=`ptf_${pt.k}`;fi.style.display='none';
+    fi.onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=re=>{if(!medPhotos[drugName])medPhotos[drugName]={};medPhotos[drugName][pt.k]=re.target.result;toast(t('toastPhotoSaved'));buildPhotoGrid(drugName);};r.readAsDataURL(f);};
+    div.appendChild(fi);pg.appendChild(div);
+  });
+}
+function rebuildPhotoGrid(){if(document.getElementById('photoBk').classList.contains('on'))buildPhotoGrid(currentPhotoMed);}
+
+function showSuccessScreen(){
+  const meals=getMeals();
+  const{periods,ivMeds}=buildSchedule(meds,meals);
+  const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
+  const maxDays=Math.max(...meds.map(m=>parseInt(m.total_days)||0),0);
+  const payload={patient_id:'demo',start_date:new Date().toISOString().split('T')[0],meal_times:meals,medications:meds,bag_count:photoQueue.length,photos:medPhotos};
+  console.log('[MedTrack] POST /api/v1/medications/confirm',JSON.stringify(payload,null,2));
+  document.getElementById('mainCnt').style.display='none';
+  document.getElementById('succ').classList.add('on');
+  document.getElementById('succ').style.display='flex';
+  document.getElementById('succ').style.pointerEvents='auto';
+  document.getElementById('mainCnt').style.display='none';
+  document.getElementById('mainCnt').style.pointerEvents='none';
+  document.getElementById('succT').textContent=t('succT');
+  document.getElementById('succMsg').innerHTML=t('succMsgTpl',{bags:photoQueue.length,drugs:meds.length,days:maxDays,alerts})+'<br><span style="font-size:11px;color:var(--t3)">'+(meds.map(m=>m.drug_name).join(', '))+'</span>';
+  document.getElementById('btnDone').textContent=t('btnDone');
+  const rfMeds=meds.filter(m=>m.total_days);
+  if(rfMeds.length){
+    document.getElementById('succRefill').style.display='block';
+    document.getElementById('srTitle').textContent=t('srTitle');
+    const today=new Date();
+    document.getElementById('srBody').innerHTML=rfMeds.map(m=>{
+      const end=new Date(today);end.setDate(end.getDate()+parseInt(m.total_days));
+      const alert7=new Date(end);alert7.setDate(alert7.getDate()-7);
+      const fmt=d=>`${d.getDate()}/${d.getMonth()+1}`;
+      return`<div style="font-size:11px;margin-bottom:3px"><strong>${m.drug_name}</strong> — หมด ${fmt(end)} · แจ้ง ${fmt(alert7)}</div>`;
+    }).join('');
+  }
+  goStep(3);
+}
+
+/* ═══════════════════════════
+   STEPS / RESET
+═══════════════════════════ */
+function goStep(n){for(let i=1;i<=3;i++){const s=document.getElementById('s'+i);const d=document.getElementById('d'+i);if(s)s.className='step'+(i<n?' done':i===n?' active':'');if(d)d.textContent=i<n?'✓':String(i);}for(let i=1;i<=2;i++){const l=document.getElementById('sl'+i+'line');if(l)l.className='sline'+(i<n?' done':'');}}
+
+function resetAll(){
+  // reset data
+  photoQueue=[];meds=[];medPhotos={};pendingB64=null;
+
+  // reset photo zone
+  const prev=document.getElementById('prev');
+  if(prev){prev.src='';prev.style.display='none';}
+  document.getElementById('sz').classList.remove('has');
+  const fi=document.getElementById('fi'); if(fi)fi.value='';
+  const fc=document.getElementById('fiCamera'); if(fc)fc.value='';
+  document.getElementById('szWrap').classList.remove('on');
+
+  // reset sections
+  document.getElementById('progressSection').classList.remove('on');
+  document.getElementById('result').classList.remove('on');
+  document.getElementById('medlistSection').style.display='none';
+  document.getElementById('medList').innerHTML='';
+  document.getElementById('dcardWrap').innerHTML='';
+  document.getElementById('pgrid').innerHTML='';
+  document.getElementById('ivcards').innerHTML='';
+  document.getElementById('prncards').innerHTML='';
+  document.getElementById('sumbar').style.display='none';
+  document.getElementById('legend').style.display='none';
+
+  // reset refill
+  const rc=document.getElementById('refillCard');if(rc)rc.style.display='none';
+  const sr=document.getElementById('succRefill');if(sr)sr.style.display='none';
+
+  // hide success screen และแสดง mainCnt
+  const succ=document.getElementById('succ');
+  succ.classList.remove('on');
+  succ.style.display='none';
+  succ.style.pointerEvents='none';
+  document.getElementById('mainCnt').style.display='';
+  document.getElementById('mainCnt').style.pointerEvents='';
+
+  // reset progress
+  const pb=document.getElementById('progBar');if(pb)pb.style.width='0%';
+  const pi=document.getElementById('progItems');if(pi)pi.innerHTML='';
+
+  // enable ปุ่มเพิ่มซองยา
+  const bap=document.getElementById('btnAddPhoto');
+  if(bap){bap.disabled=false;bap.style.opacity='';bap.style.pointerEvents='auto';}
+
+  // enable ปุ่มกล้อง/รูปภาพ/ตัวอย่าง
+  document.querySelectorAll('.upbtn').forEach(b=>{b.disabled=false;b.style.opacity='';b.style.pointerEvents='auto';});
+
+  renderQueue();updateAnalyzeBtn();goStep(1);
+
+  // scroll กลับบนสุด
+  window.scrollTo({top:0,behavior:'smooth'});
+  const app=document.querySelector('.app')||document.getElementById('mainCnt');
+  if(app)app.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ═══════════════════════════
+   UTILS
+═══════════════════════════ */
+function toast(msg,ms=2400){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),ms);}
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+
+
+/* ═══════════════════════════════════════════
+   APPOINTMENT SCANNER
+═══════════════════════════════════════════ */
+let appointments = JSON.parse(localStorage.getItem('mt_appts') || '[]');
+let apptPending = null; // { base64, mime, dataUrl }
+
+// ── DEMO APPOINTMENT DATA ──
+const DEMO_APPT = {
+  doctor_name: 'นพ. วิชัย รักสุขภาพ',
+  department: 'คลินิกโรคเบาหวานและต่อมไร้ท่อ',
+  hospital_name: 'โรงพยาบาลรามาธิบดี',
+  building: 'อาคาร 3 ชั้น 2',
+  date_str: (() => {
+    const d = new Date(); d.setDate(d.getDate() + 14);
+    return d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  })(),
+  date_iso: (() => {
+    const d = new Date(); d.setDate(d.getDate() + 14);
+    return d.toISOString().split('T')[0];
+  })(),
+  time_str: '09:00 น.',
+  hn: 'HN 12345678',
+  instructions: ['งดน้ำและอาหารอย่างน้อย 8 ชั่วโมงก่อนพบแพทย์','นำผลเลือดครั้งที่แล้วมาด้วย','พกบัตรนัดและบัตรประชาชน'],
+  note: 'เจาะเลือดที่ห้องแล็บ ชั้น 1 ก่อนพบแพทย์',
+  confidence: 0.95
+};
+
+// ── TAB SWITCH ──
+function showApptTab() {
+  document.getElementById('mainCnt').style.display = 'none';
+  document.getElementById('apptTab').classList.add('on');
+  document.getElementById('hSub').textContent = 'นัดแพทย์';
+  document.getElementById('apibAppt').style.background = 'var(--bl)';
+  document.getElementById('apibAppt').style.color = '#fff';
+  // if has saved appts show calendar, else show scan
+  const saved = JSON.parse(localStorage.getItem('mt_appts')||'[]');
+  apptGoStep(saved.length > 0 ? 3 : 1);
+}
+
+function showMedTab() {
+  document.getElementById('mainCnt').style.display = '';
+  document.getElementById('apptTab').classList.remove('on');
+  document.getElementById('hSub').textContent = 'สแกนซองยา';
+  document.getElementById('apibAppt').style.background = 'var(--bll)';
+  document.getElementById('apibAppt').style.color = 'var(--bl)';
+}
+
+// click logo to go back to med tab
+document.querySelector('.hlogo').style.cursor = 'pointer';
+document.querySelector('.hlogo').addEventListener('click', showMedTab);
+
+// ── FILE INPUT ──
+function apptCapture() { document.getElementById('apptFileCam').click(); }
+function apptGallery() { document.getElementById('apptFile').click(); }
+
+function apptFileChange(e) {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    apptPending = { base64: ev.target.result.split(',')[1], mime: f.type, dataUrl: ev.target.result };
+    showApptPreview(ev.target.result);
+    analyzeAppt();
+  };
+  r.readAsDataURL(f);
+  e.target.value = '';
+}
+
+function showApptPreview(dataUrl) {
+  document.getElementById('apptPreviewImg').src = dataUrl;
+  document.getElementById('apptAnalyzeWrap').classList.add('on');
+  document.getElementById('apptAnalyzingRow').style.display = 'flex';
+  document.getElementById('apptConfirmBtn').style.display = 'none';
+}
+
+// ── ANALYZE ──
+async function analyzeAppt() {
+  const AK = localStorage.getItem('mt_api_key') || '';
+  let result;
+  if (AK && apptPending) {
+    try {
+      const prompt = `วิเคราะห์ใบนัดแพทย์ในภาพนี้ แล้วตอบกลับเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
+{
+  "doctor_name": "ชื่อแพทย์",
+  "department": "ชื่อแผนก/คลินิก",
+  "hospital_name": "ชื่อโรงพยาบาล",
+  "building": "อาคาร/ห้อง (ถ้ามี)",
+  "date_str": "วันที่นัดแบบข้อความ",
+  "date_iso": "YYYY-MM-DD",
+  "time_str": "เวลา เช่น 09:00 น.",
+  "hn": "หมายเลข HN (ถ้ามี)",
+  "instructions": ["คำแนะนำ 1", "คำแนะนำ 2"],
+  "note": "หมายเหตุอื่นๆ",
+  "confidence": 0.95
+}`;
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:800,
+          messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:apptPending.mime,data:apptPending.base64}},
+            {type:'text',text:prompt}
+          ]}]
+        })
+      });
+      const data = await res.json();
+      const txt = data.content?.[0]?.text || '';
+      const clean = txt.replace(/```json|```/g,'').trim();
+      result = JSON.parse(clean);
+    } catch(e) {
+      result = { ...DEMO_APPT, _error: true };
+    }
+  } else {
+    await new Promise(r => setTimeout(r, 1800));
+    result = DEMO_APPT;
+  }
+  apptPending = apptPending ? { ...apptPending, result } : { result };
+  document.getElementById('apptAnalyzingRow').style.display = 'none';
+  document.getElementById('apptConfirmBtn').style.display = 'block';
+  renderApptPreviewResult(result);
+}
+
+function renderApptPreviewResult(r) {
+  const wrap = document.getElementById('apptAnalyzeWrap');
+  const existing = wrap.querySelector('.appt-preview-result');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.className = 'appt-preview-result';
+  div.style.cssText = 'background:var(--bll);border:1px solid rgba(37,99,235,.25);border-radius:var(--r2);padding:12px;margin-bottom:10px;font-size:13px';
+  div.innerHTML = `
+    <div style="font-weight:600;color:var(--bl);margin-bottom:8px">📋 อ่านได้แล้ว — ตรวจสอบก่อนบันทึก</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div><span style="color:var(--t3);font-size:11px">👨‍⚕️ แพทย์</span><br><b>${r.doctor_name||'-'}</b></div>
+      <div><span style="color:var(--t3);font-size:11px">🏥 แผนก</span><br>${r.department||'-'}</div>
+      <div><span style="color:var(--t3);font-size:11px">📅 วันที่นัด</span><br><b style="color:var(--bl)">${r.date_str||'-'}</b> เวลา ${r.time_str||'-'}</div>
+      ${r.building?`<div><span style="color:var(--t3);font-size:11px">📍 สถานที่</span><br>${r.building}</div>`:''}
+      ${r.instructions&&r.instructions.length?`<div><span style="color:var(--t3);font-size:11px">⚠️ คำแนะนำ</span><br>${r.instructions.map(i=>'• '+i).join('<br>')}</div>`:''}
+    </div>`;
+  wrap.insertBefore(div, wrap.querySelector('#apptConfirmBtn'));
+}
+
+// ── DEMO ──
+function apptDemo() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 500; canvas.height = 340;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#f9f6f0'; ctx.fillRect(0,0,500,340);
+  ctx.fillStyle = '#1e40af'; ctx.fillRect(0,0,500,60);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif';
+  ctx.fillText('โรงพยาบาลรามาธิบดี', 16, 30);
+  ctx.font = '12px sans-serif'; ctx.fillText('ฝ่ายเวชระเบียน', 16, 50);
+  ctx.fillStyle = '#1e3a5f';
+  ctx.font = 'bold 15px sans-serif'; ctx.fillText('ใบนัดตรวจ / Appointment Slip', 16, 90);
+  ctx.fillStyle = '#333';
+  ctx.font = '13px sans-serif';
+  const d = new Date(); d.setDate(d.getDate()+14);
+  const dateStr = d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const lines = [
+    'ชื่อผู้ป่วย: นาย สมชาย ใจดี   HN: 12345678',
+    'วันที่นัด: ' + dateStr,
+    'เวลา: 09:00 น.',
+    'แพทย์: นพ. วิชัย รักสุขภาพ',
+    'คลินิก: โรคเบาหวานและต่อมไร้ท่อ',
+    'สถานที่: อาคาร 3 ชั้น 2',
+    '---',
+    'หมายเหตุ: เจาะเลือดที่ห้องแล็บ ชั้น 1 ก่อนพบแพทย์',
+    'คำแนะนำ: งดน้ำและอาหาร 8 ชั่วโมงก่อนพบแพทย์',
+    '          นำผลเลือดครั้งที่แล้วมาด้วย'
+  ];
+  lines.forEach((l,i) => { if(l==='---'){ctx.strokeStyle='#ccc';ctx.beginPath();ctx.moveTo(16,120+i*22+8);ctx.lineTo(484,120+i*22+8);ctx.stroke();}else ctx.fillText(l,16,120+i*22); });
+  ctx.strokeStyle='#c00';ctx.lineWidth=1;ctx.strokeRect(10,310,480,24);
+  ctx.fillStyle='#c00';ctx.font='bold 11px sans-serif';
+  ctx.fillText('⚠ กรุณามาก่อนเวลา 30 นาที   โทร: 02-201-1111 ต่อ 1234',14,327);
+  const dataUrl = canvas.toDataURL('image/jpeg',.9);
+  apptPending = { base64: dataUrl.split(',')[1], mime:'image/jpeg', dataUrl };
+  showApptPreview(dataUrl);
+  analyzeAppt();
+  toast('📋 โหลดตัวอย่างใบนัดแล้ว');
+}
+
+// ── CONFIRM & SAVE ──
+function apptConfirm() {
+  if(!apptPending?.result) return;
+  const r = apptPending.result;
+  const appt = {
+    id: 'a_' + Date.now(),
+    ...r,
+    savedAt: new Date().toISOString(),
+    imgUrl: apptPending.dataUrl || ''
+  };
+  appointments.unshift(appt);
+  localStorage.setItem('mt_appts', JSON.stringify(appointments));
+  document.getElementById('apptAnalyzeWrap').classList.remove('on');
+  apptPending = null;
+  renderApptList();
+  toast('✅ บันทึกนัดเรียบร้อยแล้ว');
+}
+
+// ── DELETE ──
+function deleteAppt(id) {
+  appointments = appointments.filter(a => a.id !== id);
+  localStorage.setItem('mt_appts', JSON.stringify(appointments));
+  renderApptList();
+  toast('🗑️ ลบนัดแล้ว');
+}
+
+// ── COUNTDOWN ──
+function daysUntil(dateIso) {
+  if(!dateIso) return null;
+  const now = new Date(); now.setHours(0,0,0,0);
+  const appt = new Date(dateIso);
+  const diff = Math.round((appt - now) / 86400000);
+  return diff;
+}
+
+function countdownText(days) {
+  if(days < 0) return { txt: `ผ่านไปแล้ว ${Math.abs(days)} วัน`, color:'var(--t3)', icon:'⏰' };
+  if(days === 0) return { txt: 'วันนี้! เตรียมตัวให้พร้อมนะครับ', color:'var(--dg)', icon:'🚨' };
+  if(days === 1) return { txt: 'พรุ่งนี้แล้ว — อย่าลืมเตรียมตัว', color:'var(--wn)', icon:'⚠️' };
+  if(days <= 3) return { txt: `อีก ${days} วัน — ใกล้แล้วครับ`, color:'var(--wn)', icon:'📅' };
+  return { txt: `อีก ${days} วัน`, color:'var(--ac)', icon:'📅' };
+}
+
+// ── RENDER LIST ──
+function renderApptList() {
+  const el = document.getElementById('apptList');
+  if(!appointments.length) {
+    el.innerHTML = `<div class="appt-empty"><div class="appt-empty-ico">📋</div><div class="appt-empty-txt">ยังไม่มีนัดแพทย์ที่บันทึกไว้<br>กดถ่ายรูปใบนัดเพื่อเพิ่มนัดแรก</div></div>
+    <div class="appt-hint">💡 <b>เคล็ดลับ:</b> หลังพบแพทย์ ถ่ายรูปใบนัดทันที หมอน้อยจะแจ้งเตือนคุณล่วงหน้า 3 วัน 1 วัน และเช้าวันนัดครับ</div>`;
+    return;
+  }
+
+  // Sort: upcoming first, then past
+  const now = new Date(); now.setHours(0,0,0,0);
+  const sorted = [...appointments].sort((a,b) => {
+    const da = new Date(a.date_iso||'9999'), db = new Date(b.date_iso||'9999');
+    const pa = da >= now, pb = db >= now;
+    if(pa && !pb) return -1; if(!pa && pb) return 1;
+    return pa ? da-db : db-da;
+  });
+
+  const upcoming = sorted.filter(a => daysUntil(a.date_iso) >= 0);
+  const past = sorted.filter(a => daysUntil(a.date_iso) < 0);
+
+  let html = '';
+  if(upcoming.length) {
+    html += `<div class="sec-lbl">📅 นัดที่กำลังจะมาถึง <span class="upcoming-badge">${upcoming.length}</span></div>`;
+    upcoming.forEach(a => { html += renderApptCard(a); });
+  }
+  if(past.length) {
+    html += `<div class="sec-lbl" style="margin-top:8px">🕐 นัดที่ผ่านมา</div>`;
+    past.forEach(a => { html += renderApptCard(a, true); });
+  }
+  el.innerHTML = html;
+}
+
+function renderApptCard(a, isPast=false) {
+  const days = daysUntil(a.date_iso);
+  const cd = days !== null ? countdownText(days) : null;
+  const instrs = (a.instructions||[]).slice(0,3);
+  return `
+  <div class="appt-card" style="${isPast?'opacity:.65':''}">
+    <div class="appt-card-header">
+      <div class="appt-card-ico">${isPast?'✅':'🏥'}</div>
+      <div class="appt-card-info">
+        <div class="appt-card-title">${a.doctor_name||'แพทย์'}</div>
+        <div class="appt-card-date">${a.date_str||'-'} · ${a.time_str||'-'}</div>
+      </div>
+    </div>
+    <div class="appt-card-body">
+      ${a.department?`<div class="appt-row"><span class="appt-row-ico">🩺</span><span class="appt-row-lbl">แผนก</span><span class="appt-row-val">${a.department}</span></div>`:''}
+      ${a.hospital_name?`<div class="appt-row"><span class="appt-row-ico">🏥</span><span class="appt-row-lbl">โรงพยาบาล</span><span class="appt-row-val">${a.hospital_name}</span></div>`:''}
+      ${a.building?`<div class="appt-row"><span class="appt-row-ico">📍</span><span class="appt-row-lbl">สถานที่</span><span class="appt-row-val">${a.building}</span></div>`:''}
+      ${a.hn?`<div class="appt-row"><span class="appt-row-ico">🪪</span><span class="appt-row-lbl">HN</span><span class="appt-row-val">${a.hn}</span></div>`:''}
+      ${a.note?`<div class="appt-row"><span class="appt-row-ico">📝</span><span class="appt-row-lbl">หมายเหตุ</span><span class="appt-row-val">${a.note}</span></div>`:''}
+    </div>
+    ${cd && !isPast ? `<div class="appt-countdown"><span>${cd.icon}</span><span style="color:${cd.color}">${cd.txt}</span></div>` : ''}
+    ${instrs.length ? `<div class="appt-tags">${instrs.map(i=>`<span class="appt-tag warn">⚠️ ${i}</span>`).join('')}</div>` : ''}
+    <div class="appt-actions">
+      <button class="appt-act-btn" onclick="shareAppt('${a.id}')">📤 แชร์</button>
+      <button class="appt-act-btn" onclick="addToCalendar('${a.id}')">📆 เพิ่มปฏิทิน</button>
+      <button class="appt-act-btn del" onclick="deleteAppt('${a.id}')">🗑️ ลบ</button>
+    </div>
+  </div>`;
+}
+
+// ── ACTIONS ──
+function shareAppt(id) {
+  const a = appointments.find(x=>x.id===id); if(!a) return;
+  const txt = `📅 นัดแพทย์\n👨‍⚕️ ${a.doctor_name||''}\n🏥 ${a.department||''} ${a.hospital_name||''}\n📍 ${a.building||''}\n🗓️ ${a.date_str||''} ${a.time_str||''}\n${(a.instructions||[]).map(i=>'⚠️ '+i).join('\n')}`;
+  if(navigator.share) { navigator.share({ title:'นัดแพทย์', text:txt }); }
+  else { navigator.clipboard?.writeText(txt); toast('📋 คัดลอกข้อมูลนัดแล้ว'); }
+}
+
+function addToCalendar(id) {
+  const a = appointments.find(x=>x.id===id); if(!a) return;
+  try {
+    const [y,m,d] = (a.date_iso||'').split('-').map(Number);
+    const [hh,mm] = (a.time_str||'09:00').replace(/[^0-9:]/g,'').split(':').map(Number);
+    const start = new Date(y,m-1,d,hh||9,mm||0);
+    const end = new Date(start.getTime() + 60*60*1000);
+    const fmt = d => d.toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+    const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('นัดแพทย์: '+a.doctor_name)}&dates=${fmt(start)}/${fmt(end)}&details=${encodeURIComponent((a.instructions||[]).join('\n'))}&location=${encodeURIComponent((a.hospital_name||'')+' '+(a.building||''))}`;
+    window.open(url,'_blank');
+  } catch(e) { toast('ไม่สามารถเปิดปฏิทินได้'); }
+}
+
+
+/* ═══════════════════════════════════════════
+   APPOINTMENT FLOW v2  (3-screen)
+═══════════════════════════════════════════ */
+let apptData2 = null;       // parsed result from AI
+let apptImgB64 = null;      // base64 of scanned image
+let apptImgMime = 'image/jpeg';
+let calCurrentDate = new Date();
+
+// ── STEP NAVIGATION ──
+function apptGoStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('apptS'+i).classList.toggle('on', i===n);
+    const step = document.getElementById('astep'+i);
+    step.className = 'appt-step' + (i<n?' done':i===n?' active':'');
+    document.getElementById('adot'+i).textContent = i<n?'✓':String(i);
+  });
+  [1,2].forEach(i=>{
+    document.getElementById('aline'+i).className = 'astep-line'+(i<n?' done':'');
+  });
+  if(n===3){ renderCalendar(); renderCalEvents(null); }
+}
+
+// ── SCREEN 1: load image ──
+function apptLoad2(e){
+  const f = e.target.files[0]; if(!f) return;
+  apptImgMime = f.type;
+  const r = new FileReader();
+  r.onload = ev => {
+    apptImgB64 = ev.target.result.split(',')[1];
+    const prev = document.getElementById('apptPreview2');
+    prev.src = ev.target.result; prev.classList.add('on');
+    const zone = document.getElementById('apptScanZone');
+    zone.classList.add('has');
+    document.getElementById('apptScanZoneIco').textContent = '✅';
+    document.getElementById('apptScanZoneTxt').textContent = 'โหลดรูปแล้ว — กด "วิเคราะห์"';
+    const btn = document.getElementById('apptAnalyzeBtn');
+    btn.disabled = false; btn.style.opacity = '1';
+  };
+  r.readAsDataURL(f);
+  e.target.value='';
+}
+
+function apptDemo2(){
+  // build demo slip image on canvas
+  const cv = document.createElement('canvas'); cv.width=520; cv.height=360;
+  const x = cv.getContext('2d');
+  x.fillStyle='#f9f6f0'; x.fillRect(0,0,520,360);
+  x.fillStyle='#1e40af'; x.fillRect(0,0,520,58);
+  x.fillStyle='#fff'; x.font='bold 17px sans-serif'; x.fillText('โรงพยาบาลรามาธิบดี — แผนกผู้ป่วยนอก',14,28);
+  x.font='11px sans-serif'; x.fillText('ฝ่ายเวชระเบียน / ใบนัดตรวจ',14,48);
+  x.fillStyle='#111';
+  const d = new Date(); d.setDate(d.getDate()+14);
+  const dstr = d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  const rows=[
+    ['ชื่อผู้ป่วย','นาย สมชาย ใจดี'],['HN','12345678'],
+    ['วันที่นัด',dstr],['เวลา','09:00 น.'],
+    ['แพทย์','นพ. วิชัย รักสุขภาพ'],['คลินิก','โรคเบาหวานและต่อมไร้ท่อ'],
+    ['อาคาร/ห้อง','อาคาร 3 ชั้น 2 ห้อง 302'],
+  ];
+  rows.forEach(([l,v],i)=>{
+    x.font='bold 12px sans-serif'; x.fillStyle='#555'; x.fillText(l+':',14,80+i*28);
+    x.font='12px sans-serif'; x.fillStyle='#111'; x.fillText(v,140,80+i*28);
+  });
+  x.fillStyle='#92400e'; x.fillRect(14,282,490,2);
+  x.font='bold 11px sans-serif'; x.fillStyle='#92400e';
+  x.fillText('⚠ คำแนะนำ: งดน้ำและอาหารอย่างน้อย 8 ชั่วโมงก่อนพบแพทย์',14,302);
+  x.fillText('⚠ นำผลเลือดครั้งที่แล้วและบัตรนัดมาด้วย',14,320);
+  x.fillText('⚠ เจาะเลือดที่ห้องแล็บ ชั้น 1 ก่อนขึ้นพบแพทย์',14,338);
+  const du = cv.toDataURL('image/jpeg',.92);
+  apptImgB64 = du.split(',')[1]; apptImgMime = 'image/jpeg';
+  const prev = document.getElementById('apptPreview2');
+  prev.src = du; prev.classList.add('on');
+  document.getElementById('apptScanZone').classList.add('has');
+  document.getElementById('apptScanZoneIco').textContent = '✅';
+  document.getElementById('apptScanZoneTxt').textContent = 'ตัวอย่างโหลดแล้ว';
+  const btn = document.getElementById('apptAnalyzeBtn');
+  btn.disabled=false; btn.style.opacity='1';
+  toast(t('toastDemo')+'ใบนัดตัวอย่าง');
+}
+
+// ── SCREEN 1 → 2: ANALYZE ──
+async function apptAnalyze2(){
+  if(!apptImgB64) return;
+  const btn = document.getElementById('apptAnalyzeBtn');
+  btn.textContent = '⏳ กำลังวิเคราะห์...'; btn.disabled = true;
+
+  const AK = localStorage.getItem('mt_api_key')||'';
+  let result;
+  if(AK){
+    try{
+      const prompt=`วิเคราะห์ใบนัดแพทย์ในภาพ ตอบเป็น JSON เท่านั้น:
+{"doctor_name":"ชื่อแพทย์","department":"คลินิก/แผนก","hospital_name":"โรงพยาบาล","building":"อาคาร/ห้อง","date_str":"วันที่แบบข้อความ","date_iso":"YYYY-MM-DD","time_str":"09:00 น.","hn":"HN ถ้ามี","patient_name":"ชื่อผู้ป่วย","instructions":["คำแนะนำ1","คำแนะนำ2"],"note":"หมายเหตุ","confidence":0.95}`;
+      const res = await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:apptImgMime,data:apptImgB64}},
+          {type:'text',text:prompt}
+        ]}]})
+      });
+      const data=await res.json();
+      result=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
+    }catch(e){ result=getDemoAppt(); }
+  } else {
+    await new Promise(r=>setTimeout(r,1600));
+    result = getDemoAppt();
+  }
+
+  apptData2 = result;
+  renderApptResult(result);
+  updateLinePreview(result);
+  apptGoStep(2);
+  btn.textContent='🤖 วิเคราะห์ใบนัด'; btn.disabled=false; btn.style.opacity='1';
+}
+
+function getDemoAppt(){
+  const d=new Date(); d.setDate(d.getDate()+14);
+  return {
+    doctor_name:'นพ. วิชัย รักสุขภาพ', department:'คลินิกโรคเบาหวานและต่อมไร้ท่อ',
+    hospital_name:'โรงพยาบาลรามาธิบดี', building:'อาคาร 3 ชั้น 2 ห้อง 302',
+    date_str:d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric',weekday:'long'}),
+    date_iso:d.toISOString().split('T')[0], time_str:'09:00 น.',
+    hn:'12345678', patient_name:'นาย สมชาย ใจดี',
+    instructions:['งดน้ำและอาหารอย่างน้อย 8 ชั่วโมงก่อนพบแพทย์','นำผลเลือดครั้งที่แล้วมาด้วย','เจาะเลือดที่ห้องแล็บ ชั้น 1 ก่อน'],
+    note:'เจาะเลือดที่ห้องแล็บ ชั้น 1 ก่อนขึ้นพบแพทย์',
+    confidence:0.95
+  };
+}
+
+function renderApptResult(r){
+  const conf = Math.round((r.confidence||.9)*100);
+  document.getElementById('apptConf').textContent = conf+'%';
+  document.getElementById('apptConf').style.background = conf>=90?'var(--ac)':conf>=75?'var(--wn)':'var(--dg)';
+
+  const fields=[
+    ['👨‍⚕️ แพทย์', r.doctor_name||'-', true],
+    ['🩺 คลินิก', r.department||'-', false],
+    ['🏥 โรงพยาบาล', r.hospital_name||'-', false],
+    ['📍 สถานที่', r.building||'-', false],
+    ['📅 วันที่', r.date_str||'-', true],
+    ['⏰ เวลา', r.time_str||'-', true],
+    ['👤 ผู้ป่วย', r.patient_name||'-', false],
+    ['🪪 HN', r.hn||'-', false],
+  ];
+  document.getElementById('apptFieldGrid').innerHTML = fields.map(([l,v,hi])=>
+    `<span class="ai-field-lbl">${l}</span><span class="ai-field-val${hi?' hi':''}">${v}</span>`
+  ).join('');
+
+  const instrs = r.instructions||[];
+  document.getElementById('apptInstrs').innerHTML = instrs.length
+    ? instrs.map(i=>`<div class="ai-instr-item">⚠️ ${i}</div>`).join('')
+    : '';
+}
+
+function updateLinePreview(r){
+  const days = r.date_iso ? Math.round((new Date(r.date_iso)-new Date())/86400000) : 14;
+  const daysStr = days===0?'วันนี้!':days===1?'พรุ่งนี้แล้ว!':days>0?`อีก ${days} วัน`:'ผ่านไปแล้ว';
+  const instrs = (r.instructions||[]).slice(0,2);
+  document.getElementById('linePreviewMsg').innerHTML =
+    `📅 <b>${daysStr}</b> จะถึงนัดหมอแล้วนะครับ!<br>` +
+    `👨‍⚕️ ${r.doctor_name||'-'}<br>` +
+    `🏥 ${r.department||''} ${r.building||''}<br>` +
+    `📍 ${r.date_str||'-'} เวลา ${r.time_str||'-'}<br>` +
+    (instrs.length?`<br>💡 ${instrs[0]}`:'');
+}
+
+// reminder chips toggle
+document.addEventListener('click', e=>{
+  if(e.target.classList.contains('rchip')) e.target.classList.toggle('on');
+});
+
+// ── SAVE & GO TO CALENDAR ──
+function apptSave2(){
+  if(!apptData2) return;
+  const saved = JSON.parse(localStorage.getItem('mt_appts')||'[]');
+  const entry = { id:'a_'+Date.now(), ...apptData2, savedAt:new Date().toISOString() };
+  saved.unshift(entry);
+  localStorage.setItem('mt_appts', JSON.stringify(saved));
+  appointments = saved;
+  apptGoStep(3);
+  toast('✅ บันทึกนัดแพทย์แล้ว');
+}
+
+// ── CALENDAR ──
+function calNav(dir){
+  calCurrentDate = new Date(calCurrentDate.getFullYear(), calCurrentDate.getMonth()+dir, 1);
+  renderCalendar();
+  renderCalEvents(null);
+}
+
+function renderCalendar(){
+  const y = calCurrentDate.getFullYear(), m = calCurrentDate.getMonth();
+  const monthNames=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  document.getElementById('calMonth').textContent = `${monthNames[m]} ${y+543}`;
+
+  const firstDay = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const prevDays = new Date(y,m,0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // get appointment dates
+  const appts = JSON.parse(localStorage.getItem('mt_appts')||'[]');
+  const apptDays = new Set(appts.map(a=>{
+    if(!a.date_iso) return null;
+    const d=new Date(a.date_iso); return d.getFullYear()===y&&d.getMonth()===m?d.getDate():null;
+  }).filter(Boolean));
+
+  // demo med-taken days (past week)
+  const medDays = new Set();
+  for(let i=1;i<=today.getDate()&&today.getMonth()===m&&today.getFullYear()===y;i++) medDays.add(i);
+
+  // demo lab days
+  const labDays = new Set([23]);
+
+  let html='';
+  // prev month
+  for(let i=firstDay-1;i>=0;i--) html+=`<div class="cal-day other">${prevDays-i}</div>`;
+  // current month
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=today.getDate()===d&&today.getMonth()===m&&today.getFullYear()===y;
+    const hasA=apptDays.has(d), hasM=medDays.has(d)&&d<today.getDate(), hasL=labDays.has(d);
+    let cls='cal-day';
+    if(isToday) cls+=' today';
+    if(hasA&&hasM) cls+=' has-both';
+    else if(hasA) cls+=' has-appt';
+    else if(hasL) cls+=' has-appt'; // reuse blue for lab, just change dot color below
+    else if(hasM) cls+=' has-med';
+    html+=`<div class="${cls}" onclick="renderCalEvents(${d})">${d}</div>`;
+  }
+  // next month
+  const remaining=(7-((firstDay+daysInMonth)%7))%7;
+  for(let d=1;d<=remaining;d++) html+=`<div class="cal-day other">${d}</div>`;
+  document.getElementById('calGrid').innerHTML=html;
+}
+
+function renderCalEvents(selectedDay){
+  const appts=JSON.parse(localStorage.getItem('mt_appts')||'[]');
+  const today=new Date(); today.setHours(0,0,0,0);
+  const y=calCurrentDate.getFullYear(),m=calCurrentDate.getMonth();
+
+  let events=[];
+
+  if(selectedDay){
+    document.getElementById('calEventsTitle').textContent=`นัดวันที่ ${selectedDay}`;
+    // filter appts for selected day
+    events=appts.filter(a=>{
+      if(!a.date_iso) return false;
+      const d=new Date(a.date_iso);
+      return d.getFullYear()===y&&d.getMonth()===m&&d.getDate()===selectedDay;
+    }).map(a=>({type:'appt',title:a.doctor_name||'นัดแพทย์',sub:`${a.date_str||''} ${a.time_str||''}  ${a.department||''}`,days:Math.round((new Date(a.date_iso)-today)/86400000)}));
+    // add demo lab if day 23
+    if(selectedDay===23) events.push({type:'lab',title:'ตรวจเลือด lab',sub:'08:00 น. · ห้องแล็บ ชั้น 1',days:Math.round((new Date(y,m,23)-today)/86400000)});
+  } else {
+    document.getElementById('calEventsTitle').textContent='นัดหมายใกล้นี้';
+    // upcoming appts sorted
+    events=appts.filter(a=>a.date_iso&&new Date(a.date_iso)>=today)
+      .sort((a,b)=>new Date(a.date_iso)-new Date(b.date_iso))
+      .slice(0,4)
+      .map(a=>({type:'appt',title:a.doctor_name||'นัดแพทย์',sub:`${a.date_str||''} · ${a.time_str||''} · ${a.department||''}`,days:Math.round((new Date(a.date_iso)-today)/86400000)}));
+    // add demo events if empty
+    if(!events.length){
+      const d14=new Date(today); d14.setDate(today.getDate()+14);
+      const d18=new Date(today); d18.setDate(today.getDate()+18);
+      events=[
+        {type:'appt',title:'นพ. วิชัย รักสุขภาพ',sub:`${d14.toLocaleDateString('th-TH',{day:'numeric',month:'short'})} · 09:00 น. · อายุรกรรม`,days:14},
+        {type:'lab',title:'ตรวจเลือด lab',sub:`${d18.toLocaleDateString('th-TH',{day:'numeric',month:'short'})} · 08:00 น.`,days:18},
+      ];
+    }
+  }
+
+  if(!events.length){
+    document.getElementById('calEvents').innerHTML='<div style="padding:12px;text-align:center;font-size:13px;color:var(--t3)">ไม่มีนัดในวันนี้</div>';
+    return;
+  }
+
+  document.getElementById('calEvents').innerHTML=events.map(ev=>{
+    const daysLabel=ev.days<0?'ผ่านแล้ว':ev.days===0?'วันนี้!':ev.days===1?'พรุ่งนี้':ev.days+' วัน';
+    const nearCls=ev.days>=0&&ev.days<=3?'near':'';
+    const todayCls=ev.days===0?'today-ev':'';
+    return `<div class="cal-event-card ${ev.type}">
+      <div class="cal-event-inner">
+        <div class="cal-event-title">${ev.title}</div>
+        <div class="cal-event-sub">${ev.sub}</div>
+      </div>
+      <div class="cal-event-days ${nearCls||todayCls}">${daysLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+/* INIT */
+document.addEventListener('DOMContentLoaded', function(){
+  highlightLang();
+  setLang(lang);
+  renderQueue();
+  updateAnalyzeBtn();
+});
+</script>
+
+  <!-- ══ APPOINTMENT TAB ══ -->
+  <div class="appt-tab" id="apptTab">
+
+    <!-- Step indicator -->
+    <div class="appt-steps" id="apptSteps">
+      <div class="appt-step active" id="astep1"><div class="astep-dot" id="adot1">1</div><span>สแกน</span></div>
+      <div class="astep-line" id="aline1"></div>
+      <div class="appt-step" id="astep2"><div class="astep-dot" id="adot2">2</div><span>AI ยืนยัน</span></div>
+      <div class="astep-line" id="aline2"></div>
+      <div class="appt-step" id="astep3"><div class="astep-dot" id="adot3">3</div><span>ปฏิทิน</span></div>
+    </div>
+
+    <!-- ── SCREEN 1: SCAN ── -->
+    <div class="appt-screen on" id="apptS1">
+      <div style="font-size:14px;font-weight:700;color:var(--t1)">📸 สแกนใบนัดแพทย์</div>
+      <div style="font-size:12px;color:var(--t2)">ถ่ายรูปหรือเลือกรูปใบนัด — AI จะอ่านวันเวลา แพทย์ และคำแนะนำให้อัตโนมัติ</div>
+
+      <!-- scan zone -->
+      <div class="appt-scan-zone" id="apptScanZone" onclick="document.getElementById('apptFile2').click()">
+        <span id="apptScanZoneIco" style="font-size:32px">📋</span>
+        <span id="apptScanZoneTxt" style="font-size:13px;font-weight:600;color:var(--t2)">กดเพื่อเลือกรูปใบนัด</span>
+        <span style="font-size:11px;color:var(--t3)">รองรับ JPG, PNG</span>
+      </div>
+      <img id="apptPreview2" class="appt-preview-img" src="" alt="">
+
+      <div class="appt-scan-actions">
+        <button class="appt-scan-act" onclick="document.getElementById('apptFileCam2').click()">📸 ถ่ายรูป</button>
+        <button class="appt-scan-act" onclick="document.getElementById('apptFile2').click()">🖼️ แกลเลอรี</button>
+        <button class="appt-scan-act" onclick="apptDemo2()">📋 ตัวอย่าง</button>
+      </div>
+      <input type="file" id="apptFile2" accept="image/*" onchange="apptLoad2(event)" style="display:none">
+      <input type="file" id="apptFileCam2" accept="image/*" capture="environment" onchange="apptLoad2(event)" style="display:none">
+
+      <button id="apptAnalyzeBtn" disabled onclick="apptAnalyze2()" style="width:100%;padding:12px;background:var(--bl);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;opacity:.4;transition:opacity .2s">
+        🤖 วิเคราะห์ใบนัด
+      </button>
+    </div>
+
+    <!-- ── SCREEN 2: AI RESULT ── -->
+    <div class="appt-screen" id="apptS2">
+      <div style="font-size:14px;font-weight:700;color:var(--t1)">✅ AI อ่านข้อมูลสำเร็จ</div>
+
+      <div class="ai-result-card" id="apptResultCard">
+        <div class="ai-result-header">
+          <div class="ai-result-header-ico">🤖</div>
+          <div class="ai-result-title">นัดพบแพทย์</div>
+          <div class="ai-conf" id="apptConf">95%</div>
+        </div>
+        <div class="ai-field-grid" id="apptFieldGrid"></div>
+        <div class="ai-instrs" id="apptInstrs"></div>
+      </div>
+
+      <!-- reminder chips -->
+      <div class="reminder-row">
+        <div class="reminder-title">⏰ ตั้งเตือนล่วงหน้า</div>
+        <div class="reminder-chips">
+          <button class="rchip on" data-days="7">7 วัน</button>
+          <button class="rchip on" data-days="3">3 วัน</button>
+          <button class="rchip on" data-days="1">1 วัน</button>
+          <button class="rchip on" data-days="0">เช้าวันนัด</button>
+        </div>
+      </div>
+
+      <!-- LINE preview -->
+      <div class="line-preview">
+        <div class="line-head">
+          <div class="line-head-ico">🩺</div>
+          <div class="line-head-name">หมอน้อย — MedTrack Bot</div>
+        </div>
+        <div class="line-body">
+          <div class="line-msg" id="linePreviewMsg">📅 อีก 14 วัน จะถึงนัดหมอแล้วนะครับ!<br>👨‍⚕️ นพ. วิชัย รักสุขภาพ<br>🏥 คลินิกเบาหวาน อาคาร 3<br>📍 15 พ.ค. 2026 เวลา 09:00 น.<br><br>💡 อย่าลืม: งดน้ำและอาหาร 8 ชม. ก่อนพบแพทย์</div>
+          <div class="line-qr-row">
+            <button class="line-qr-btn">✅ รับทราบ</button>
+            <button class="line-qr-btn">📆 เพิ่มปฏิทิน</button>
+            <button class="line-qr-btn">🗂️ ดูนัดทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="apptGoStep(1)" style="flex:1;padding:11px;border:1.5px solid var(--bd);background:var(--sf);border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--t2)">← แก้ไข</button>
+        <button onclick="apptSave2()" style="flex:2;padding:11px;background:var(--bl);color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">บันทึกนัดหมาย ✓</button>
+      </div>
+    </div>
+
+    <!-- ── SCREEN 3: CALENDAR ── -->
+    <div class="appt-screen" id="apptS3">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:-4px">
+        <div style="font-size:14px;font-weight:700;color:var(--t1)">📆 ปฏิทินภาพรวม</div>
+        <button onclick="apptGoStep(1)" style="margin-left:auto;background:var(--bl);color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">+ เพิ่มนัด</button>
+      </div>
+
+      <!-- Calendar widget -->
+      <div class="cal-wrap">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="calNav(-1)">‹</button>
+          <div class="cal-month" id="calMonth"></div>
+          <button class="cal-nav" onclick="calNav(1)">›</button>
+        </div>
+        <div class="cal-dow">
+          <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--bl)"></div> นัดหมอ</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--ac)"></div> ยาครบ</div>
+          <div class="cal-legend-item"><div class="cal-legend-dot" style="background:var(--wn)"></div> ตรวจ lab</div>
+        </div>
+      </div>
+
+      <!-- Events list -->
+      <div style="font-size:12px;font-weight:700;color:var(--t2);margin-bottom:4px" id="calEventsTitle">นัดหมายใกล้นี้</div>
+      <div class="cal-events" id="calEvents"></div>
+    </div>
+
+  </div><!-- /apptTab -->
+</body>
+</html>

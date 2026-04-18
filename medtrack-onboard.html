@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MedTrack — เริ่มใช้งาน</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --teal:#0A9C7A; --teal2:#077A5F; --teal3:#E0FFF6;
+  --blue:#2563EB; --blue2:#1D4ED8; --blue3:#EFF6FF;
+  --navy:#0F2744;
+  --amber:#F59E0B; --amber3:#FFFBEB;
+  --coral:#EF4444; --coral3:#FEF2F2;
+  --t1:#111827; --t2:#6B7280; --t3:#9CA3AF;
+  --bg:#F7F9FC; --card:#FFFFFF; --bd:#E5E7EB;
+  --r:14px; --r2:10px; --r3:20px;
+  --sh:0 2px 12px rgba(0,0,0,.07);
+  --sh2:0 8px 32px rgba(0,0,0,.12);
+  --sans:'DM Sans','Noto Sans Thai',sans-serif;
+}
+html,body{height:100%;background:var(--navy);font-family:var(--sans);color:var(--t1);overscroll-behavior:none}
+.phone{max-width:390px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--navy)}
+
+/* ── SCREENS ── */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform .4s cubic-bezier(.32,.72,0,1),opacity .3s;pointer-events:none;opacity:0;transform:translateX(100%)}
+.screen.active{pointer-events:all;opacity:1;transform:translateX(0)}
+.screen.exit{transform:translateX(-30%);opacity:0}
+
+/* ── SPLASH ── */
+#sSplash{background:var(--navy);align-items:center;justify-content:center;gap:0}
+.splash-bg{position:absolute;inset:0;overflow:hidden}
+.splash-circle1{position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(10,156,122,.3),transparent 70%);top:-80px;left:-60px;animation:float1 6s ease-in-out infinite}
+.splash-circle2{position:absolute;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(37,99,235,.2),transparent 70%);bottom:-60px;right:-40px;animation:float2 7s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,20px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(-15px,-15px)}}
+.splash-content{position:relative;z-index:1;text-align:center;padding:40px 32px}
+.splash-logo{width:90px;height:90px;background:linear-gradient(145deg,var(--teal),#06b48a);border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:44px;margin:0 auto 24px;box-shadow:0 12px 40px rgba(10,156,122,.4);animation:logoPop .6s cubic-bezier(.34,1.56,.64,1) .3s both}
+@keyframes logoPop{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+.splash-title{font-size:36px;font-weight:700;color:#fff;margin-bottom:8px;animation:fadeUp .5s ease .6s both}
+.splash-sub{font-size:15px;color:rgba(255,255,255,.65);line-height:1.6;animation:fadeUp .5s ease .8s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.splash-badges{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap;animation:fadeUp .5s ease 1s both}
+.splash-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:5px 13px;font-size:12px;color:rgba(255,255,255,.8);display:flex;align-items:center;gap:5px}
+.splash-btns{display:flex;flex-direction:column;gap:10px;padding:0 32px 50px;position:relative;z-index:1;animation:fadeUp .5s ease 1.1s both}
+.btn-primary{padding:15px;background:var(--teal);color:#fff;border:none;border-radius:var(--r);font-size:16px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;box-shadow:0 4px 20px rgba(10,156,122,.4)}
+.btn-primary:active{transform:scale(.97)}
+.btn-secondary{padding:14px;background:rgba(255,255,255,.1);color:#fff;border:1.5px solid rgba(255,255,255,.2);border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;font-family:var(--sans);transition:all .2s}
+.btn-secondary:active{background:rgba(255,255,255,.15)}
+
+/* ── ONBOARDING CARDS ── */
+#sOnboard{background:var(--bg);flex-direction:column}
+.ob-header{background:var(--navy);padding:16px 20px 24px;position:relative;overflow:hidden}
+.ob-header::after{content:'';position:absolute;bottom:-20px;left:0;right:0;height:40px;background:var(--bg);border-radius:50% 50% 0 0}
+.ob-progress{display:flex;gap:5px;margin-bottom:16px}
+.ob-prog-dot{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.2);transition:background .3s}
+.ob-prog-dot.done{background:var(--teal)}
+.ob-prog-dot.active{background:#fff}
+.ob-step-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:4px;letter-spacing:.06em;text-transform:uppercase}
+.ob-step-title{font-size:20px;font-weight:700;color:#fff}
+.ob-step-sub{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;line-height:1.5}
+.ob-body{flex:1;overflow-y:auto;padding:24px 20px 20px;position:relative;z-index:1}
+.ob-body::-webkit-scrollbar{display:none}
+.ob-step{display:none}.ob-step.on{display:block;animation:fadeUp .3s ease}
+
+/* form fields */
+.field{margin-bottom:14px}
+.field-label{font-size:12px;font-weight:600;color:var(--t2);margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.field-label.req::after{content:'*';color:var(--coral);margin-left:2px}
+.field-input{width:100%;padding:12px 14px;background:var(--card);border:1.5px solid var(--bd);border-radius:var(--r2);font-size:14px;color:var(--t1);font-family:var(--sans);transition:border-color .2s;outline:none}
+.field-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(10,156,122,.12)}
+.field-input.err{border-color:var(--coral)}
+.field-err{font-size:11px;color:var(--coral);margin-top:4px}
+.field-hint{font-size:11px;color:var(--t3);margin-top:4px}
+select.field-input{cursor:pointer}
+textarea.field-input{resize:none;min-height:80px}
+
+/* row 2 col */
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* toggle row */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r2);margin-bottom:10px}
+.toggle-info{flex:1}
+.toggle-title{font-size:14px;font-weight:500;color:var(--t1)}
+.toggle-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--bd);border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none;outline:none}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on{background:var(--teal)}.toggle.on::after{transform:translateX(20px)}
+
+/* disease chips */
+.chip-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+.chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--bd);background:var(--card);font-size:13px;cursor:pointer;color:var(--t2);transition:all .2s;font-family:var(--sans);font-weight:500}
+.chip:active{transform:scale(.95)}
+.chip.on{background:var(--teal3);border-color:var(--teal);color:var(--teal2);font-weight:600}
+.chip.blue.on{background:var(--blue3);border-color:var(--blue);color:var(--blue2)}
+
+/* meal time card */
+.meal-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r2);overflow:hidden;margin-bottom:10px}
+.meal-card-head{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)}
+.meal-icon{font-size:20px;width:32px;text-align:center}
+.meal-name{font-size:14px;font-weight:600;color:var(--t1);flex:1}
+.meal-time-input{background:var(--bg);border:1.5px solid var(--bd);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;color:var(--t1);font-family:var(--sans);outline:none;cursor:pointer;transition:border-color .2s}
+.meal-time-input:focus{border-color:var(--teal)}
+
+/* reminder chips */
+.remind-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.remind-chip{padding:7px 14px;border-radius:20px;border:1.5px solid var(--bd);background:var(--card);font-size:13px;cursor:pointer;color:var(--t2);transition:all .2s;font-family:var(--sans);font-weight:500}
+.remind-chip.on{background:var(--amber3);border-color:var(--amber);color:#92400E;font-weight:600}
+
+/* caregiver */
+.care-card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r2);padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.care-ico{width:40px;height:40px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.care-info{flex:1}
+.care-name{font-size:14px;font-weight:600;color:var(--t1)}
+.care-rel{font-size:12px;color:var(--t2);margin-top:1px}
+.care-del{color:var(--t3);font-size:18px;cursor:pointer;padding:4px;line-height:1}
+
+/* avatar row */
+.avatar-row{display:flex;gap:10px;margin-bottom:16px}
+.avatar-opt{width:56px;height:56px;border-radius:50%;border:2.5px solid var(--bd);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:26px;transition:all .2s;background:var(--bg);flex-shrink:0}
+.avatar-opt.sel{border-color:var(--teal);background:var(--teal3);box-shadow:0 0 0 3px rgba(10,156,122,.2)}
+
+/* success screen */
+#sSuccess{background:var(--navy);align-items:center;justify-content:center;text-align:center;padding:32px}
+.success-circle{width:100px;height:100px;border-radius:50%;background:linear-gradient(145deg,var(--teal),#06b48a);display:flex;align-items:center;justify-content:center;font-size:48px;margin:0 auto 24px;box-shadow:0 12px 40px rgba(10,156,122,.4);animation:logoPop .6s cubic-bezier(.34,1.56,.64,1) both}
+.success-title{font-size:28px;font-weight:700;color:#fff;margin-bottom:8px}
+.success-sub{font-size:14px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:32px}
+.success-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:var(--r);padding:16px;width:100%;text-align:left;margin-bottom:24px}
+.success-row{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:13px;color:rgba(255,255,255,.8)}
+.success-row-ico{font-size:16px;width:22px;text-align:center}
+
+/* footer nav */
+.ob-footer{padding:16px 20px 32px;background:var(--bg);border-top:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.ob-back{width:44px;height:44px;border-radius:50%;background:var(--card);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--t2);flex-shrink:0;transition:all .2s}
+.ob-back:hover{border-color:var(--t2)}
+.ob-next{flex:1;padding:14px;background:var(--teal);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:all .2s;box-shadow:0 4px 16px rgba(10,156,122,.3);display:flex;align-items:center;justify-content:center;gap:8px}
+.ob-next:active{transform:scale(.97)}
+.ob-next:disabled{background:var(--bd);color:var(--t3);box-shadow:none;cursor:not-allowed}
+.ob-skip{font-size:12px;color:var(--t3);cursor:pointer;padding:8px;text-align:center;margin-top:4px}
+
+/* section divider */
+.sec-div{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+.sec-div::before,.sec-div::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* SETTINGS SCREEN */
+#sSettings{background:var(--bg);flex-direction:column}
+.settings-header{background:var(--navy);padding:48px 20px 20px;position:relative;overflow:hidden}
+.settings-header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(10,156,122,.15)}
+.settings-back{position:absolute;top:14px;left:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#fff;border:none}
+.settings-title{font-size:22px;font-weight:700;color:#fff;position:relative;z-index:1}
+.settings-sub{font-size:13px;color:rgba(255,255,255,.6);margin-top:3px;position:relative;z-index:1}
+.settings-avatar{width:60px;height:60px;border-radius:50%;border:3px solid rgba(255,255,255,.3);background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px;position:relative;z-index:1}
+
+.settings-body{flex:1;overflow-y:auto;padding:16px 16px 100px;position:relative;z-index:1}
+.settings-body::-webkit-scrollbar{display:none}
+
+.set-section{margin-bottom:20px}
+.set-section-title{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding:0 4px}
+.set-card{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.set-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--bd);cursor:pointer;transition:background .15s;position:relative}
+.set-item:last-child{border-bottom:none}
+.set-item:active{background:var(--bg)}
+.set-item-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.set-item-info{flex:1}
+.set-item-title{font-size:14px;font-weight:500;color:var(--t1)}
+.set-item-sub{font-size:12px;color:var(--t3);margin-top:1px}
+.set-item-val{font-size:12px;font-weight:600;color:var(--teal);margin-right:4px}
+.set-item-arrow{color:var(--t3);font-size:16px}
+.set-item-badge{background:var(--coral);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 7px;min-width:18px;text-align:center}
+
+/* edit modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);pointer-events:none}
+.modal-overlay.on{display:flex;pointer-events:all}
+.modal{background:var(--card);border-radius:24px 24px 0 0;width:100%;max-width:390px;max-height:85vh;overflow-y:auto;padding:20px 20px 32px;animation:slideUp .3s cubic-bezier(.32,.72,0,1)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:18px;font-weight:700;color:var(--t1);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.modal-footer{display:flex;gap:10px;margin-top:20px}
+.modal-cancel{flex:1;padding:12px;background:var(--bg);border:1.5px solid var(--bd);border-radius:var(--r2);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--t2)}
+.modal-save{flex:2;padding:12px;background:var(--teal);color:#fff;border:none;border-radius:var(--r2);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+
+/* animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── TREATMENT RIGHTS ── */
+.rights-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.rights-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:var(--r2);border:1.5px solid var(--bd);background:#fff;cursor:pointer;transition:all .2s;user-select:none}
+.rights-item:active{transform:scale(.97)}
+.rights-item.sel{border-color:var(--teal);background:var(--teal3);box-shadow:0 0 0 2px rgba(10,156,122,.12)}
+.rights-item-ico{width:24px;text-align:center;flex-shrink:0;line-height:1}
+.rights-item-info{flex:1;min-width:0}
+.rights-item-title{font-size:13px;font-weight:600;color:var(--t1)}
+.rights-item-sub{font-size:10px;color:var(--t3);margin-top:1px}
+.rights-item.sel .rights-item-title{color:var(--teal2)}
+.rights-item.sel .rights-item-sub{color:var(--teal)}
+
+/* Settings items */
+.set-item{cursor:pointer;transition:background .15s}
+.set-item:hover{background:#F9FAFB}
+.set-item:active{background:#F0F4F8}
+.set-item *{pointer-events:none}
+.set-item{pointer-events:auto}
+
+/* ob-step items */
+.chip{user-select:none}
+.chip:active{transform:scale(.95)}
+.rights-item:active{transform:scale(.97)}
+.avatar-opt:active{transform:scale(.92)}
+
+/* ── DISEASE DURATION ── */
+.disease-dur{display:none;margin-top:12px;padding:12px;background:#F9FAFB;border-radius:12px;border:1px solid #E5E7EB}
+.disease-dur.on{display:block}
+.disease-dur-title{font-size:13px;font-weight:600;color:var(--t2);margin-bottom:10px}
+.disease-dur-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.dur-chip{padding:6px 14px;border-radius:20px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;color:var(--t1);transition:all .15s;pointer-events:auto !important;user-select:none}
+.dur-chip:active{transform:scale(.95)}
+.dur-chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+
+.lang-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:16px}
+.lang-btn{padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
+.lang-btn.sel{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6);color:#fff;font-weight:700}
+.lang-btn:active{transform:scale(.94)}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ═══ SPLASH ═══ -->
+<div class="screen active" id="sSplash">
+  <div class="splash-bg">
+    <div class="splash-circle1"></div>
+    <div class="splash-circle2"></div>
+  </div>
+  <div class="splash-content" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <div class="splash-logo">💊</div>
+    <div class="splash-title">MedTrack</div>
+    <div class="splash-sub">ผู้ช่วยดูแลยาของคุณ<br>สแกนซองยาไทย · แจ้งเตือนอัตโนมัติ · หมอน้อยดูแล</div>
+    <div class="splash-badges">
+      <div class="splash-badge">🤖 AI OCR ภาษาไทย</div>
+      <div class="splash-badge">💚 LINE แจ้งเตือน</div>
+      <div class="splash-badge">🏆 สะสมแต้ม</div>
+    </div>
+  </div>
+  <div class="splash-btns">
+    <div class="lang-bar" id="splashLangBar">
+      <button class="lang-btn sel" data-lang="th" onclick="selectSplashLang(this)">🇹🇭 ไทย</button>
+      <button class="lang-btn" data-lang="en" onclick="selectSplashLang(this)">🇬🇧 EN</button>
+      <button class="lang-btn" data-lang="mm" onclick="selectSplashLang(this)">🇲🇲 MM</button>
+      <button class="lang-btn" data-lang="zh" onclick="selectSplashLang(this)">🇨🇳 中文</button>
+      <button class="lang-btn" data-lang="lo" onclick="selectSplashLang(this)">🇱🇦 ລາວ</button>
+    </div>
+    <button class="btn-primary" onclick="goTo('sOnboard')">🚀 เริ่มใช้งานฟรี</button>
+    <button class="btn-secondary" onclick="loginExisting()">เข้าสู่ระบบ (มีบัญชีแล้ว)</button>
+  </div>
+</div>
+
+<!-- ═══ ONBOARDING ═══ -->
+<div class="screen" id="sOnboard">
+  <div class="ob-header" id="obHeader">
+    <div class="ob-progress" id="obProgress"></div>
+    <div class="ob-step-label" id="obStepLabel">ขั้นตอน 1 จาก 5</div>
+    <div class="ob-step-title" id="obStepTitle">ยินดีต้อนรับ!</div>
+    <div class="ob-step-sub" id="obStepSub">มาเริ่มสร้างโปรไฟล์ของคุณกัน</div>
+  </div>
+
+  <div class="ob-body">
+
+    <!-- STEP 1: ข้อมูลพื้นฐาน -->
+    <div class="ob-step on" id="obS1">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:16px">เลือก Avatar ของคุณ</div>
+      <div class="avatar-row" id="avatarRow">
+        <div class="avatar-opt sel" data-v="👴" onclick="selectAvatar(this)">👴</div>
+        <div class="avatar-opt" data-v="👵" onclick="selectAvatar(this)">👵</div>
+        <div class="avatar-opt" data-v="👨" onclick="selectAvatar(this)">👨</div>
+        <div class="avatar-opt" data-v="👩" onclick="selectAvatar(this)">👩</div>
+        <div class="avatar-opt" data-v="🧑" onclick="selectAvatar(this)">🧑</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label req">ชื่อ-นามสกุล</div>
+        <input class="field-input" id="f_name" type="text" placeholder="เช่น นาย สมชาย ใจดี" oninput="validateStep1()">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label req">อายุ</div>
+          <input class="field-input" id="f_age" type="number" min="1" max="120" placeholder="ปี" oninput="validateStep1()">
+        </div>
+        <div class="field">
+          <div class="field-label">เพศ</div>
+          <select class="field-input" id="f_gender">
+            <option value="">เลือก</option>
+            <option value="ชาย">ชาย</option>
+            <option value="หญิง">หญิง</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">น้ำหนัก (กก.)</div>
+          <input class="field-input" id="f_weight" type="number" placeholder="65">
+        </div>
+        <div class="field">
+          <div class="field-label">ส่วนสูง (ซม.)</div>
+          <input class="field-input" id="f_height" type="number" placeholder="165">
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label req">เบอร์โทรศัพท์</div>
+        <input class="field-input" id="f_phone" type="tel" placeholder="081-234-5678" oninput="validateStep1()">
+      </div>
+
+      <div class="sec-div">ที่อยู่และภูมิภาค</div>
+
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label req">ประเทศ</div>
+          <select class="field-input" id="f_country" onchange="onCountryChange()" oninput="validateStep1()">
+            <option value="">เลือกประเทศ</option>
+            <option value="TH" selected>🇹🇭 ไทย</option>
+            <option value="MM">🇲🇲 เมียนมา</option>
+            <option value="LA">🇱🇦 ลาว</option>
+            <option value="KH">🇰🇭 กัมพูชา</option>
+            <option value="VN">🇻🇳 เวียดนาม</option>
+            <option value="CN">🇨🇳 จีน</option>
+            <option value="JP">🇯🇵 ญี่ปุ่น</option>
+            <option value="OTHER">🌍 อื่นๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">จังหวัด / รัฐ</div>
+          <select class="field-input" id="f_province_th">
+            <option value="">เลือกจังหวัด</option>
+            <option>กรุงเทพมหานคร</option><option>กระบี่</option><option>กาญจนบุรี</option>
+            <option>กาฬสินธุ์</option><option>กำแพงเพชร</option><option>ขอนแก่น</option>
+            <option>จันทบุรี</option><option>ฉะเชิงเทรา</option><option>ชลบุรี</option>
+            <option>ชัยนาท</option><option>ชัยภูมิ</option><option>ชุมพร</option>
+            <option>เชียงราย</option><option>เชียงใหม่</option><option>ตรัง</option>
+            <option>ตราด</option><option>ตาก</option><option>นครนายก</option>
+            <option>นครปฐม</option><option>นครพนม</option><option>นครราชสีมา</option>
+            <option>นครศรีธรรมราช</option><option>นครสวรรค์</option><option>นนทบุรี</option>
+            <option>นราธิวาส</option><option>น่าน</option><option>บึงกาฬ</option>
+            <option>บุรีรัมย์</option><option>ปทุมธานี</option><option>ประจวบคีรีขันธ์</option>
+            <option>ปราจีนบุรี</option><option>ปัตตานี</option><option>พระนครศรีอยุธยา</option>
+            <option>พะเยา</option><option>พังงา</option><option>พัทลุง</option>
+            <option>พิจิตร</option><option>พิษณุโลก</option><option>เพชรบุรี</option>
+            <option>เพชรบูรณ์</option><option>แพร่</option><option>ภูเก็ต</option>
+            <option>มหาสารคาม</option><option>มุกดาหาร</option><option>แม่ฮ่องสอน</option>
+            <option>ยโสธร</option><option>ยะลา</option><option>ร้อยเอ็ด</option>
+            <option>ระนอง</option><option>ระยอง</option><option>ราชบุรี</option>
+            <option>ลพบุรี</option><option>ลำปาง</option><option>ลำพูน</option>
+            <option>เลย</option><option>ศรีสะเกษ</option><option>สกลนคร</option>
+            <option>สงขลา</option><option>สตูล</option><option>สมุทรปราการ</option>
+            <option>สมุทรสงคราม</option><option>สมุทรสาคร</option><option>สระแก้ว</option>
+            <option>สระบุรี</option><option>สิงห์บุรี</option><option>สุโขทัย</option>
+            <option>สุพรรณบุรี</option><option>สุราษฎร์ธานี</option><option>สุรินทร์</option>
+            <option>หนองคาย</option><option>หนองบัวลำภู</option><option>อ่างทอง</option>
+            <option>อำนาจเจริญ</option><option>อุดรธานี</option><option>อุตรดิตถ์</option>
+            <option>อุทัยธานี</option><option>อุบลราชธานี</option>
+          </select>
+          <input class="field-input" id="f_province_other" type="text" placeholder="ระบุรัฐ/จังหวัด" style="display:none;margin-top:6px">
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">เชื้อชาติ / Ethnicity</div>
+        <select class="field-input" id="f_ethnicity">
+          <option value="">เลือกเชื้อชาติ</option>
+          <option value="TH">ไทย</option>
+          <option value="TH-CHINESE">ไทยเชื้อสายจีน</option>
+          <option value="TH-MALAY">ไทยมุสลิม / มลายู</option>
+          <option value="TH-HIGHLAND">ชาวเขา / ชนเผ่า</option>
+          <option value="MM">เมียนมา / พม่า</option>
+          <option value="KH">เขมร</option>
+          <option value="LA">ลาว</option>
+          <option value="VN">เวียดนาม</option>
+          <option value="CN">จีน</option>
+          <option value="JP">ญี่ปุ่น</option>
+          <option value="OTHER">อื่นๆ</option>
+        </select>
+        <div class="field-hint">ข้อมูลนี้ช่วยให้ AI แนะนำยาได้แม่นขึ้น เนื่องจากยาบางตัว metabolize ต่างกันตามเชื้อชาติ</div>
+      </div>
+
+      <div class="field">
+        <div class="field-label req">สิทธิการรักษา</div>
+        <div class="rights-grid" id="rightsGrid">
+          <div class="rights-item sel" data-v="บัตรทอง" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="#F59E0B"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">บัตรทอง</div>
+              <div class="rights-item-sub">UC / 30 บาท</div>
+            </div>
+          </div>
+          <div class="rights-item" data-v="ประกันสังคม" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="#3B82F6"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">ประกันสังคม</div>
+              <div class="rights-item-sub">SSO</div>
+            </div>
+          </div>
+          <div class="rights-item" data-v="ข้าราชการ" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="#10B981"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">ข้าราชการ</div>
+              <div class="rights-item-sub">CSMBS</div>
+            </div>
+          </div>
+          <div class="rights-item" data-v="ประกันเอกชน" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="#8B5CF6"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">ประกันเอกชน</div>
+              <div class="rights-item-sub">Private</div>
+            </div>
+          </div>
+          <div class="rights-item" data-v="แรงงานต่างชาติ" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><circle cx="10" cy="10" r="9" fill="#6B7280"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">แรงงานต่างชาติ</div>
+              <div class="rights-item-sub">Foreign worker</div>
+            </div>
+          </div>
+          <div class="rights-item" data-v="จ่ายเอง" onclick="selectRights(this)">
+            <div class="rights-item-ico"><svg width="20" height="20"><rect x="1" y="4" width="18" height="12" rx="3" fill="#EC4899"/><rect x="1" y="7" width="18" height="3" fill="#BE185D"/></svg></div>
+            <div class="rights-item-info">
+              <div class="rights-item-title">จ่ายเอง</div>
+              <div class="rights-item-sub">Self-pay / OPD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">เลข HN (ถ้ามี)</div>
+        <input class="field-input" id="f_hn" type="text" placeholder="หมายเลขผู้ป่วยจากโรงพยาบาล">
+        <div class="field-hint">สามารถกรอกภายหลังได้</div>
+      </div>
+    </div>
+
+    <!-- STEP 2: โรคประจำตัว -->
+    <div class="ob-step" id="obS2">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:12px">เลือกโรคที่เป็นอยู่ (เลือกได้หลายข้อ)</div>
+      <div class="chip-grid" id="diseaseChips">
+        <div class="chip on" onclick="toggleChip(this)">🩸 เบาหวาน</div>
+        <div class="chip" onclick="toggleChip(this)">❤️ ความดันโลหิตสูง</div>
+        <div class="chip" onclick="toggleChip(this)">🫀 โรคหัวใจ</div>
+        <div class="chip" onclick="toggleChip(this)">🧠 ไขมันในเลือดสูง</div>
+        <div class="chip" onclick="toggleChip(this)">🫁 หอบหืด</div>
+        <div class="chip" onclick="toggleChip(this)">🦴 ข้ออักเสบ</div>
+        <div class="chip" onclick="toggleChip(this)">🫘 ไตเรื้อรัง</div>
+        <div class="chip" onclick="toggleChip(this)">🧪 ไทรอยด์</div>
+        <div class="chip" onclick="toggleChip(this)">🩺 กระดูกพรุน</div>
+        <div class="chip" onclick="toggleChip(this)">💊 อื่นๆ</div>
+      </div>
+
+      <!-- Disease duration — shows after selecting disease -->
+      <div class="disease-dur" id="diseaseDurBlock">
+        <div class="disease-dur-title">🕐 เป็นโรคนี้มานานเท่าไหร่แล้ว?</div>
+        <div id="diseaseDurList"></div>
+      </div>
+
+      <div class="sec-div" style="margin-top:12px">ข้อมูลเพิ่มเติม</div>
+      <div class="field">
+        <div class="field-label">โรงพยาบาลประจำ</div>
+        <input class="field-input" id="f_hospital" type="text" placeholder="เช่น โรงพยาบาลรามาธิบดี">
+      </div>
+      <div class="field">
+        <div class="field-label">แพทย์ประจำตัว</div>
+        <input class="field-input" id="f_doctor" type="text" placeholder="เช่น นพ. วิชัย รักสุขภาพ">
+      </div>
+      <div class="field">
+        <div class="field-label">เบอร์โทรแพทย์ / คลินิก</div>
+        <input class="field-input" id="f_doctor_phone" type="tel" placeholder="เช่น 02-201-1234 ต่อ 5678">
+        <div class="field-hint">ใช้โทรนัดหมายหรือติดต่อฉุกเฉิน</div>
+      </div>
+      <div class="field">
+        <div class="field-label">แพ้ยา (ถ้ามี)</div>
+        <input class="field-input" id="f_allergy" type="text" placeholder="เช่น Penicillin, Aspirin">
+      </div>
+    </div>
+
+    <!-- STEP 3: เวลาอาหาร -->
+    <div class="ob-step" id="obS3">
+      <div style="font-size:13px;color:var(--t2);margin-bottom:14px">ตั้งเวลามื้ออาหาร เพื่อให้หมอน้อยแจ้งเตือนยาได้ถูกเวลา</div>
+      <div class="meal-card">
+        <div class="meal-card-head">
+          <div class="meal-icon">🌅</div>
+          <div class="meal-name">มื้อเช้า</div>
+          <input class="meal-time-input" id="t_morning" type="time" value="07:00">
+        </div>
+      </div>
+      <div class="meal-card">
+        <div class="meal-card-head">
+          <div class="meal-icon">☀️</div>
+          <div class="meal-name">มื้อกลางวัน</div>
+          <input class="meal-time-input" id="t_noon" type="time" value="12:00">
+        </div>
+      </div>
+      <div class="meal-card">
+        <div class="meal-card-head">
+          <div class="meal-icon">🌆</div>
+          <div class="meal-name">มื้อเย็น</div>
+          <input class="meal-time-input" id="t_evening" type="time" value="18:00">
+        </div>
+      </div>
+      <div class="meal-card">
+        <div class="meal-card-head">
+          <div class="meal-icon">🌙</div>
+          <div class="meal-name">ก่อนนอน</div>
+          <input class="meal-time-input" id="t_bed" type="time" value="21:00">
+        </div>
+      </div>
+      <div class="sec-div">การแจ้งเตือน</div>
+      <div class="field-label" style="margin-bottom:6px">แจ้งเตือนล่วงหน้ากินยา</div>
+      <div class="remind-chips">
+        <div class="remind-chip" onclick="toggleRchip(this)" data-v="0">ตรงเวลา</div>
+        <div class="remind-chip on" onclick="toggleRchip(this)" data-v="10">10 นาที</div>
+        <div class="remind-chip" onclick="toggleRchip(this)" data-v="15">15 นาที</div>
+        <div class="remind-chip" onclick="toggleRchip(this)" data-v="30">30 นาที</div>
+      </div>
+    </div>
+
+    <!-- STEP 4: ผู้ดูแล + LINE -->
+    <div class="ob-step" id="obS4">
+
+      <!-- LINE Connect Card -->
+      <div style="background:#F0FFF9;border:1.5px solid #0A9C7A;border-radius:var(--r);padding:14px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="width:36px;height:36px;border-radius:10px;background:#06C755;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💚</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">เชื่อม LINE หมอน้อย</div>
+            <div style="font-size:11px;color:var(--t2);margin-top:1px">รับแจ้งเตือนกินยาผ่าน LINE ได้เลย</div>
+          </div>
+          <div id="ob4LineStatus" style="font-size:10px;font-weight:700;background:#E0FFF6;color:#0A9C7A;padding:3px 9px;border-radius:10px;border:1px solid #0A9C7A">ยังไม่เชื่อม</div>
+        </div>
+
+        <!-- QR Code จริง MedTrack LINE OA -->
+        <div style="background:#fff;border-radius:var(--r2);padding:12px;text-align:center;margin-bottom:10px;border:1px solid var(--bd)">
+          <img src="https://qr-official.line.me/gs/M_785gznlp_GW.png?oat_content=qr" 
+               alt="QR Code LINE หมอน้อย MedTrack"
+               style="width:150px;height:150px;display:block;margin:0 auto 6px;border-radius:8px"
+               onerror="this.style.display='none';document.getElementById('qrFallback').style.display='block'">
+          <div id="qrFallback" style="display:none;width:150px;height:150px;background:#f0f0f0;border-radius:8px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#999">
+            QR Code
+          </div>
+          <div style="font-size:12px;font-weight:600;color:#06C755;margin-bottom:2px">@MedTrack หมอน้อย</div>
+          <div style="font-size:11px;color:var(--t3)">สแกน QR ด้วยแอป LINE เพื่อ Add Friend</div>
+        </div>
+
+        <div style="display:flex;gap:8px">
+          <button onclick="window.open('https://line.me/ti/p/@785gznlp','_blank');ob4ConnectLine();" id="ob4LineBtn"
+            style="flex:1;padding:10px;background:#06C755;color:#fff;border:none;border-radius:var(--r2);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;justify-content:center;gap:6px">
+            💚 Add หมอน้อยใน LINE
+          </button>
+          <button onclick="ob4SimConnect()"
+            style="padding:10px 12px;background:var(--bg);border:1.5px solid var(--bd);border-radius:var(--r2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);color:var(--t2)">
+            ทดสอบ
+          </button>
+        </div>
+        <div style="text-align:center;margin-top:6px;font-size:11px;color:var(--t3)">ข้ามได้ — เชื่อมภายหลังที่ตั้งค่าก็ได้</div>
+      </div>
+
+      <!-- Caregiver section -->
+      <div class="sec-div">ผู้ดูแล (Caregiver)</div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:10px">เพิ่มคนที่จะได้รับแจ้งเตือนเมื่อคุณลืมกินยา (ไม่บังคับ)</div>
+      <div id="caregiverList"></div>
+      <div class="field">
+        <div class="field-label">ชื่อผู้ดูแล</div>
+        <input class="field-input" id="c_name" type="text" placeholder="เช่น นาง สมศรี ใจดี">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <div class="field-label">ความสัมพันธ์</div>
+          <select class="field-input" id="c_rel">
+            <option value="">เลือก</option>
+            <option>ลูก</option><option>สามี/ภรรยา</option>
+            <option>พ่อ/แม่</option><option>หลาน</option><option>อื่นๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-label">เบอร์โทร</div>
+          <input class="field-input" id="c_phone" type="tel" placeholder="081-xxx-xxxx">
+        </div>
+      </div>
+      <button onclick="addCaregiver()" style="width:100%;padding:11px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-bottom:16px">
+        + เพิ่มผู้ดูแล
+      </button>
+
+      <!-- Notify toggles -->
+      <div class="sec-div">การแจ้งเตือน</div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">แจ้งเตือนทาง LINE</div>
+          <div class="toggle-sub" id="tg_line_sub">ยังไม่ได้เชื่อม LINE</div>
+        </div>
+        <button class="toggle" id="tg_line" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">แจ้งเตือน Push Notification</div>
+          <div class="toggle-sub">แจ้งเตือนในแอปและหน้าจอ</div>
+        </div>
+        <button class="toggle on" id="tg_push" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">แจ้งเตือนผู้ดูแลอัตโนมัติ</div>
+          <div class="toggle-sub">ถ้าลืมกินยาเกิน 1 ชั่วโมง</div>
+        </div>
+        <button class="toggle" id="tg_caregiver" onclick="this.classList.toggle('on')"></button>
+      </div>
+    </div>
+
+    <!-- STEP 5: PDPA -->
+    <div class="ob-step" id="obS5">
+      <div style="background:var(--blue3);border:1px solid rgba(37,99,235,.2);border-radius:var(--r2);padding:14px;margin-bottom:16px;font-size:13px;color:var(--blue);line-height:1.6">
+        🔒 <b>ความเป็นส่วนตัวของคุณสำคัญมาก</b><br>ข้อมูลสุขภาพของคุณจะถูกเก็บรักษาอย่างปลอดภัย
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">ยอมรับข้อตกลงการใช้งาน</div>
+          <div class="toggle-sub">อ่าน <span style="color:var(--teal);cursor:pointer">ข้อตกลงฉบับเต็ม</span></div>
+        </div>
+        <button class="toggle" id="pdpa1" onclick="this.classList.toggle('on');validateStep5()"></button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">ยินยอมเก็บข้อมูลสุขภาพ (PDPA)</div>
+          <div class="toggle-sub">เพื่อการแจ้งเตือนและตารางยา</div>
+        </div>
+        <button class="toggle" id="pdpa2" onclick="this.classList.toggle('on');validateStep5()"></button>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">ยินยอมใช้ข้อมูลแบบ anonymous</div>
+          <div class="toggle-sub">เพื่อพัฒนา AI ให้แม่นขึ้น (ไม่บังคับ)</div>
+        </div>
+        <button class="toggle" id="pdpa3" onclick="this.classList.toggle('on')"></button>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--r2);padding:12px;margin-top:8px">
+        <div style="font-size:12px;color:var(--t3);line-height:1.7">
+          ✅ ข้อมูลเข้ารหัส AES-256<br>
+          ✅ ไม่แชร์กับบุคคลที่สามโดยไม่ได้รับอนุญาต<br>
+          ✅ สามารถลบข้อมูลได้ทุกเมื่อ<br>
+          ✅ เป็นไปตาม PDPA พ.ศ. 2562
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ob-body -->
+
+  <div class="ob-footer" id="obFooter">
+    <div class="ob-back" id="obBackBtn" onclick="obBack()" style="display:none">←</div>
+    <button class="ob-next" id="obNextBtn" onclick="obNext()" disabled>
+      <span id="obNextTxt">ถัดไป</span> →
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SUCCESS ═══ -->
+<div class="screen" id="sSuccess">
+  <div class="success-circle">🩺</div>
+  <div class="success-title">พร้อมแล้วครับ!</div>
+  <div class="success-sub">หมอน้อยพร้อมดูแลคุณแล้ว<br>มาเริ่มสแกนซองยากันเลยครับ</div>
+  <div class="success-card" id="successSummary"></div>
+  <button class="btn-primary" style="width:100%" onclick="goToHome()">🏠 ไปหน้าหลัก</button>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="screen" id="sSettings">
+  <div class="settings-header">
+    <button class="settings-back" onclick="goTo('sSplash')">←</button>
+    <div class="settings-avatar" id="setAvatar">👴</div>
+    <div class="settings-title" id="setName">ตั้งค่าโปรไฟล์</div>
+    <div class="settings-sub" id="setSubtitle">แก้ไขข้อมูลและการตั้งค่า</div>
+  </div>
+
+  <div class="settings-body">
+
+    <!-- ── ส่วนที่ 1: ข้อมูลส่วนตัว ── -->
+    <div class="set-section">
+      <div class="set-section-title">ข้อมูลส่วนตัว</div>
+      <div class="set-card">
+        <div class="set-item" onclick="openModal('modalProfile')">
+          <div class="set-item-ico" style="background:#F0FFF4">👤</div>
+          <div class="set-item-info">
+            <div class="set-item-title">ข้อมูลส่วนตัว</div>
+            <div class="set-item-sub" id="setProfileSub">ชื่อ · อายุ · เพศ · น้ำหนัก · ส่วนสูง</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalDisease')">
+          <div class="set-item-ico" style="background:#FEF2F2">🩸</div>
+          <div class="set-item-info">
+            <div class="set-item-title">โรคประจำตัว</div>
+            <div class="set-item-sub" id="setDiseaseSub">ยังไม่ได้ตั้งค่า</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalAllergy')">
+          <div class="set-item-ico" style="background:#FFFBEB">⚠️</div>
+          <div class="set-item-info">
+            <div class="set-item-title">ประวัติแพ้ยา</div>
+            <div class="set-item-sub" id="setAllergySub">ไม่มีประวัติแพ้ยา</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ส่วนที่ 2: แพทย์และโรงพยาบาล ── -->
+    <div class="set-section">
+      <div class="set-section-title">แพทย์และโรงพยาบาล</div>
+      <div class="set-card">
+        <div class="set-item" onclick="openModal('modalHospital')">
+          <div class="set-item-ico" style="background:#EFF6FF">🏥</div>
+          <div class="set-item-info">
+            <div class="set-item-title">โรงพยาบาลประจำ</div>
+            <div class="set-item-sub" id="setHospitalNameSub">ยังไม่ได้ตั้งค่า</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalHospital')">
+          <div class="set-item-ico" style="background:#F0FFF4">🩺</div>
+          <div class="set-item-info">
+            <div class="set-item-title">แพทย์ประจำตัว</div>
+            <div class="set-item-sub" id="setDoctorSub">ยังไม่ได้ตั้งค่า</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalHospital')">
+          <div class="set-item-ico" style="background:#FEF2F2">📞</div>
+          <div class="set-item-info">
+            <div class="set-item-title">เบอร์โทรแพทย์ / คลินิก</div>
+            <div class="set-item-sub" id="setDoctorPhoneSub">ยังไม่ได้ตั้งค่า</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ส่วนที่ 3: การแจ้งเตือน ── -->
+    <div class="set-section">
+      <div class="set-section-title">การแจ้งเตือน</div>
+      <div class="set-card">
+        <div class="set-item" onclick="openModal('modalMealTime')">
+          <div class="set-item-ico" style="background:#FFFBEB">⏰</div>
+          <div class="set-item-info">
+            <div class="set-item-title">เวลาอาหาร</div>
+            <div class="set-item-sub" id="setMealSub">เช้า 07:00 · กลางวัน 12:00 · เย็น 18:00</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalNotify')">
+          <div class="set-item-ico" style="background:#F0FFF4">💚</div>
+          <div class="set-item-info">
+            <div class="set-item-title">LINE & Push Notification</div>
+            <div class="set-item-sub" id="setLineSub">ยังไม่เชื่อม LINE</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalCaregiver')">
+          <div class="set-item-ico" style="background:#EFF6FF">👨‍👩‍👧</div>
+          <div class="set-item-info">
+            <div class="set-item-title">ผู้ดูแล / Caregiver</div>
+            <div class="set-item-sub" id="setCaregiverSub">ยังไม่มีผู้ดูแล</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ส่วนที่ 4: ระบบ ── -->
+    <div class="set-section">
+      <div class="set-section-title">ระบบ</div>
+      <div class="set-card">
+        <div class="set-item" onclick="openModal('modalLang')">
+          <div class="set-item-ico" style="background:#F9FAFB">🌐</div>
+          <div class="set-item-info">
+            <div class="set-item-title">ภาษา / Language</div>
+            <div class="set-item-sub">🇹🇭 ภาษาไทย</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalPrivacy')">
+          <div class="set-item-ico" style="background:#F0FFF4">🔒</div>
+          <div class="set-item-info">
+            <div class="set-item-title">ความเป็นส่วนตัว & PDPA</div>
+            <div class="set-item-sub">จัดการ consent และข้อมูลของคุณ</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="openModal('modalAbout')">
+          <div class="set-item-ico" style="background:#F5F3FF">💊</div>
+          <div class="set-item-info">
+            <div class="set-item-title">เกี่ยวกับ MedTrack</div>
+            <div class="set-item-sub">v1.0.0 · © 2026</div>
+          </div>
+          <div class="set-item-arrow">›</div>
+        </div>
+        <div class="set-item" onclick="clearDataConfirm()">
+          <div class="set-item-ico" style="background:#FEF2F2">🗑️</div>
+          <div class="set-item-info">
+            <div class="set-item-title" style="color:var(--coral)">ล้างข้อมูลทั้งหมด</div>
+            <div class="set-item-sub">รีเซ็ตแอปกลับเป็นค่าเริ่มต้น</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+
+  <!-- Profile -->
+  <div class="modal" id="modalProfile">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👤 ข้อมูลส่วนตัว</div>
+    <div class="field"><div class="field-label req">ชื่อ-นามสกุล</div>
+      <input class="field-input" id="m_name" type="text"></div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">อายุ</div>
+        <input class="field-input" id="m_age" type="number" placeholder="ปี"></div>
+      <div class="field"><div class="field-label">เพศ</div>
+        <select class="field-input" id="m_gender">
+          <option value="ชาย">ชาย</option><option value="หญิง">หญิง</option><option value="อื่นๆ">อื่นๆ</option>
+        </select></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">น้ำหนัก (กก.)</div>
+        <input class="field-input" id="m_weight" type="number"></div>
+      <div class="field"><div class="field-label">ส่วนสูง (ซม.)</div>
+        <input class="field-input" id="m_height" type="number"></div>
+    </div>
+    <div class="field"><div class="field-label">เบอร์โทร</div>
+      <input class="field-input" id="m_phone" type="tel"></div>
+    <div class="field"><div class="field-label">HN (โรงพยาบาล)</div>
+      <input class="field-input" id="m_hn" type="text"></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveProfile()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <!-- Meal Time -->
+  <div class="modal" id="modalMealTime">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⏰ เวลาอาหาร</div>
+    <div class="meal-card"><div class="meal-card-head"><div class="meal-icon">🌅</div><div class="meal-name">มื้อเช้า</div><input class="meal-time-input" id="m_t_morning" type="time" value="07:00"></div></div>
+    <div class="meal-card"><div class="meal-card-head"><div class="meal-icon">☀️</div><div class="meal-name">มื้อกลางวัน</div><input class="meal-time-input" id="m_t_noon" type="time" value="12:00"></div></div>
+    <div class="meal-card"><div class="meal-card-head"><div class="meal-icon">🌆</div><div class="meal-name">มื้อเย็น</div><input class="meal-time-input" id="m_t_evening" type="time" value="18:00"></div></div>
+    <div class="meal-card"><div class="meal-card-head"><div class="meal-icon">🌙</div><div class="meal-name">ก่อนนอน</div><input class="meal-time-input" id="m_t_bed" type="time" value="21:00"></div></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveMealTime()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <!-- Hospital -->
+  <div class="modal" id="modalHospital">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🏥 แพทย์และโรงพยาบาล</div>
+    <div class="field">
+      <div class="field-label">โรงพยาบาลประจำ</div>
+      <input class="field-input" id="m_hospital" type="text" placeholder="เช่น โรงพยาบาลรามาธิบดี">
+    </div>
+    <div class="field">
+      <div class="field-label">แพทย์ประจำตัว</div>
+      <input class="field-input" id="m_doctor" type="text" placeholder="เช่น นพ. วิชัย รักสุขภาพ">
+    </div>
+    <div class="field">
+      <div class="field-label">เบอร์โทรแพทย์ / คลินิก</div>
+      <input class="field-input" id="m_doctor_phone" type="tel" placeholder="เช่น 02-201-1234 ต่อ 5678">
+      <div class="field-hint">📞 กดโทรหาหมอได้จากแอปโดยตรง</div>
+    </div>
+    <div style="background:#EFF6FF;border-radius:var(--r2);padding:10px 12px;margin-bottom:4px">
+      <div style="font-size:11px;color:var(--blue);display:flex;align-items:center;gap:6px">
+        <span>💡</span>
+        <span>เบอร์นี้ใช้แสดงในหน้านัดหมอและ Report ที่ส่งให้หมอด้วยครับ</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveHospital()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <!-- Allergy -->
+  <div class="modal" id="modalAllergy">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚠️ ประวัติแพ้ยา</div>
+    <div class="field"><div class="field-label">ยาที่แพ้</div>
+      <textarea class="field-input" id="m_allergy" placeholder="เช่น Penicillin, Sulfa, Aspirin&#10;(เว้นบรรทัดแต่ละตัว)"></textarea></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveAllergy()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <!-- Generic info modals -->
+  <div class="modal" id="modalDisease">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🩺 โรคประจำตัว</div>
+    <div class="chip-grid" id="mDiseaseChips">
+      <div class="chip on" onclick="toggleChip(this)">🩸 เบาหวาน</div>
+      <div class="chip" onclick="toggleChip(this)">❤️ ความดันโลหิตสูง</div>
+      <div class="chip" onclick="toggleChip(this)">🫀 โรคหัวใจ</div>
+      <div class="chip" onclick="toggleChip(this)">🧠 ไขมันในเลือดสูง</div>
+      <div class="chip" onclick="toggleChip(this)">🫁 หอบหืด</div>
+      <div class="chip" onclick="toggleChip(this)">🦴 ข้ออักเสบ</div>
+      <div class="chip" onclick="toggleChip(this)">🫘 ไตเรื้อรัง</div>
+      <div class="chip" onclick="toggleChip(this)">💊 อื่นๆ</div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="saveDisease()">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalLang">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🌐 ภาษา / Language</div>
+    <div class="chip-grid">
+      <div class="chip on blue" onclick="toggleChip(this)">🇹🇭 ภาษาไทย</div>
+      <div class="chip blue" onclick="toggleChip(this)">🇬🇧 English</div>
+      <div class="chip blue" onclick="toggleChip(this)">🇨🇳 中文</div>
+    </div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="closeModal();showToast('✅ บันทึกภาษาแล้ว')">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalNotify">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔔 การแจ้งเตือน</div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">LINE OA</div><div class="toggle-sub">หมอน้อยส่งข้อความผ่าน LINE</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Push Notification</div><div class="toggle-sub">แจ้งเตือนในแอป</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div style="margin-top:12px"><div class="field-label" style="margin-bottom:8px">แจ้งเตือนล่วงหน้า</div>
+    <div class="remind-chips"><div class="remind-chip" onclick="toggleRchip(this)">ตรงเวลา</div><div class="remind-chip on" onclick="toggleRchip(this)">10 นาที</div><div class="remind-chip" onclick="toggleRchip(this)">15 นาที</div><div class="remind-chip" onclick="toggleRchip(this)">30 นาที</div></div></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="closeModal();showToast('✅ บันทึกการแจ้งเตือนแล้ว')">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalCaregiver">
+    <div class="modal-handle"></div>
+    <div class="modal-title">👨‍👩‍👧 ผู้ดูแล</div>
+    <div id="mCaregiverList" style="margin-bottom:12px"></div>
+    <div class="field"><div class="field-label">ชื่อ</div><input class="field-input" id="mc_name" type="text" placeholder="ชื่อผู้ดูแล"></div>
+    <div class="field-row">
+      <div class="field"><div class="field-label">ความสัมพันธ์</div><select class="field-input" id="mc_rel"><option>ลูก</option><option>สามี/ภรรยา</option><option>พ่อ/แม่</option><option>หลาน</option><option>อื่นๆ</option></select></div>
+      <div class="field"><div class="field-label">เบอร์โทร</div><input class="field-input" id="mc_phone" type="tel"></div>
+    </div>
+    <button onclick="addCaregiverModal()" style="width:100%;padding:10px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-bottom:12px">+ เพิ่มผู้ดูแล</button>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="closeModal();showToast('✅ บันทึกผู้ดูแลแล้ว')">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalPrivacy">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🔒 ความเป็นส่วนตัว</div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">ยินยอมเก็บข้อมูลสุขภาพ</div><div class="toggle-sub">จำเป็นสำหรับการทำงานของแอป</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">ใช้ข้อมูล anonymous เพื่อพัฒนา AI</div><div class="toggle-sub">ช่วยให้ OCR แม่นขึ้นสำหรับทุกคน</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="modal-save" onclick="closeModal();showToast('✅ บันทึกแล้ว')">💾 บันทึก</button>
+    </div>
+  </div>
+
+  <div class="modal" id="modalAbout">
+    <div class="modal-handle"></div>
+    <div class="modal-title">💊 เกี่ยวกับ MedTrack</div>
+    <div style="text-align:center;padding:8px 0 16px">
+      <div style="font-size:48px;margin-bottom:8px">💊</div>
+      <div style="font-size:18px;font-weight:700;color:var(--t1)">MedTrack v1.0.0</div>
+      <div style="font-size:13px;color:var(--t2);margin-top:4px">AI-Powered Medication Management<br>สำหรับผู้ป่วยไทย</div>
+    </div>
+    <div style="background:var(--bg);border-radius:var(--r2);padding:12px;font-size:12px;color:var(--t3);line-height:1.8">
+      🤖 OCR ภาษาไทย โดย Claude AI<br>
+      💚 แจ้งเตือนผ่าน LINE OA<br>
+      🔒 ข้อมูลเข้ารหัส AES-256<br>
+      📊 เป็นไปตาม PDPA พ.ศ. 2562
+    </div>
+    <div class="modal-footer">
+      <button class="modal-save" style="flex:1" onclick="closeModal()">ปิด</button>
+    </div>
+  </div>
+
+</div><!-- /modal-overlay -->
+
+<!-- Toast -->
+<div id="globalToast" style="position:fixed;bottom:40px;left:50%;transform:translateX(-50%) translateY(20px);background:rgba(17,24,39,.9);color:#fff;padding:9px 18px;border-radius:20px;font-size:13px;font-weight:500;pointer-events:none;opacity:0;transition:all .3s;z-index:999;white-space:nowrap"></div>
+
+<script>
+
+// ── MedTrack Config ──
+const MEDTRACK_BACKEND = 'https://medtrack-backend-production-9bfb.up.railway.app';
+const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
+
+const KEY = 'mt_user_profile';
+
+// ── SCREEN NAVIGATION ──
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    if(s.id===id){ s.classList.remove('exit'); s.classList.add('active'); }
+    else{ s.classList.remove('active'); s.classList.add('exit'); setTimeout(()=>s.classList.remove('exit'),400); }
+  });
+}
+
+function loginExisting(){
+  const p=loadProfile();
+  if(p&&p.name){
+    // มีข้อมูลแล้ว → ไปหน้าหลัก
+    showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
+    setTimeout(()=>{ window.location.href='medtrack-home.html'; }, 800);
+  } else {
+    goTo('sOnboard');
+  }
+}
+
+// ── ONBOARDING STEPS ──
+const OB_STEPS = [
+  {label:'ขั้นตอน 1 จาก 5', title:'ข้อมูลส่วนตัว', sub:'ชื่อ อายุ เพศ และข้อมูลพื้นฐาน'},
+  {label:'ขั้นตอน 2 จาก 5', title:'โรคประจำตัว', sub:'เพื่อให้หมอน้อยดูแลได้ตรงจุด'},
+  {label:'ขั้นตอน 3 จาก 5', title:'เวลามื้ออาหาร', sub:'สำหรับตั้งเวลาแจ้งเตือนกินยา'},
+  {label:'ขั้นตอน 4 จาก 5', title:'ผู้ดูแลและแจ้งเตือน', sub:'คนที่จะช่วยดูแลให้คุณกินยาครบ'},
+  {label:'ขั้นตอน 5 จาก 5', title:'ข้อตกลงและความเป็นส่วนตัว', sub:'PDPA และสิทธิ์การใช้ข้อมูล'},
+];
+let obCurrent = 1;
+let selectedAvatar = '👴';
+let caregivers = [];
+
+function initOb(){
+  updateObUI();
+  validateStep1();
+}
+
+function updateObUI(){
+  const s=OB_STEPS[obCurrent-1];
+  document.getElementById('obStepLabel').textContent=s.label;
+  document.getElementById('obStepTitle').textContent=s.title;
+  document.getElementById('obStepSub').textContent=s.sub;
+  // progress dots
+  const prog=document.getElementById('obProgress');
+  prog.innerHTML=OB_STEPS.map((_,i)=>`<div class="ob-prog-dot${i+1<obCurrent?' done':i+1===obCurrent?' active':''}"></div>`).join('');
+  // show/hide steps
+  document.querySelectorAll('.ob-step').forEach((el,i)=>el.classList.toggle('on',i+1===obCurrent));
+  // back button
+  document.getElementById('obBackBtn').style.display=obCurrent>1?'flex':'none';
+  // next button
+  const btn=document.getElementById('obNextBtn');
+  const txt=document.getElementById('obNextTxt');
+  if(obCurrent===5){ txt.textContent='เริ่มใช้งาน'; btn.innerHTML='🚀 เริ่มใช้งาน'; }
+  else{ btn.innerHTML=`<span>ถัดไป</span> →`; }
+  if(obCurrent===1) validateStep1();
+  else if(obCurrent===5) validateStep5();
+  else btn.disabled=false;
+}
+
+function obNext(){
+  if(obCurrent<5){ obCurrent++; updateObUI(); }
+  else{ saveOnboarding(); }
+}
+function obBack(){ if(obCurrent>1){ obCurrent--; updateObUI(); } }
+
+function selectAvatar(el){
+  document.querySelectorAll('.avatar-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedAvatar=el.dataset.v;
+}
+
+function toggleChip(el){ el.classList.toggle('on'); }
+function toggleRchip(el){
+  el.closest('.remind-chips,.apf-chips')?.querySelectorAll('.remind-chip,.apf-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function validateStep1(){
+  const name=document.getElementById('f_name')?.value.trim();
+  const phone=document.getElementById('f_phone')?.value.trim();
+  const country=document.getElementById('f_country')?.value;
+  document.getElementById('obNextBtn').disabled=!(name&&phone&&country);
+}
+function validateStep5(){
+  const p1=document.getElementById('pdpa1')?.classList.contains('on');
+  const p2=document.getElementById('pdpa2')?.classList.contains('on');
+  document.getElementById('obNextBtn').disabled=!(p1&&p2);
+}
+
+// caregiver in onboarding
+function addCaregiver(){
+  const name=document.getElementById('c_name').value.trim();
+  const rel=document.getElementById('c_rel').value;
+  const phone=document.getElementById('c_phone').value.trim();
+  if(!name) return showToast('กรุณากรอกชื่อผู้ดูแล');
+  caregivers.push({name,rel,phone});
+  document.getElementById('c_name').value='';
+  document.getElementById('c_phone').value='';
+  renderCaregivers();
+  showToast(`✅ เพิ่ม ${name} แล้ว`);
+}
+function renderCaregivers(){
+  const el=document.getElementById('caregiverList');
+  if(!el) return;
+  el.innerHTML=caregivers.map((c,i)=>`
+    <div class="care-card">
+      <div class="care-ico">👤</div>
+      <div class="care-info">
+        <div class="care-name">${c.name}</div>
+        <div class="care-rel">${c.rel||''} ${c.phone?'· '+c.phone:''}</div>
+      </div>
+      <div class="care-del" onclick="removeCaregiver(${i})">✕</div>
+    </div>`).join('');
+}
+function removeCaregiver(i){ caregivers.splice(i,1); renderCaregivers(); }
+
+// ── SAVE ONBOARDING ──
+function saveOnboarding(){
+  const diseases=[];
+  document.querySelectorAll('#diseaseChips .chip.on').forEach(el=>diseases.push(el.textContent.trim()));
+  const profile={
+    avatar:selectedAvatar,
+    name:document.getElementById('f_name').value.trim(),
+    age:document.getElementById('f_age').value,
+    gender:document.getElementById('f_gender').value,
+    weight:document.getElementById('f_weight').value,
+    height:document.getElementById('f_height').value,
+    phone:document.getElementById('f_phone').value.trim(),
+    hn:document.getElementById('f_hn').value.trim(),
+    diseases,
+    hospital:document.getElementById('f_hospital').value.trim(),
+    doctor:document.getElementById('f_doctor').value.trim(),
+    doctor_phone:document.getElementById('f_doctor_phone')?.value.trim()||'',
+    allergy:document.getElementById('f_allergy').value.trim(),
+    meals:{morning:document.getElementById('t_morning').value,noon:document.getElementById('t_noon').value,evening:document.getElementById('t_evening').value,bed:document.getElementById('t_bed').value},
+    caregivers,
+    notify:{line:document.getElementById('tg_line').classList.contains('on'),push:document.getElementById('tg_push').classList.contains('on'),caregiverAlert:document.getElementById('tg_caregiver').classList.contains('on')},
+    pdpa:{terms:true,health:true,anonymous:document.getElementById('pdpa3').classList.contains('on')},
+    treatment_rights:selectedRights,
+    rights:selectedRights,
+    disease_duration: (()=>{
+      const durs={};
+      document.querySelectorAll('#diseaseDurList > div').forEach(row=>{
+        const dName=row.querySelector('div')?.textContent?.trim();
+        const sel=row.querySelector('.dur-chip.on')?.textContent?.trim();
+        if(dName&&sel) durs[dName]=sel;
+      });
+      return durs;
+    })(),
+    createdAt:new Date().toISOString()
+  };
+  localStorage.setItem(KEY, JSON.stringify(profile));
+  showSuccessScreen(profile);
+}
+
+function showSuccessScreen(p){
+  const d=p.diseases||[];
+  document.getElementById('successSummary').innerHTML=`
+    <div class="success-row"><div class="success-row-ico">${p.avatar||'👤'}</div>${p.name}</div>
+    ${p.age?`<div class="success-row"><div class="success-row-ico">🎂</div>${p.age} ปี · ${p.gender||''}</div>`:''}
+    ${d.length?`<div class="success-row"><div class="success-row-ico">🩺</div>${d.join(', ')}</div>`:''}
+    ${p.hospital?`<div class="success-row"><div class="success-row-ico">🏥</div>${p.hospital}</div>`:''}
+    <div class="success-row"><div class="success-row-ico">⏰</div>เช้า ${p.meals.morning} · เที่ยง ${p.meals.noon} · เย็น ${p.meals.evening}</div>
+    ${p.caregivers?.length?`<div class="success-row"><div class="success-row-ico">👨‍👩‍👧</div>ผู้ดูแล ${p.caregivers.length} คน</div>`:''}
+    ${p.country?`<div class="success-row"><div class="success-row-ico">🌏</div>${{TH:'ไทย',MM:'เมียนมา',LA:'ลาว',KH:'กัมพูชา',VN:'เวียดนาม',CN:'จีน'}[p.country]||p.country}${p.province?' · '+p.province:''}</div>`:''}
+    ${p.treatment_rights?`<div class="success-row"><div class="success-row-ico">🏥</div>${p.treatment_rights}</div>`:''}
+  `;
+  goTo('sSuccess');
+}
+
+function goToHome(){
+  showToast('🏠 กำลังเข้าสู่หน้าหลัก...');
+  setTimeout(()=>{ window.location.href='medtrack-home.html'; },1000);
+}
+
+// ── PROFILE HELPERS ──
+function loadProfile(){ try{ return JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){ return null; } }
+function saveProfile2(p){ localStorage.setItem(KEY,JSON.stringify(p)); }
+
+// ── SETTINGS UI ──
+function loadSettingsUI(){
+  const p=loadProfile(); if(!p) return;
+  document.getElementById('setAvatar').textContent=p.avatar||'👤';
+  document.getElementById('setName').textContent=p.name||'โปรไฟล์';
+  document.getElementById('setSubtitle').textContent=`${p.age||''}${p.age?' ปี':''}${p.gender?' · '+p.gender:''}${p.diseases?.length?' · '+p.diseases[0]:''}`;
+  document.getElementById('setProfileSub').textContent=`${p.name||''} · ${p.age||'-'} ปี · ${p.gender||''}`;
+  document.getElementById('setDiseaseSub').textContent=(p.diseases||[]).join(', ')||'ยังไม่ได้ตั้งค่า';
+  document.getElementById('setAllergySub').textContent=p.allergy||'ไม่มีประวัติแพ้ยา';
+  document.getElementById('setHospitalSub').textContent=
+    p.hospital
+      ? p.hospital + (p.doctor?' · '+p.doctor:'') + (p.doctor_phone?' · '+p.doctor_phone:'')
+      : 'ยังไม่ได้ตั้งค่า';
+  document.getElementById('setMealSub').textContent=`เช้า ${p.meals?.morning||'07:00'} · กลางวัน ${p.meals?.noon||'12:00'} · เย็น ${p.meals?.evening||'18:00'}`;
+  document.getElementById('setCaregiverSub').textContent=p.caregivers?.length?`${p.caregivers.length} คน · ${p.caregivers[0]?.name}`:'ยังไม่มีผู้ดูแล';
+  // hospital section (new 3-row)
+  const hNameEl=document.getElementById('setHospitalNameSub');
+  const hDocEl=document.getElementById('setDoctorSub');
+  const hPhoneEl=document.getElementById('setDoctorPhoneSub');
+  if(hNameEl) hNameEl.textContent=p.hospital||'ยังไม่ได้ตั้งค่า';
+  if(hDocEl) hDocEl.textContent=p.doctor||'ยังไม่ได้ตั้งค่า';
+  if(hPhoneEl) hPhoneEl.textContent=p.doctor_phone||'ยังไม่ได้ตั้งค่า';
+  // m_doctor_phone in modal
+  const mdp=document.getElementById('m_doctor_phone');
+  if(mdp) mdp.value=p.doctor_phone||'';
+  // LINE status
+  const uid=localStorage.getItem('mt_line_uid');
+  const lineSub=document.getElementById('setLineSub');
+  if(lineSub) lineSub.textContent=uid?'เชื่อมแล้ว · หมอน้อย LINE OA':'ยังไม่เชื่อม LINE';
+  // fill modal fields
+  document.getElementById('m_name').value=p.name||'';
+  document.getElementById('m_age').value=p.age||'';
+  document.getElementById('m_gender').value=p.gender||'ชาย';
+  document.getElementById('m_weight').value=p.weight||'';
+  document.getElementById('m_height').value=p.height||'';
+  document.getElementById('m_phone').value=p.phone||'';
+  document.getElementById('m_hn').value=p.hn||'';
+  document.getElementById('m_hospital').value=p.hospital||'';
+  document.getElementById('m_doctor').value=p.doctor||'';
+  document.getElementById('m_allergy').value=p.allergy||'';
+  if(p.meals){ document.getElementById('m_t_morning').value=p.meals.morning||'07:00'; document.getElementById('m_t_noon').value=p.meals.noon||'12:00'; document.getElementById('m_t_evening').value=p.meals.evening||'18:00'; document.getElementById('m_t_bed').value=p.meals.bed||'21:00'; }
+  // caregivers in modal
+  caregivers=[...(p.caregivers||[])];
+  const mc=document.getElementById('mCaregiverList');
+  if(mc) mc.innerHTML=caregivers.map((c,i)=>`<div class="care-card"><div class="care-ico">👤</div><div class="care-info"><div class="care-name">${c.name}</div><div class="care-rel">${c.rel||''} ${c.phone?'· '+c.phone:''}</div></div><div class="care-del" onclick="caregivers.splice(${i},1);loadSettingsUI()">✕</div></div>`).join('');
+}
+
+// ── MODAL SAVES ──
+function saveProfile(){
+  const p=loadProfile()||{};
+  p.name=document.getElementById('m_name').value.trim();
+  p.age=document.getElementById('m_age').value;
+  p.gender=document.getElementById('m_gender').value;
+  p.weight=document.getElementById('m_weight').value;
+  p.height=document.getElementById('m_height').value;
+  p.phone=document.getElementById('m_phone').value.trim();
+  p.hn=document.getElementById('m_hn').value.trim();
+  saveProfile2(p); closeModal(); loadSettingsUI(); showToast('✅ บันทึกข้อมูลส่วนตัวแล้ว');
+}
+function saveMealTime(){
+  const p=loadProfile()||{};
+  p.meals={morning:document.getElementById('m_t_morning').value,noon:document.getElementById('m_t_noon').value,evening:document.getElementById('m_t_evening').value,bed:document.getElementById('m_t_bed').value};
+  saveProfile2(p); closeModal(); loadSettingsUI(); showToast('✅ บันทึกเวลาอาหารแล้ว');
+}
+function saveHospital(){
+  const p=loadProfile()||{};
+  p.hospital=document.getElementById('m_hospital').value.trim();
+  p.doctor=document.getElementById('m_doctor').value.trim();
+  saveProfile2(p); closeModal(); loadSettingsUI(); showToast('✅ บันทึกข้อมูลแพทย์แล้ว');
+}
+function saveAllergy(){
+  const p=loadProfile()||{};
+  p.allergy=document.getElementById('m_allergy').value.trim();
+  saveProfile2(p); closeModal(); loadSettingsUI(); showToast('✅ บันทึกประวัติแพ้ยาแล้ว');
+}
+function saveDisease(){
+  const p=loadProfile()||{};
+  const d=[];
+  document.querySelectorAll('#mDiseaseChips .chip.on').forEach(el=>d.push(el.textContent.trim()));
+  p.diseases=d; saveProfile2(p); closeModal(); loadSettingsUI(); showToast('✅ บันทึกโรคประจำตัวแล้ว');
+}
+function addCaregiverModal(){
+  const name=document.getElementById('mc_name').value.trim();
+  const rel=document.getElementById('mc_rel').value;
+  const phone=document.getElementById('mc_phone').value.trim();
+  if(!name) return showToast('กรุณากรอกชื่อ');
+  caregivers.push({name,rel,phone});
+  const p=loadProfile()||{}; p.caregivers=caregivers; saveProfile2(p);
+  document.getElementById('mc_name').value=''; document.getElementById('mc_phone').value='';
+  loadSettingsUI(); showToast(`✅ เพิ่ม ${name} แล้ว`);
+}
+
+// ── MODAL OPEN/CLOSE ──
+function openModal(id){
+  document.getElementById('modalOverlay').classList.add('on');
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+function closeModal(e){
+  // ถ้าถูกเรียกจาก event — ปิดเฉพาะเมื่อกดตรง overlay ไม่ใช่ modal
+  if(e && e.target && e.target.id !== 'modalOverlay') return;
+  document.getElementById('modalOverlay').classList.remove('on');
+  document.querySelectorAll('.modal').forEach(m=>m.style.display='none');
+}
+
+// ── UTILS ──
+function clearDataConfirm(){
+  if(confirm('ต้องการล้างข้อมูลทั้งหมดใช่ไหม?')){
+    localStorage.clear(); showToast('🗑️ ล้างข้อมูลแล้ว'); setTimeout(()=>goTo('sSplash'),1200);
+  }
+}
+function showToast(msg){
+  const el=document.getElementById('globalToast');
+  el.textContent=msg; el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(20px)'; },2400);
+}
+
+
+// ── LANGUAGE SELECTOR (Splash) ──
+let appLang = 'th';
+function selectSplashLang(btn){
+  document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  appLang = btn.dataset.lang;
+  showToast({th:'🇹🇭 เลือกภาษาไทย',en:'🇬🇧 Language: English',mm:'🇲🇲 ဘာသာ: မြန်မာ',zh:'🇨🇳 语言：中文',lo:'🇱🇦 ພາສາ: ລາວ'}[appLang]||'✅');
+}
+
+// ── COUNTRY CHANGE ──
+function onCountryChange(){
+  const v = document.getElementById('f_country').value;
+  const isTH = v==='TH';
+  document.getElementById('f_province_th').style.display = isTH?'':'none';
+  document.getElementById('f_province_other').style.display = isTH?'none':'';
+  validateStep1();
+}
+
+// ── TREATMENT RIGHTS ──
+let selectedRights = '';
+function selectRights(el){
+  document.querySelectorAll('.rights-item').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+  selectedRights = el.dataset.v;
+}
+
+// ── DISEASE DURATION ──
+const DUR_OPTIONS = ['< 1 ปี','1-3 ปี','3-5 ปี','5-10 ปี','> 10 ปี'];
+function renderDiseaseDur(){
+  const diseases = [];
+  document.querySelectorAll('#diseaseChips .chip.on').forEach(el=>{
+    diseases.push(el.textContent.trim());
+  });
+  const block = document.getElementById('diseaseDurBlock');
+  const list = document.getElementById('diseaseDurList');
+  if(!diseases.length){ block.classList.remove('on'); return; }
+  block.classList.add('on');
+  list.innerHTML = diseases.map((d,i)=>`
+    <div style="margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:5px">${d}</div>
+      <div class="disease-dur-grid" id="dur_${i}">
+        ${DUR_OPTIONS.map((opt,j)=>`<div class="dur-chip${j===0?' on':''}" onclick="toggleDurChip(this,'dur_${i}')">${opt}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function toggleDurChip(el, groupId){
+  document.querySelectorAll('#'+groupId+' .dur-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+// patch toggleChip to also render duration
+const _origToggleChip = toggleChip;
+toggleChip = function(el){
+  _origToggleChip(el);
+  if(el.closest('#diseaseChips')) renderDiseaseDur();
+};
+
+// ── SAVE: country, province, ethnicity, rights, disease_duration ──
+const _origSaveOnboarding = saveOnboarding;
+saveOnboarding = function(){
+  // patch profile before original save
+  const origSave = saveProfile2;
+  saveProfile2 = function(p){
+    p.country = document.getElementById('f_country')?.value||'TH';
+    const isTH = p.country==='TH';
+    p.province = isTH
+      ? document.getElementById('f_province_th')?.value||''
+      : document.getElementById('f_province_other')?.value||'';
+    p.ethnicity = document.getElementById('f_ethnicity')?.value||'';
+    p.treatment_rights = selectedRights;
+    // disease durations
+    const durs = {};
+    document.querySelectorAll('#diseaseDurList > div').forEach((row,i)=>{
+      const dName = row.querySelector('div')?.textContent?.trim();
+      const sel = row.querySelector('.dur-chip.on')?.textContent?.trim();
+      if(dName&&sel) durs[dName]=sel;
+    });
+    p.disease_duration = durs;
+    origSave(p);
+    saveProfile2 = origSave;
+  };
+  _origSaveOnboarding();
+};
+
+// ── LINE CONNECT (Onboarding Step 4) ──
+function ob4ConnectLine(){
+  showToast('💚 กำลังเปิด LINE...');
+  setTimeout(()=> ob4SimConnect(), 1500);
+}
+function ob4SimConnect(){
+  const uid='U'+Math.random().toString(36).substr(2,16).toUpperCase();
+  localStorage.setItem('mt_line_uid', uid);
+  const badge=document.getElementById('ob4LineStatus');
+  if(badge){ badge.textContent='✅ เชื่อมแล้ว'; badge.style.cssText='font-size:10px;font-weight:700;background:#0A9C7A;color:#fff;padding:3px 9px;border-radius:10px;border:1px solid #0A9C7A'; }
+  const btn=document.getElementById('ob4LineBtn');
+  if(btn){ btn.innerHTML='✅ เชื่อม LINE แล้วครับ'; btn.style.background='#077A5F'; }
+  const tgLine=document.getElementById('tg_line');
+  if(tgLine) tgLine.classList.add('on');
+  const sub=document.getElementById('tg_line_sub');
+  if(sub) sub.textContent='เชื่อมแล้ว · หมอน้อย LINE OA';
+  showToast('✅ เชื่อม LINE สำเร็จ!');
+}
+
+// ── INIT ──
+(function(){
+  const p=loadProfile();
+  if(p&&p.name){
+    // returning user → show splash with login option
+    document.querySelector('.btn-secondary').textContent=`👤 เข้าสู่ระบบ (${p.name})`;
+  }
+  initOb();
+})();
+document.addEventListener("DOMContentLoaded",function(){syncSplashLang();});
+</script>
+</body>
+</html>
