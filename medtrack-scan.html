@@ -1523,7 +1523,23 @@ function showSuccessScreen(){
   const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
   const maxDays=Math.max(...meds.map(m=>parseInt(m.total_days)||0),0);
   const payload={patient_id:'demo',start_date:new Date().toISOString().split('T')[0],meal_times:meals,medications:meds,bag_count:photoQueue.length,photos:medPhotos};
-  console.log('[MedTrack] POST /api/v1/medications/confirm',JSON.stringify(payload,null,2));
+
+  // ── บันทึกยาลง localStorage ให้ Home อ่านได้ ──
+  const savedMeds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
+  const newMeds = meds.map(m=>({
+    ...m,
+    id: 'med_'+Date.now()+'_'+Math.random().toString(36).substr(2,5),
+    savedAt: new Date().toISOString(),
+    meals: meals,
+    is_active: true,
+  }));
+  // รวมกับยาเดิม (ถ้ามี) ไม่ลบยาเก่า
+  const allMeds = [...newMeds, ...savedMeds];
+  localStorage.setItem('mt_medications', JSON.stringify(allMeds));
+  // sync เวลาอาหารไปด้วย
+  const settings = JSON.parse(localStorage.getItem('mt_settings')||'{}');
+  settings.meals = {breakfast:meals.breakfast, lunch:meals.lunch, dinner:meals.dinner, bedtime:meals.bedtime||'21:00'};
+  localStorage.setItem('mt_settings', JSON.stringify(settings));
   document.getElementById('mainCnt').style.display='none';
   document.getElementById('succ').classList.add('on');
   document.getElementById('succ').style.display='flex';
