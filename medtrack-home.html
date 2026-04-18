@@ -1302,6 +1302,140 @@ function refreshLangModal(){
   });
 }
 
+
+// ── โหลดยาจาก localStorage ──
+function loadMedsFromStorage(){
+  const meds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
+  const settings = JSON.parse(localStorage.getItem('mt_settings')||'{}');
+  const meals = settings.meals || {breakfast:'07:00',lunch:'12:00',dinner:'18:00',bedtime:'21:00'};
+  const activeMeds = meds.filter(m=>m.is_active!==false);
+
+  if(!activeMeds.length) return;
+
+  // อัปเดต sheet-medicine
+  const sheetList = document.querySelector('#sheet-medicine .sheet-list');
+  if(!sheetList) return;
+
+  // สร้าง meal schedule จากยาจริง
+  const mealMap = {breakfast:'เช้า',lunch:'กลางวัน',dinner:'เย็น',bedtime:'ก่อนนอน',all:'ทุกมื้อ'};
+  const schedule = {breakfast:[],lunch:[],dinner:[],bedtime:[],interval:[],prn:[]};
+
+  activeMeds.forEach(med=>{
+    if(med.is_prn || med.timing_type==='prn'){
+      schedule.prn.push(med);
+    } else if(med.timing_type==='interval'){
+      schedule.interval.push(med);
+    } else {
+      const anchor = med.meal_anchor||'all';
+      if(anchor==='all'){
+        if(med.frequency_per_day>=3){ schedule.breakfast.push(med);schedule.lunch.push(med);schedule.dinner.push(med); }
+        else if(med.frequency_per_day===2){ schedule.breakfast.push(med);schedule.dinner.push(med); }
+        else { schedule.breakfast.push(med); }
+      } else {
+        if(schedule[anchor]) schedule[anchor].push(med);
+      }
+    }
+  });
+
+  const mealIcons = {breakfast:'🌅',lunch:'☀️',dinner:'🌆',bedtime:'🌙'};
+  const mealLabels = {breakfast:`เช้า — ${meals.breakfast} น.`,lunch:`เที่ยง — ${meals.lunch} น.`,dinner:`เย็น — ${meals.dinner} น.`,bedtime:`ก่อนนอน — ${meals.bedtime||'21:00'} น.`};
+  const now = new Date();
+  const curHour = now.getHours()*60+now.getMinutes();
+
+  function toMin(t){ const[h,m]=(t||'00:00').split(':').map(Number); return h*60+m; }
+
+  // สร้าง HTML แต่ละมื้อ
+  let mealHTML = '<div class="sheet-sec">วันนี้</div>';
+  ['breakfast','lunch','dinner','bedtime'].forEach(meal=>{
+    if(!schedule[meal].length) return;
+    const mealMin = toMin(meals[meal]||'07:00');
+    const isPast = curHour > mealMin+30;
+    const status = isPast
+      ? '<span style="color:#059669;font-size:11px">✓ กินแล้ว</span>'
+      : curHour > mealMin-30
+        ? '<span style="color:#F59E0B;font-size:11px">⏰ รอ</span>'
+        : '';
+    const drugNames = schedule[meal].map(m=>`${m.drug_name} ${m.dose_mg||''}${m.dose_unit||'mg'}`).join(' · ');
+    mealHTML += `
+      <div class="sheet-item" onclick="switchSheet('confirm')">
+        <div class="sheet-item-ico" style="background:#F0FFF4;font-size:18px">${mealIcons[meal]}</div>
+        <div class="sheet-item-info">
+          <div class="sheet-item-title">${mealLabels[meal]} ${status}</div>
+          <div class="sheet-item-sub">${drugNames}</div>
+        </div>
+        ${!isPast?'<div class="sheet-item-arrow">›</div>':''}
+      </div>`;
+  });
+
+  // PRN
+  if(schedule.prn.length){
+    schedule.prn.forEach(med=>{
+      mealHTML += `
+        <div class="sheet-item">
+          <div class="sheet-item-ico" style="background:#FFFBEB;font-size:18px">💊</div>
+          <div class="sheet-item-info">
+            <div class="sheet-item-title">${med.drug_name} <span style="background:#F59E0B;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">PRN</span></div>
+            <div class="sheet-item-sub">กินเมื่อมีอาการ · ทุก ${med.prn_min_interval_hours||4} ชม.</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // Interval
+  if(schedule.interval.length){
+    schedule.interval.forEach(med=>{
+      mealHTML += `
+        <div class="sheet-item">
+          <div class="sheet-item-ico" style="background:#EFF6FF;font-size:18px">⏱️</div>
+          <div class="sheet-item-info">
+            <div class="sheet-item-title">${med.drug_name} <span style="background:#1D4ED8;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">ทุก ${med.interval_hours} ชม.</span></div>
+            <div class="sheet-item-sub">${med.dose_mg||''} ${med.dose_unit||'mg'}</div>
+          </div>
+        </div>`;
+    });
+  }
+
+  // จัดการยา
+  mealHTML += `
+    <div class="sheet-sec">จัดการยา</div>
+    <div class="sheet-item" onclick="navTo('medtrack-scan.html')">
+      <div class="sheet-item-ico ic-teal" style="border-radius:13px">➕</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title">เพิ่มยาใหม่</div>
+        <div class="sheet-item-sub">สแกนซองหรือกรอกด้วยมือ</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>
+    <div class="sheet-item" onclick="clearAllMeds()">
+      <div class="sheet-item-ico" style="background:#FEF2F2;font-size:18px">🗑️</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title" style="color:#EF4444">ล้างรายการยาทั้งหมด</div>
+        <div class="sheet-item-sub">เริ่มต้นใหม่</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>`;
+
+  sheetList.innerHTML = mealHTML;
+
+  // อัปเดต header
+  const totalMeals = ['breakfast','lunch','dinner','bedtime'].filter(m=>schedule[m].length).length;
+  const doneMeals = ['breakfast','lunch','dinner','bedtime'].filter(meal=>{
+    if(!schedule[meal].length) return false;
+    return curHour > toMin(meals[meal]||'07:00')+30;
+  }).length;
+  const subEl = document.querySelector('#sheet-medicine .sheet-header-sub');
+  if(subEl) subEl.textContent = `วันนี้ ${doneMeals} / ${totalMeals} มื้อ`;
+}
+
+function clearAllMeds(){
+  if(confirm('ล้างรายการยาทั้งหมด?')){
+    localStorage.removeItem('mt_medications');
+    loadMedsFromStorage();
+    closeSheet();
+    toast('🗑️ ล้างรายการยาแล้ว');
+  }
+}
+
 function closeSheet() {
   document.getElementById('overlay').classList.remove('on');
   document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
@@ -2447,7 +2581,8 @@ function saveHomeModal(name){
       ✅ ไม่มีการส่งไปยัง server โดยไม่ได้รับอนุญาต<br>
       ✅ ลบข้อมูลได้ทุกเมื่อ
     </div>
-    <button class="modal-save-btn" style="background:#EF4444" onclick="clearAllData()">🗑️ ลบข้อมูลทั้งหมด</button>
+    <button class="modal-save-btn" style="background:#EF4444;margin-bottom:8px" onclick="clearAllData()">🗑️ ลบข้อมูลทั้งหมด (เริ่มใหม่)</button>
+    <button class="modal-save-btn" style="background:#F59E0B" onclick="clearAllMeds();closeHomeModal()">💊 ล้างรายการยาเท่านั้น</button>
     <button class="modal-save-btn" style="margin-top:8px" onclick="closeHomeModal()">ปิด</button>
   </div>
 
