@@ -1240,7 +1240,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 <script>
 
 // ── MedTrack Config ──
-const MEDTRACK_BACKEND = 'https://medtrack-backend-production-9bfb.up.railway.app';
+const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
 const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
 
 let currentSheet = null;
@@ -1578,30 +1578,57 @@ function apfDemo(){
 async function apfAnalyze(){
   if(!apfB64) return;
   const btn=document.getElementById('apfAnalyzeBtn');
+  const resetBtn=()=>{ btn.textContent='🤖 วิเคราะห์ใบนัด'; btn.disabled=false; btn.style.opacity='1'; };
   btn.textContent='⏳ กำลังวิเคราะห์...'; btn.disabled=true;
-  const AK=localStorage.getItem('mt_api_key')||'';
-  let result;
-  if(AK){
-    try{
-      const prompt='วิเคราะห์ใบนัดแพทย์ในภาพ ตอบเป็น JSON เท่านั้น: {"doctor_name":"","department":"","hospital_name":"","building":"","date_str":"","date_iso":"YYYY-MM-DD","time_str":"","hn":"","patient_name":"","instructions":[],"note":"","confidence":0.95}';
-      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:apfMime,data:apfB64}},
-          {type:'text',text:prompt}
-        ]}]})});
-      const data=await res.json();
-      result=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
-    }catch(e){ result=apfDemoData(); }
-  } else {
-    await new Promise(r=>setTimeout(r,1500));
-    result=apfDemoData();
+
+  console.log('[apfAnalyze] calling backend:', MEDTRACK_BACKEND + '/api/scan-appointment');
+
+  let res, data;
+  try{
+    res = await fetch(MEDTRACK_BACKEND + '/api/scan-appointment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image_base64: apfB64, media_type: apfMime })
+    });
+  }catch(e){
+    console.error('[apfAnalyze] network error:', e);
+    alert('❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้\n\n'+(e.message||e)+'\n\nตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+    resetBtn(); return;
   }
-  apfData=result;
+
+  console.log('[apfAnalyze] status:', res.status);
+
+  try{ data = await res.json(); }
+  catch(e){
+    console.error('[apfAnalyze] parse error:', e);
+    alert('❌ เซิร์ฟเวอร์ตอบในรูปแบบที่อ่านไม่ได้'); resetBtn(); return;
+  }
+
+  if(!res.ok || !data.ok){
+    console.error('[apfAnalyze] backend error:', data);
+    const hint = res.status===429 ? '\n\n⏱️ ใช้งานเกินโควต้า รอสักครู่แล้วลองใหม่'
+               : res.status===400 ? '\n\n📷 รูปอาจใหญ่เกินไป หรือรูปแบบไม่รองรับ'
+               : res.status===502 ? '\n\n🤖 AI ตอบในรูปแบบที่อ่านไม่ได้ ลองถ่ายใหม่'
+               : '';
+    alert(`❌ วิเคราะห์ใบนัดไม่สำเร็จ (${res.status})${hint}\n\n${data.message||data.error||'ไม่ทราบสาเหตุ'}`);
+    resetBtn(); return;
+  }
+
+  const result = data.data || {};
+  console.log('[apfAnalyze] result:', result);
+
+  // Guard: AI ไม่สามารถอ่านข้อมูลจากภาพได้เลย
+  const hasAnyData = !!(result.doctor_name||result.hospital_name||result.date_str||result.time_str||result.patient_name);
+  if(!hasAnyData){
+    alert('⚠️ AI อ่านข้อมูลจากใบนัดไม่ได้\n\nอาจเป็นเพราะ:\n• รูปเบลอหรือมืดเกินไป\n• ถ่ายไม่ตรงมุม\n• ไม่ใช่ใบนัดแพทย์\n\nลองถ่ายใหม่อีกครั้ง');
+    resetBtn(); return;
+  }
+
+  apfData = result;
   apfRenderResult(result);
   apfUpdateLineMsg(result);
   apfGoStep(2);
-  btn.textContent='🤖 วิเคราะห์ใบนัด'; btn.disabled=false; btn.style.opacity='1';
+  resetBtn();
 }
 
 function apfDemoData(){
@@ -1826,23 +1853,30 @@ function hnTyping(on){
   document.getElementById('hnStatus').textContent=on?'✍️ กำลังคิด...':'🟢 พร้อมตอบคำถาม';
 }
 async function hnCall(msg){
-  const AK=localStorage.getItem('mt_api_key')||localStorage.getItem('mk')||'';
-  if(!AK){
-    await new Promise(r=>setTimeout(r,800));
-    hnTyping(false);
-    const demos={'ยาของฉัน':'มียา 3 ตัวในตารางครับ 💊<br>• Metformin 500mg — หลังอาหาร<br>• Amlodipine 5mg — เช้า<br>• Atorvastatin 20mg — ก่อนนอน','กินยาตอนไหน':'Metformin กินพร้อมหรือหลังอาหารครับ จะลดอาการคลื่นไส้ได้ 🍽️','อาหารเบาหวาน':'แนะนำผักใบเขียว ปลา เต้าหู้ครับ ✅<br>หลีกเลี่ยงของหวาน น้ำอัดลม ❌','ยาที่ฉันแพ้':'บันทึกว่าแพ้ Penicillin ครับ ⚠️<br>แจ้งแพทย์ทุกครั้งนะครับ'};
-    const key=Object.keys(demos).find(k=>msg.includes(k));
-    const reply=key?demos[key]:'ขอโทษครับ ยังไม่ได้ตั้งค่า API Key<br>กรุณาตั้งค่าที่ ⚙️ ตั้งค่า → API Key ครับ 🔑';
-    hnAddMsg('bot',reply); hnHist.push({role:'assistant',content:reply}); return;
-  }
   try{
     const p=(() =>{try{return JSON.parse(localStorage.getItem('mt_user_profile')||'{}')}catch(e){return{}}})();
     const sys=`คุณคือหมอน้อย AI ผู้ช่วยด้านยาในแอป MedTrack พูดภาษาไทย กระชับ 2-4 ประโยค ข้อมูลผู้ใช้: ${p.name||''}${p.diseases?.join(',')?' โรค:'+p.diseases.join(','):''}`;
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:sys,messages:hnHist.slice(-8)})});
+    const res=await fetch(MEDTRACK_BACKEND+'/api/chat-hornoi',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ system: sys, messages: hnHist.slice(-8) })
+    });
     const data=await res.json();
-    const reply=data.content?.[0]?.text||'ขอโทษครับ ไม่สามารถตอบได้';
-    hnTyping(false); hnAddMsg('bot',reply.split('\n').join('<br>')); hnHist.push({role:'assistant',content:reply});
-  }catch(e){ hnTyping(false); hnAddMsg('bot','เกิดข้อผิดพลาดครับ กรุณาลองใหม่ 🙏'); }
+    if(!res.ok || !data.ok){
+      console.error('[hnCall] backend error:',data);
+      hnTyping(false);
+      hnAddMsg('bot','ขอโทษครับ เชื่อมต่อ AI ไม่ได้ 🙏<br>'+(data.message||'ลองใหม่อีกครั้ง'));
+      return;
+    }
+    const reply=data.reply||'ขอโทษครับ ไม่สามารถตอบได้';
+    hnTyping(false);
+    hnAddMsg('bot',reply.split('\n').join('<br>'));
+    hnHist.push({role:'assistant',content:reply});
+  }catch(e){
+    console.error('[hnCall] network error:',e);
+    hnTyping(false);
+    hnAddMsg('bot','เกิดข้อผิดพลาดครับ กรุณาลองใหม่ 🙏');
+  }
 }
 
 

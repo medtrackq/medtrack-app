@@ -653,7 +653,7 @@ label.upbtn{cursor:pointer}
 <script>
 
 // ── MedTrack Config ──
-const MEDTRACK_BACKEND = 'https://medtrack-backend-production-9bfb.up.railway.app';
+const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
 const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
 
 /* ═══════════════════════════
@@ -1200,63 +1200,19 @@ function updateProgBar(done,total){
 }
 
 async function callAPI(b64,mime){
-  const prompt=`You are a Thai pharmacy AI. Read this medication bag/label carefully.
-Reply ONLY valid JSON (no backticks, no explanation):
-{
-  "drug_name": "ชื่อยาภาษาไทยหรืออังกฤษ",
-  "dose_mg": null,
-  "dose_unit": "mg",
-  "tablets_per_dose": 1,
-  "frequency_per_day": 1,
-  "timing_type": "meal_based|interval|prn|tapering|patch|cyclical",
-  "meal_relation": "before|with|after|empty_stomach|bedtime|null",
-  "meal_anchor": "breakfast|lunch|dinner|all|null",
-  "offset_minutes": 0,
-  "interval_hours": null,
-  "first_dose_time": null,
-  "skip_days": 0,
-  "timing_label": "คำอธิบายเวลากิน",
-  "total_tablets": null,
-  "total_days": null,
-  "special_instructions": null,
-  "doctor_name": null,
-  "hospital_name": null,
-  "drug_type": "antibiotic|chronic|prn|steroid|antifungal|antiviral|vitamin|other",
-  "must_complete_course": false,
-  "must_complete_reason": null,
-  "is_continuous": false,
-  "is_prn": false,
-  "prn_min_interval_hours": null,
-  "prn_max_per_day": null,
-  "is_tapering": false,
-  "tapering_instructions": null,
-  "is_patch": false,
-  "patch_change_hours": null,
-  "course_completion_warning": null,
-  "confidence": 0.95
-}
-
-Rules:
-- drug_type antibiotic/antifungal/antiviral/antituberculosis = must_complete_course:true
-- Antibiotics (Amoxicillin,Azithromycin,Cloxacillin,Doxycycline,Metronidazole,Augmentin etc) = must_complete_course:true, course_completion_warning:"กินให้ครบคอร์ส ห้ามหยุดเองแม้อาการดีขึ้น"
-- Chronic drugs (Metformin,Amlodipine,Atorvastatin,Losartan,Aspirin etc) = is_continuous:true, must_complete_course:false
-- Pain/fever/allergy relief = is_prn:true, timing_type:prn
-- Steroids (Prednisolone,Dexamethasone) = is_tapering:true (if tapering instructions found)
-- Patch medications = is_patch:true, patch_change_hours:24 or 72
-- interval_hours: fill if label says every X hours (Q4H=4, Q6H=6, Q8H=8, Q12H=12)
-- first_dose_time: suggest based on timing (morning meds=07:00, evening=18:00, bedtime=21:00)
-- IMPORTANT total_days calculation:
-  * Normal (skip_days=0): total_days = total_tablets / (frequency_per_day * tablets_per_dose)
-  * วันเว้นวัน (skip_days=1, 3 times/week): total_days = (total_tablets / tablets_per_dose) / doses_per_week * 7
-    Example: 60 tablets, 4 tabs/dose, วันเว้นวัน (จ.พ.ศ. = 3 days/week) = (60/4)/3*7 = 35 days
-  * ทุก 2 วัน (skip_days=2): total_days = (total_tablets / tablets_per_dose) * 3
-  * Always calculate actual calendar days, not just dose count
-- Read Thai text carefully: วันละ=per day, ครั้ง=time, เม็ด=tablet, ก่อนอาหาร=before meal, หลังอาหาร=after meal, พร้อมอาหาร=with meal, ก่อนนอน=bedtime
-`;
-  const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mime,data:b64}},{type:'text',text:prompt}]}]})});
-  if(!res.ok){const er=await res.json().catch(()=>({}));throw new Error(er.error?.message||`HTTP ${res.status}`);}
-  const j=await res.json();
-  return JSON.parse(j.content[0]?.text.replace(/```json|```/g,'').trim()||'{}');
+  // ส่งรูปไปให้ backend วิเคราะห์ — backend มี prompt ของตัวเองสำหรับซองยา
+  const res = await fetch(MEDTRACK_BACKEND + '/api/scan-medicine', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ image_base64: b64, media_type: mime })
+  });
+  if(!res.ok){
+    const er = await res.json().catch(()=>({}));
+    throw new Error(er.message || er.error || `HTTP ${res.status}`);
+  }
+  const j = await res.json();
+  if(!j.ok || !j.data) throw new Error('Invalid backend response');
+  return j.data;
 }
 
 /* ═══════════════════════════
@@ -1707,47 +1663,24 @@ function showApptPreview(dataUrl) {
 
 // ── ANALYZE ──
 async function analyzeAppt() {
-  const AK = localStorage.getItem('mt_api_key') || '';
+  if(!apptPending) return;
   let result;
-  if (AK && apptPending) {
-    try {
-      const prompt = `วิเคราะห์ใบนัดแพทย์ในภาพนี้ แล้วตอบกลับเป็น JSON เท่านั้น ไม่มีข้อความอื่น:
-{
-  "doctor_name": "ชื่อแพทย์",
-  "department": "ชื่อแผนก/คลินิก",
-  "hospital_name": "ชื่อโรงพยาบาล",
-  "building": "อาคาร/ห้อง (ถ้ามี)",
-  "date_str": "วันที่นัดแบบข้อความ",
-  "date_iso": "YYYY-MM-DD",
-  "time_str": "เวลา เช่น 09:00 น.",
-  "hn": "หมายเลข HN (ถ้ามี)",
-  "instructions": ["คำแนะนำ 1", "คำแนะนำ 2"],
-  "note": "หมายเหตุอื่นๆ",
-  "confidence": 0.95
-}`;
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:800,
-          messages:[{role:'user',content:[
-            {type:'image',source:{type:'base64',media_type:apptPending.mime,data:apptPending.base64}},
-            {type:'text',text:prompt}
-          ]}]
-        })
-      });
-      const data = await res.json();
-      const txt = data.content?.[0]?.text || '';
-      const clean = txt.replace(/```json|```/g,'').trim();
-      result = JSON.parse(clean);
-    } catch(e) {
-      result = { ...DEMO_APPT, _error: true };
-    }
-  } else {
-    await new Promise(r => setTimeout(r, 1800));
-    result = DEMO_APPT;
+  try {
+    const res = await fetch(MEDTRACK_BACKEND + '/api/scan-appointment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image_base64: apptPending.base64, media_type: apptPending.mime })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+    result = data.data;
+  } catch(e) {
+    console.error('[analyzeAppt] error:', e);
+    document.getElementById('apptAnalyzingRow').style.display = 'none';
+    alert('❌ วิเคราะห์ใบนัดไม่สำเร็จ\n\n'+(e.message||e)+'\n\nลองใหม่อีกครั้ง');
+    return;
   }
-  apptPending = apptPending ? { ...apptPending, result } : { result };
+  apptPending = { ...apptPending, result };
   document.getElementById('apptAnalyzingRow').style.display = 'none';
   document.getElementById('apptConfirmBtn').style.display = 'block';
   renderApptPreviewResult(result);
@@ -2023,35 +1956,37 @@ function apptDemo2(){
 async function apptAnalyze2(){
   if(!apptImgB64) return;
   const btn = document.getElementById('apptAnalyzeBtn');
+  const resetBtn=()=>{ btn.textContent='🤖 วิเคราะห์ใบนัด'; btn.disabled=false; btn.style.opacity='1'; };
   btn.textContent = '⏳ กำลังวิเคราะห์...'; btn.disabled = true;
 
-  const AK = localStorage.getItem('mt_api_key')||'';
   let result;
-  if(AK){
-    try{
-      const prompt=`วิเคราะห์ใบนัดแพทย์ในภาพ ตอบเป็น JSON เท่านั้น:
-{"doctor_name":"ชื่อแพทย์","department":"คลินิก/แผนก","hospital_name":"โรงพยาบาล","building":"อาคาร/ห้อง","date_str":"วันที่แบบข้อความ","date_iso":"YYYY-MM-DD","time_str":"09:00 น.","hn":"HN ถ้ามี","patient_name":"ชื่อผู้ป่วย","instructions":["คำแนะนำ1","คำแนะนำ2"],"note":"หมายเหตุ","confidence":0.95}`;
-      const res = await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':AK,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:[
-          {type:'image',source:{type:'base64',media_type:apptImgMime,data:apptImgB64}},
-          {type:'text',text:prompt}
-        ]}]})
-      });
-      const data=await res.json();
-      result=JSON.parse((data.content?.[0]?.text||'').replace(/```json|```/g,'').trim());
-    }catch(e){ result=getDemoAppt(); }
-  } else {
-    await new Promise(r=>setTimeout(r,1600));
-    result = getDemoAppt();
+  try{
+    const res = await fetch(MEDTRACK_BACKEND + '/api/scan-appointment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image_base64: apptImgB64, media_type: apptImgMime })
+    });
+    const data = await res.json();
+    if(!res.ok || !data.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+    result = data.data;
+  }catch(e){
+    console.error('[apptAnalyze2] error:',e);
+    alert('❌ วิเคราะห์ใบนัดไม่สำเร็จ\n\n'+(e.message||e)+'\n\nลองใหม่อีกครั้ง');
+    resetBtn(); return;
+  }
+
+  // Guard: ข้อมูลว่างทั้งหมด
+  const hasAnyData = !!(result.doctor_name||result.hospital_name||result.date_str||result.time_str||result.patient_name);
+  if(!hasAnyData){
+    alert('⚠️ AI อ่านข้อมูลจากใบนัดไม่ได้\n\nลองถ่ายใหม่ให้ชัดขึ้น');
+    resetBtn(); return;
   }
 
   apptData2 = result;
   renderApptResult(result);
   updateLinePreview(result);
   apptGoStep(2);
-  btn.textContent='🤖 วิเคราะห์ใบนัด'; btn.disabled=false; btn.style.opacity='1';
+  resetBtn();
 }
 
 function getDemoAppt(){
