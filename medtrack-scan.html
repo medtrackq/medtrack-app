@@ -788,7 +788,10 @@ function setLang(l){
   lang=l;localStorage.setItem('mtl',l);
   document.documentElement.lang=l==='zh'?'zh-Hans':l;
   if(l==='zh'){const e=document.getElementById('zhf');if(!e){const k=document.createElement('link');k.id='zhf';k.rel='stylesheet';k.href='https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&display=swap';document.head.appendChild(k);}}
-  ['TH','EN','ZH'].forEach(c=>document.getElementById('b'+c).classList.toggle('on',c.toLowerCase()===l));
+  ['TH','EN','ZH'].forEach(c=>{
+    const btn = document.getElementById('b'+c);
+    if(btn) btn.classList.toggle('on', c.toLowerCase()===l);
+  });
   const tl=L[l];
   IDS.forEach(id=>{const el=document.getElementById(id);if(el&&tl[id])el.textContent=typeof tl[id]==='function'?tl[id](0):tl[id];});
   updateAnalyzeBtn();updateBadge();
@@ -1139,49 +1142,45 @@ async function analyzeAll(){
     renderQueue();renderProgItems();
     updateProgBar(i,photoQueue.length);
     try{
-      let result;
-      if(AK){
-        // มี API Key — เรียก Claude API จริง พร้อม timeout 30 วินาที
-        const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000));
-        result = await Promise.race([callAPI(photoQueue[i].base64,photoQueue[i].mime), timeoutPromise]);
-      } else {
-        // ไม่มี API Key — ใช้ Demo OCR
-        await wait(800+Math.random()*400);
-        result = DEMO_OCR[i%DEMO_OCR.length];
-      }
+      // เรียก backend — มี timeout 30 วินาที
+      const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000));
+      const result = await Promise.race([callAPI(photoQueue[i].base64,photoQueue[i].mime), timeoutPromise]);
       photoQueue[i].result=result;photoQueue[i].status='done';
       meds.push(fixTotalDays(result));
     }catch(e){
-      console.error('Analyze error:',e);
+      console.error('[analyzeAll] error on photo',i,':',e);
       photoQueue[i].status='error';
       photoQueue[i].result=null;
-      // ถ้า error ให้ใช้ demo แทน ไม่ค้าง
-      if(!AK){
-        const fallback = DEMO_OCR[i%DEMO_OCR.length];
-        photoQueue[i].result=fallback;
-        photoQueue[i].status='done';
-        meds.push(fixTotalDays(fallback));
-      }
+      // ไม่ fallback เป็น demo — แสดง error ให้ผู้ใช้รู้
     }
     renderQueue();renderProgItems();
   }
   updateProgBar(photoQueue.length,photoQueue.length);
 
-  // show results
-  if(meds.length){
-    renderMedList();
-    renderDcards();
-    rebundleIfReady();
-    renderRefillCard();
-    renderDoctor();
-    document.getElementById('result').classList.add('on');
-    document.getElementById('medlistSection').style.display='block';
-    document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
-    goStep(3);
-    // check interval
-    const hasInterval=meds.some(m=>m.timing_type==='interval');
-    document.getElementById('iprompt').style.display=hasInterval?'block':'none';
+  // ถ้าไม่มีผลลัพธ์เลย — แจ้งผู้ใช้
+  if(!meds.length){
+    alert('❌ วิเคราะห์ไม่สำเร็จทั้งหมด\n\nอาจเป็นเพราะ:\n• เซิร์ฟเวอร์มีปัญหา\n• รูปไม่ชัด\n• อินเทอร์เน็ตไม่เสถียร\n\nลองใหม่อีกครั้ง');
+    document.getElementById('btnAnalyze').disabled=false;
+    document.getElementById('btnAddPhoto').disabled=false;
+    return;
   }
+
+  // show results
+  renderMedList();
+  renderDcards();
+  rebundleIfReady();
+  renderRefillCard();
+  renderDoctor();
+  document.getElementById('result').classList.add('on');
+  const medSec = document.getElementById('medlistSection');
+  if(medSec) medSec.style.display='block';
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
+  goStep(3);
+  // check interval — element อาจไม่มีใน DOM
+  const hasInterval=meds.some(m=>m.timing_type==='interval');
+  const ipEl = document.getElementById('iprompt');
+  if(ipEl) ipEl.style.display = hasInterval ? 'block' : 'none';
+
   document.getElementById('btnAddPhoto').disabled=false;
 }
 
