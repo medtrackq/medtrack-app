@@ -402,13 +402,13 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
     </div>
     <div class="greeting">
-      <div class="greeting-name">สวัสดีครับ คุณสมชาย 👋</div>
-      <div class="greeting-sub">วันนี้กินยาครบแล้ว 2 จาก 4 มื้อ</div>
+      <div class="greeting-name" id="greetingName">สวัสดีครับ 👋</div>
+      <div class="greeting-sub" id="greetingSub">เริ่มต้นวันใหม่ที่ดี</div>
     </div>
-    <div class="streak-row">
-      <div class="streak-pill hi">🔥 กินครบ 5 วันติด</div>
-      <div class="streak-pill">⭐ 320 แต้ม</div>
-      <div class="streak-pill">🏥 นัดหมอ 14 วัน</div>
+    <div class="streak-row" id="streakRow" style="display:none">
+      <div class="streak-pill hi" id="streakDays">🔥 กินครบ 0 วันติด</div>
+      <div class="streak-pill" id="streakPoints">⭐ 0 แต้ม</div>
+      <div class="streak-pill" id="streakAppt">🏥 ยังไม่มีนัด</div>
     </div>
   </div>
 
@@ -429,14 +429,14 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     </div>
   </div>
 
-  <!-- Today card -->
-  <div class="today-card" onclick="openSheet('medicine')">
+  <!-- Today card (shown only if user has medications scheduled) -->
+  <div class="today-card" id="todayCard" style="display:none" onclick="openSheet('medicine')">
     <div class="today-ico">💊</div>
     <div class="today-info">
-      <div class="today-title">มื้อเที่ยง — 12:00 น.</div>
-      <div class="today-sub">Metformin 500mg · Amlodipine 5mg</div>
+      <div class="today-title" id="todayTitle">มื้อต่อไป</div>
+      <div class="today-sub" id="todaySub">ยังไม่มียา</div>
     </div>
-    <div class="today-badge">ยังไม่ได้กิน</div>
+    <div class="today-badge" id="todayBadge">ยังไม่ได้กิน</div>
   </div>
 
   <!-- Scroll content -->
@@ -473,7 +473,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="icon-btn" onclick="openSheet('medicine')">
         <div class="icon-face ic-teal">
           💊
-          <div class="icon-badge">2</div>
+          <div class="icon-badge" id="medicineBadge" style="display:none">0</div>
         </div>
         <div class="icon-lbl">มื้อยา</div>
       </div>
@@ -529,7 +529,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="icon-btn" onclick="openSheet('refills')">
         <div class="icon-face" style="background:linear-gradient(145deg,#f87171,#ef4444);position:relative">
           🔄
-          <div class="icon-badge" id="refillBadge">2</div>
+          <div class="icon-badge" id="refillBadge" style="display:none">0</div>
         </div>
         <div class="icon-lbl">สั่งยา Refill</div>
       </div>
@@ -1455,7 +1455,49 @@ document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('overlay').addEventListener('click', function(e){
     if(e.target === this) closeSheet();
   });
+  // Initialize user data from localStorage
+  initUserData();
 });
+
+// ────────────────────────────────────────────────────────
+// initUserData() — load profile + render greeting/stats
+// Replaces hardcoded "สมชาย" mock data with real user data
+// ────────────────────────────────────────────────────────
+function initUserData(){
+  try{
+    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+    const greetEl = document.getElementById('greetingName');
+    const subEl = document.getElementById('greetingSub');
+    
+    if(profile && profile.name){
+      // Returning user — show personalized greeting
+      const firstName = profile.name.split(' ').slice(-1)[0] || profile.name;
+      if(greetEl) greetEl.textContent = `สวัสดีครับ คุณ${firstName} 👋`;
+      if(subEl) subEl.textContent = 'วันนี้เป็นยังไงบ้างครับ?';
+    } else {
+      // New user — generic greeting
+      if(greetEl) greetEl.textContent = 'สวัสดีครับ 👋';
+      if(subEl) subEl.textContent = 'ยินดีต้อนรับสู่ MedTrack';
+    }
+    
+    // Show stats only if user has activity (currently always hidden for new users)
+    const meds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
+    const streakRow = document.getElementById('streakRow');
+    if(streakRow && meds.length > 0){
+      streakRow.style.display = '';
+      // TODO: calculate real streak/points from push_logs in Session 6
+    }
+    
+    // Show today card only if user has medications scheduled
+    const todayCard = document.getElementById('todayCard');
+    if(todayCard && meds.length > 0){
+      // TODO: render real next meal in Session 6
+      // For now keep hidden until backend integration
+    }
+  } catch(e) {
+    console.warn('initUserData error:', e);
+  }
+}
 
 // overlay click — ปิด sheet เฉพาะเมื่อกดนอก sheet
 document.getElementById('overlay').addEventListener('click', function(e){
