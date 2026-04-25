@@ -2178,9 +2178,8 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 
 // ────────────────────────────────────────────────────────
-// saveToBackend(medsList) — Session 5 addition
-// POST scanned medications to Railway backend so the
-// scheduler can send LINE push reminders.
+// saveToBackend(medsList) — Session 5 addition (v2 — fixed)
+// POST scanned medications + schedules to Railway backend.
 // MVP: user_id hardcoded to 2 (Apidej test user).
 // Future: replace with line_user_id mapping.
 // ────────────────────────────────────────────────────────
@@ -2190,37 +2189,83 @@ async function saveToBackend(medsList) {
   
   console.log('[saveToBackend] Saving ' + medsList.length + ' medications...');
   
+  // Get user meal times to compute reminder_time
+  let userMeals = null;
+  try {
+    const ures = await fetch(BACKEND + '/api/users/' + USER_ID);
+    const udata = await ures.json();
+    userMeals = {
+      breakfast: udata.user?.breakfast_time || '07:00',
+      lunch: udata.user?.lunch_time || '12:00',
+      dinner: udata.user?.dinner_time || '18:00',
+      bedtime: udata.user?.bedtime || '21:00'
+    };
+    console.log('[saveToBackend] User meal times:', userMeals);
+  } catch(e) {
+    console.warn('[saveToBackend] Could not fetch user meal times, using defaults');
+    userMeals = {breakfast:'07:00', lunch:'12:00', dinner:'18:00', bedtime:'21:00'};
+  }
+  
   for (const m of medsList) {
     try {
+      // Map meal_anchor → meal time
+      const anchor = m.meal_anchor || 'breakfast';
+      const baseMealTime = userMeals[anchor] || '07:00';
+      
+      // Apply offset: before = negative, after = positive, with = 0
+      const relation = m.meal_relation || 'after';
+      let offsetMin = parseInt(m.offset_minutes) || 15;
+      if (relation === 'before') offsetMin = -Math.abs(offsetMin);
+      else if (relation === 'with') offsetMin = 0;
+      else offsetMin = Math.abs(offsetMin);
+      
+      // Calculate reminder_time
+      const [bh, bm] = baseMealTime.split(':').map(Number);
+      const totalMin = bh * 60 + bm + offsetMin;
+      const finalH = Math.floor((totalMin + 1440) % 1440 / 60);
+      const finalM = ((totalMin + 1440) % 1440) % 60;
+      const reminderTime = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
+      
+      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + reminderTime + ' (' + anchor + ' ' + baseMealTime + ' ' + (offsetMin>=0?'+':'') + offsetMin + 'm)');
+      
+      // Build schedule(s) — for now, 1 schedule per medication
+      // (frequency_per_day > 1 needs more complex logic, defer)
+      const schedules = [{
+        reminder_time: reminderTime,
+        meal_anchor: anchor,
+        meal_relation: relation
+      }];
+      
       const body = {
         user_id: USER_ID,
         drug_name: m.drug_name,
-        drug_name_en: m.drug_name_en || m.drug_name,
+        drug_name_en: m.drug_name_en || null,
         dose_mg: parseFloat(m.dose_mg) || 0,
         dose_unit: m.dose_unit || 'mg',
         tablets_per_dose: parseInt(m.tablets_per_dose) || 1,
         frequency_per_day: parseInt(m.frequency_per_day) || 1,
-        timing_type: m.timing_type || 'meal_based',
-        meal_relation: m.meal_relation || 'after',
-        meal_anchor: m.meal_anchor || 'breakfast',
-        offset_minutes: m.offset_minutes != null ? parseInt(m.offset_minutes) : 15,
+        timing_type: 'meal',  // backend expects 'meal' not 'meal_based'
         total_tablets: parseInt(m.total_tablets) || null,
         total_days: parseInt(m.total_days) || null,
         special_instructions: m.special_instructions || null,
         doctor_name: m.doctor_name || null,
         hospital_name: m.hospital_name || null,
-        dispense_date: m.dispense_date || null
+        dispense_date: m.dispense_date || null,
+        schedules: schedules
       };
+      
       const res = await fetch(BACKEND + '/api/medications', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
       });
+      
       if (res.ok) {
         const data = await res.json();
-        console.log('[saveToBackend] OK ' + m.drug_name + ' id=' + (data.medication && data.medication.id));
+        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + (data.medication && data.medication.id) + ' (push at ' + reminderTime + ')');
       } else {
-        console.error('[saveToBackend] FAIL ' + m.drug_name + ' HTTP ' + res.status);
+        const errText = await res.text();
+        console.error('[saveToBackend] ❌ ' + m.drug_name + ' HTTP ' + res.status + ' — ' + errText);
       }
     } catch (e) {
       console.error('[saveToBackend] ERROR ' + m.drug_name + ': ' + e.message);
