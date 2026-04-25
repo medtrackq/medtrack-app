@@ -521,7 +521,7 @@ textarea.field-input{resize:none;min-height:80px}
       </div>
     </div>
 
-    <!-- STEP 4: ผู้ดูแล + LINE -->
+    <!-- STEP 4: LINE Connect -->
     <div class="ob-step" id="obS4">
 
       <!-- LINE Connect Card -->
@@ -560,6 +560,10 @@ textarea.field-input{resize:none;min-height:80px}
         </div>
         <div style="text-align:center;margin-top:6px;font-size:11px;color:var(--t3)">ข้ามได้ — เชื่อมภายหลังที่ตั้งค่าก็ได้</div>
       </div>
+    </div>
+
+    <!-- STEP 5: Caregiver + Notification -->
+    <div class="ob-step" id="obS5">
 
       <!-- Caregiver section -->
       <div class="sec-div">ผู้ดูแล (Caregiver)</div>
@@ -612,8 +616,8 @@ textarea.field-input{resize:none;min-height:80px}
       </div>
     </div>
 
-    <!-- STEP 5: PDPA -->
-    <div class="ob-step" id="obS5">
+    <!-- STEP 6: PDPA -->
+    <div class="ob-step" id="obS6">
       <div style="background:var(--blue3);border:1px solid rgba(37,99,235,.2);border-radius:var(--r2);padding:14px;margin-bottom:16px;font-size:13px;color:var(--blue);line-height:1.6">
         🔒 <b>ความเป็นส่วนตัวของคุณสำคัญมาก</b><br>ข้อมูลสุขภาพของคุณจะถูกเก็บรักษาอย่างปลอดภัย
       </div>
@@ -622,14 +626,14 @@ textarea.field-input{resize:none;min-height:80px}
           <div class="toggle-title">ยอมรับข้อตกลงการใช้งาน</div>
           <div class="toggle-sub">อ่าน <span style="color:var(--teal);cursor:pointer">ข้อตกลงฉบับเต็ม</span></div>
         </div>
-        <button class="toggle" id="pdpa1" onclick="this.classList.toggle('on');validateStep5()"></button>
+        <button class="toggle" id="pdpa1" onclick="this.classList.toggle('on');validateStep6()"></button>
       </div>
       <div class="toggle-row">
         <div class="toggle-info">
           <div class="toggle-title">ยินยอมเก็บข้อมูลสุขภาพ (PDPA)</div>
           <div class="toggle-sub">เพื่อการแจ้งเตือนและตารางยา</div>
         </div>
-        <button class="toggle" id="pdpa2" onclick="this.classList.toggle('on');validateStep5()"></button>
+        <button class="toggle" id="pdpa2" onclick="this.classList.toggle('on');validateStep6()"></button>
       </div>
       <div class="toggle-row">
         <div class="toggle-info">
@@ -1027,11 +1031,12 @@ function loginExisting(){
 
 // ── ONBOARDING STEPS ──
 const OB_STEPS = [
-  {label:'ขั้นตอน 1 จาก 5', title:'ข้อมูลส่วนตัว', sub:'ชื่อ อายุ เพศ และข้อมูลพื้นฐาน'},
-  {label:'ขั้นตอน 2 จาก 5', title:'โรคประจำตัว', sub:'เพื่อให้หมอน้อยดูแลได้ตรงจุด'},
-  {label:'ขั้นตอน 3 จาก 5', title:'เวลามื้ออาหาร', sub:'สำหรับตั้งเวลาแจ้งเตือนกินยา'},
-  {label:'ขั้นตอน 4 จาก 5', title:'ผู้ดูแลและแจ้งเตือน', sub:'คนที่จะช่วยดูแลให้คุณกินยาครบ'},
-  {label:'ขั้นตอน 5 จาก 5', title:'ข้อตกลงและความเป็นส่วนตัว', sub:'PDPA และสิทธิ์การใช้ข้อมูล'},
+  {label:'ขั้นตอน 1 จาก 6', title:'ข้อมูลส่วนตัว', sub:'ชื่อ อายุ เพศ และข้อมูลพื้นฐาน'},
+  {label:'ขั้นตอน 2 จาก 6', title:'โรคประจำตัว', sub:'เพื่อให้หมอน้อยดูแลได้ตรงจุด'},
+  {label:'ขั้นตอน 3 จาก 6', title:'เวลามื้ออาหาร', sub:'สำหรับตั้งเวลาแจ้งเตือนกินยา'},
+  {label:'ขั้นตอน 4 จาก 6', title:'เชื่อม LINE หมอน้อย', sub:'รับแจ้งเตือนกินยาผ่าน LINE'},
+  {label:'ขั้นตอน 5 จาก 6', title:'ผู้ดูแลและแจ้งเตือน', sub:'คนที่จะช่วยดูแลให้คุณกินยาครบ'},
+  {label:'ขั้นตอน 6 จาก 6', title:'ข้อตกลงและความเป็นส่วนตัว', sub:'PDPA และสิทธิ์การใช้ข้อมูล'},
 ];
 let obCurrent = 1;
 let selectedAvatar = '👴';
@@ -1059,18 +1064,18 @@ function updateObUI(){
   // Fix: Use safe text update pattern. Previously, writing to btn.innerHTML
   // destroyed the obNextTxt span element, causing TypeError when subsequent
   // code tried to set .textContent on the now-deleted element.
-  if(obCurrent===5){
+  if(obCurrent===6){
     btn.innerHTML='<span id="obNextTxt">🚀 เริ่มใช้งาน</span>';
   } else {
     btn.innerHTML='<span id="obNextTxt">ถัดไป</span> →';
   }
   if(obCurrent===1) validateStep1();
-  else if(obCurrent===5) validateStep5();
+  else if(obCurrent===6) validateStep6();
   else btn.disabled=false;
 }
 
 function obNext(){
-  if(obCurrent<5){ obCurrent++; updateObUI(); }
+  if(obCurrent<6){ obCurrent++; updateObUI(); }
   else{ saveOnboarding(); }
 }
 function obBack(){ if(obCurrent>1){ obCurrent--; updateObUI(); } }
@@ -1093,7 +1098,7 @@ function validateStep1(){
   const country=document.getElementById('f_country')?.value;
   document.getElementById('obNextBtn').disabled=!(name&&phone&&country);
 }
-function validateStep5(){
+function validateStep6(){
   const p1=document.getElementById('pdpa1')?.classList.contains('on');
   const p2=document.getElementById('pdpa2')?.classList.contains('on');
   document.getElementById('obNextBtn').disabled=!(p1&&p2);
