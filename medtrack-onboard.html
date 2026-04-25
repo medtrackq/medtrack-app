@@ -1056,9 +1056,14 @@ function updateObUI(){
   document.getElementById('obBackBtn').style.display=obCurrent>1?'flex':'none';
   // next button
   const btn=document.getElementById('obNextBtn');
-  const txt=document.getElementById('obNextTxt');
-  if(obCurrent===5){ txt.textContent='เริ่มใช้งาน'; btn.innerHTML='🚀 เริ่มใช้งาน'; }
-  else{ btn.innerHTML=`<span>ถัดไป</span> →`; }
+  // Fix: Use safe text update pattern. Previously, writing to btn.innerHTML
+  // destroyed the obNextTxt span element, causing TypeError when subsequent
+  // code tried to set .textContent on the now-deleted element.
+  if(obCurrent===5){
+    btn.innerHTML='<span id="obNextTxt">🚀 เริ่มใช้งาน</span>';
+  } else {
+    btn.innerHTML='<span id="obNextTxt">ถัดไป</span> →';
+  }
   if(obCurrent===1) validateStep1();
   else if(obCurrent===5) validateStep5();
   else btn.disabled=false;
@@ -1414,7 +1419,8 @@ function ob4SimConnect(){
   }
   initOb();
 })();
-document.addEventListener("DOMContentLoaded",function(){syncSplashLang();});
+// Fix: removed dead code call to syncSplashLang() — function never defined
+// (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
 </body>
 </html>
