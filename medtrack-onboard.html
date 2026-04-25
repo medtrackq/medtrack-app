@@ -1419,8 +1419,11 @@ function ob4SimConnect(){
 (function(){
   const p=loadProfile();
   if(p&&p.name){
-    // returning user → show splash with login option
-    document.querySelector('.btn-secondary').textContent=`👤 เข้าสู่ระบบ (${p.name})`;
+    // Returning user → auto-redirect to home (Phase B fix)
+    // Show brief welcome toast then redirect
+    showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
+    setTimeout(()=>{ window.location.href='medtrack-home.html'; }, 1200);
+    return; // skip onboarding init
   }
   initOb();
 })();
