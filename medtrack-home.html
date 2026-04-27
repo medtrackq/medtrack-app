@@ -67,6 +67,31 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 
 /* ── TODAY CARD ── */
 .today-card{margin:16px 16px 0;background:var(--card);border-radius:20px;padding:14px 16px;box-shadow:var(--sh);display:flex;align-items:center;gap:12px}
+/* Phase 3: Today's Doses widget */
+.todays-doses{margin:16px 16px 0;background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--sh)}
+.td-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.td-title{font-size:16px;font-weight:700;color:var(--ink)}
+.td-date{font-size:12px;color:#94a3b8}
+.td-list{display:flex;flex-direction:column;gap:10px}
+.td-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;transition:all .2s}
+.td-item.taken{background:#f0fdf4;border-color:#bbf7d0}
+.td-item.late{background:#fffbeb;border-color:#fde68a}
+.td-item.missed{background:#fef2f2;border-color:#fecaca}
+.td-item.skipped{background:#f1f5f9;border-color:#cbd5e1}
+.td-item.pending{background:#eff6ff;border-color:#bfdbfe}
+.td-time{font-size:14px;font-weight:700;color:var(--ink);min-width:48px}
+.td-info{flex:1;min-width:0}
+.td-drug{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td-meta{font-size:12px;color:#64748b;margin-top:2px}
+.td-status{font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;white-space:nowrap}
+.td-status.taken{background:#dcfce7;color:#15803d}
+.td-status.late{background:#fef3c7;color:#a16207}
+.td-status.missed{background:#fecaca;color:#b91c1c}
+.td-status.skipped{background:#e2e8f0;color:#475569}
+.td-action-btn{padding:6px 12px;border-radius:10px;border:none;background:var(--brand);color:#fff;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.td-action-btn:hover{transform:scale(1.05);box-shadow:0 2px 8px rgba(10,156,122,.3)}
+.td-action-btn:disabled{opacity:.5;cursor:not-allowed}
+.td-empty{text-align:center;padding:24px 12px;color:#94a3b8;font-size:13px;font-style:italic}
 .today-ico{width:44px;height:44px;background:linear-gradient(135deg,var(--teal),#06b48a);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
 .today-info{flex:1}
 .today-title{font-size:14px;font-weight:600;color:var(--t1)}
@@ -437,6 +462,23 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="today-sub" id="todaySub">ยังไม่มียา</div>
     </div>
     <div class="today-badge" id="todayBadge">ยังไม่ได้กิน</div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- Phase 3: Today's Doses Widget -->
+  <!-- Shows live data from /api/dose-logs/today -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="todays-doses" id="todaysDoses" style="display:none">
+    <div class="td-header">
+      <span class="td-title">💊 ยาวันนี้</span>
+      <span class="td-date" id="tdDate"></span>
+    </div>
+    <div class="td-list" id="tdList">
+      <!-- Populated by JS: renderTodayDoses() -->
+    </div>
+    <div class="td-empty" id="tdEmpty" style="display:none">
+      ยังไม่มีตารางยาวันนี้ — สแกนซองยาเพิ่มได้เลย 📸
+    </div>
   </div>
 
   <!-- Scroll content -->
@@ -1461,7 +1503,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ────────────────────────────────────────────────────────
 // initUserData() — load profile + render greeting/stats
-// Replaces hardcoded "สมชาย" mock data with real user data
+// Phase 3: Now also fetches today's doses + stats from backend
 // ────────────────────────────────────────────────────────
 function initUserData(){
   try{
@@ -1471,7 +1513,8 @@ function initUserData(){
     
     if(profile && profile.name){
       // Returning user — show personalized greeting
-      const firstName = profile.name.split(' ').slice(-1)[0] || profile.name;
+      // Use first word as first name (Thai convention) — fixes "คุณTest" bug
+      const firstName = profile.name.split(' ')[0] || profile.name;
       if(greetEl) greetEl.textContent = `สวัสดีครับ คุณ${firstName} 👋`;
       if(subEl) subEl.textContent = 'วันนี้เป็นยังไงบ้างครับ?';
     } else {
@@ -1480,22 +1523,200 @@ function initUserData(){
       if(subEl) subEl.textContent = 'ยินดีต้อนรับสู่ MedTrack';
     }
     
-    // Show stats only if user has activity (currently always hidden for new users)
-    const meds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
-    const streakRow = document.getElementById('streakRow');
-    if(streakRow && meds.length > 0){
-      streakRow.style.display = '';
-      // TODO: calculate real streak/points from push_logs in Session 6
-    }
-    
-    // Show today card only if user has medications scheduled
-    const todayCard = document.getElementById('todayCard');
-    if(todayCard && meds.length > 0){
-      // TODO: render real next meal in Session 6
-      // For now keep hidden until backend integration
+    // Phase 3: Fetch live data from backend (if user has user_id)
+    // Order: profile.user_id → profile.id → URL param ?user_id= → default 2 (Apidej test)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUid = parseInt(urlParams.get('user_id'));
+    const userId = profile?.user_id || profile?.id || urlUid || 2;
+    if(userId){
+      loadTodayDoses(userId);
+    } else {
+      // Fallback: show medication count from localStorage
+      const meds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
+      const streakRow = document.getElementById('streakRow');
+      if(streakRow && meds.length > 0){
+        streakRow.style.display = '';
+      }
     }
   } catch(e) {
     console.warn('initUserData error:', e);
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// Phase 3: Load today's doses from backend
+// Renders Today's Doses widget + Stats bar with real data
+// ────────────────────────────────────────────────────────
+async function loadTodayDoses(userId){
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/today?user_id=${userId}`);
+    const data = await r.json();
+    
+    if(!data.ok || !Array.isArray(data.doses)){
+      console.warn('loadTodayDoses: unexpected response', data);
+      return;
+    }
+    
+    renderTodayDoses(data.doses, data.date);
+    renderStatsBar(data.doses);
+  } catch(e) {
+    console.warn('loadTodayDoses error:', e);
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// Render Today's Doses widget
+// ────────────────────────────────────────────────────────
+function renderTodayDoses(doses, date){
+  const widget = document.getElementById('todaysDoses');
+  const list = document.getElementById('tdList');
+  const empty = document.getElementById('tdEmpty');
+  const dateEl = document.getElementById('tdDate');
+  
+  if(!widget || !list) return;
+  
+  // Format date "27 เม.ย."
+  if(dateEl && date){
+    try {
+      const d = new Date(date+'T00:00:00');
+      const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+      dateEl.textContent = `${d.getDate()} ${months[d.getMonth()]}`;
+    } catch(e){}
+  }
+  
+  widget.style.display = '';
+  
+  if(doses.length === 0){
+    list.innerHTML = '';
+    empty.style.display = '';
+    return;
+  }
+  
+  empty.style.display = 'none';
+  
+  // Status emoji + label maps
+  const statusMap = {
+    taken:   { emoji:'✅', label:'กินแล้ว',  cls:'taken' },
+    late:    { emoji:'🟡', label:'กินช้า',   cls:'late' },
+    missed:  { emoji:'❌', label:'พลาด',     cls:'missed' },
+    skipped: { emoji:'⏭️', label:'ข้าม',     cls:'skipped' },
+    pending: { emoji:'⏳', label:'รอ',       cls:'pending' }
+  };
+  
+  list.innerHTML = doses.map(d => {
+    const s = statusMap[d.status] || statusMap.pending;
+    const time = (d.scheduled_time||'').substring(0,5); // HH:MM
+    const dose = d.dose_mg ? `${d.dose_mg}${d.dose_unit||'mg'}` : '';
+    const tablets = d.tablets_per_dose ? `${d.tablets_per_dose} เม็ด` : '';
+    const meta = [dose, tablets].filter(x=>x).join(' · ');
+    
+    let actionBtn = '';
+    if(d.status === 'pending'){
+      actionBtn = `<button class="td-action-btn" onclick="confirmDose(${d.id})">✅ ยืนยัน</button>`;
+    } else {
+      const pts = d.reward_points ? `+${d.reward_points} pt` : '';
+      actionBtn = `<span class="td-status ${s.cls}">${s.emoji} ${s.label}${pts ? ' '+pts : ''}</span>`;
+    }
+    
+    return `
+      <div class="td-item ${s.cls}">
+        <div class="td-time">${time}</div>
+        <div class="td-info">
+          <div class="td-drug">${d.drug_name||'ยา'}</div>
+          <div class="td-meta">${meta || '—'}</div>
+        </div>
+        ${actionBtn}
+      </div>
+    `;
+  }).join('');
+}
+
+// ────────────────────────────────────────────────────────
+// Render Stats Bar (streak/points/adherence)
+// ────────────────────────────────────────────────────────
+function renderStatsBar(doses){
+  const streakRow = document.getElementById('streakRow');
+  const streakDays = document.getElementById('streakDays');
+  const streakPoints = document.getElementById('streakPoints');
+  const streakAppt = document.getElementById('streakAppt');
+  
+  if(!streakRow) return;
+  streakRow.style.display = '';
+  
+  // Calculate stats from today's doses
+  const totalPoints = doses.reduce((s,d) => s + (d.reward_points||0), 0);
+  const confirmed = doses.filter(d => d.status === 'taken' || d.status === 'late').length;
+  const total = doses.length;
+  const adherence = total > 0 ? Math.round((confirmed/total)*100) : 0;
+  
+  // Update pills
+  if(streakDays){
+    if(total === 0){
+      streakDays.textContent = '🌟 พร้อมเริ่มวันใหม่';
+    } else if(adherence === 100){
+      streakDays.textContent = `🔥 วันนี้ ${confirmed}/${total} ครบ!`;
+    } else {
+      streakDays.textContent = `📊 วันนี้ ${confirmed}/${total} (${adherence}%)`;
+    }
+  }
+  
+  if(streakPoints){
+    streakPoints.textContent = `⭐ ${totalPoints} แต้ม`;
+  }
+  
+  // Appt pill — keep existing or future enhance
+  if(streakAppt){
+    const appts = JSON.parse(localStorage.getItem('mt_appts')||'[]');
+    if(appts.length > 0){
+      const upcoming = appts.filter(a => new Date(a.date_iso || a.date) > new Date());
+      if(upcoming.length > 0){
+        streakAppt.textContent = `🏥 มีนัด ${upcoming.length} ครั้ง`;
+      } else {
+        streakAppt.textContent = '🏥 ยังไม่มีนัด';
+      }
+    } else {
+      streakAppt.textContent = '🏥 ยังไม่มีนัด';
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// Phase 3: Confirm dose from home (alternative to LINE)
+// ────────────────────────────────────────────────────────
+async function confirmDose(doseId){
+  if(!confirm('ยืนยันว่ากินยาแล้วใช่มั้ย?')) return;
+  
+  // Get user_id with same fallback as initUserData
+  function getUserId(){
+    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlUid = parseInt(urlParams.get('user_id'));
+    return profile?.user_id || profile?.id || urlUid || 2;
+  }
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/${doseId}/confirm`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({})
+    });
+    const data = await r.json();
+    
+    if(data.ok){
+      // Reload widget with fresh data
+      loadTodayDoses(getUserId());
+      // Brief feedback
+      try { 
+        if('vibrate' in navigator) navigator.vibrate(50);
+      } catch(e){}
+    } else if(data.error === 'not_found_or_already_confirmed'){
+      alert('ยืนยันไปแล้ว — รอโหลดใหม่...');
+      loadTodayDoses(getUserId());
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + (data.error||'unknown'));
+    }
+  } catch(e) {
+    alert('เชื่อมต่อ server ไม่ได้: ' + e.message);
   }
 }
 
