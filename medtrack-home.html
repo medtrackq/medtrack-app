@@ -371,6 +371,26 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .modal-save-btn{width:100%;padding:13px;background:var(--teal);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px}
 .modal-save-btn:active{background:var(--teal2)}
 .chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+/* Caregiver UI styles */
+.cg-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.cg-card.linked{background:#f0fdf4;border-color:#bbf7d0}
+.cg-card.pending{background:#fffbeb;border-color:#fde68a}
+.cg-card-ico{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.cg-card-info{flex:1;min-width:0}
+.cg-card-name{font-size:15px;font-weight:700;color:var(--ink)}
+.cg-card-meta{font-size:12px;color:#64748b;margin-top:2px}
+.cg-card-status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;display:inline-block;margin-top:4px}
+.cg-card-status.linked{background:#dcfce7;color:#15803d}
+.cg-card-status.pending{background:#fef3c7;color:#a16207}
+.cg-card-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.cg-card-btn{padding:6px 10px;border-radius:8px;border:none;font-size:11px;font-weight:600;cursor:pointer;background:#fff;color:#475569;border:1px solid #e2e8f0;font-family:inherit}
+.cg-card-btn.primary{background:#0a9c7a;color:#fff;border-color:#0a9c7a}
+.cg-card-btn.danger{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.cg-btn{padding:10px 18px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s}
+.cg-btn-primary{background:#0a9c7a;color:#fff}
+.cg-btn-primary:hover{background:#089368}
+.cg-btn-secondary{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
+.cg-empty{text-align:center;padding:20px 12px;color:#94a3b8;font-size:13px;font-style:italic;background:#f8fafc;border-radius:12px}
 .chip{padding:5px 12px;border-radius:20px;border:1.5px solid #E5E7EB;font-size:12px;font-weight:500;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s}
 .chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 
@@ -2416,6 +2436,206 @@ function simNextStatus(idx){
 let _currentHomeModal = null;
 let _genderVal = '';
 
+// ════════════════════════════════════════════════════════
+// Path B: Caregiver Management UI (Session 8)
+// ════════════════════════════════════════════════════════
+
+let _currentInviteCode = '';
+
+// Get current user_id (helper)
+function getCurrentUserId(){
+  const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlUid = parseInt(urlParams.get('user_id'));
+  return profile?.user_id || profile?.id || urlUid || 2;
+}
+
+// Load + render caregiver list from backend
+async function loadCaregiverList(){
+  const container = document.getElementById('cg-existing-list');
+  if(!container) return;
+  
+  const userId = getCurrentUserId();
+  container.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:13px;padding:12px">⏳ กำลังโหลด...</div>';
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers?user_id=${userId}`);
+    const data = await r.json();
+    
+    if(!data.ok || !Array.isArray(data.caregivers)){
+      container.innerHTML = '';
+      return;
+    }
+    
+    if(data.caregivers.length === 0){
+      container.innerHTML = '<div class="cg-empty">ยังไม่มีผู้ดูแล — เพิ่มได้เลยครับ ⬇️</div>';
+      return;
+    }
+    
+    container.innerHTML = '<div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:8px">ผู้ดูแลปัจจุบัน:</div>' +
+      data.caregivers.map(cg => {
+        const linked = cg.is_linked;
+        const statusCls = linked ? 'linked' : 'pending';
+        const statusLabel = linked ? '✅ เชื่อมต่อแล้ว' : '⏳ รอเชื่อม';
+        const ico = cg.relationship === 'ลูก' ? '👨‍👦' :
+                    cg.relationship === 'คู่สมรส' ? '💑' :
+                    cg.relationship === 'พ่อแม่' ? '👴' :
+                    cg.relationship === 'พี่น้อง' ? '👫' : '👤';
+        
+        return `
+          <div class="cg-card ${statusCls}">
+            <div class="cg-card-ico">${ico}</div>
+            <div class="cg-card-info">
+              <div class="cg-card-name">${cg.name}</div>
+              <div class="cg-card-meta">${cg.relationship||'ผู้ดูแล'} · เตือน ${cg.alert_threshold_minutes} นาที</div>
+              <div class="cg-card-status ${statusCls}">${statusLabel}</div>
+              ${!linked && cg.invite_code ? `<div style="margin-top:6px;font-family:monospace;font-size:13px;font-weight:700;color:#0a9c7a;letter-spacing:2px">📋 ${cg.invite_code}</div>` : ''}
+            </div>
+            <div class="cg-card-actions">
+              ${!linked && cg.invite_code ? `<button class="cg-card-btn primary" onclick="copyExistingCode('${cg.invite_code}')">📋</button>` : ''}
+              <button class="cg-card-btn danger" onclick="deleteCaregiver(${cg.id}, '${cg.name.replace(/'/g, "\\'")}')">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+  } catch(e) {
+    console.error('loadCaregiverList error:', e);
+    container.innerHTML = '<div class="cg-empty">⚠️ โหลดไม่สำเร็จ</div>';
+  }
+}
+
+// Threshold chip selector
+function selectThresholdChip(el){
+  document.querySelectorAll('#mc-threshold-chips .chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// Save new caregiver
+async function saveCaregiverNew(){
+  const name = document.getElementById('mc-name').value.trim();
+  const relation = document.getElementById('mc-relation').value;
+  const phone = document.getElementById('mc-phone').value.trim();
+  const thresholdEl = document.querySelector('#mc-threshold-chips .chip.on');
+  const threshold = parseInt(thresholdEl?.dataset.min || '30');
+  
+  if(!name){
+    alert('กรุณากรอกชื่อผู้ดูแล');
+    return;
+  }
+  
+  const userId = getCurrentUserId();
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        name: name,
+        relationship: relation,
+        phone: phone || null,
+        alert_threshold_minutes: threshold
+      })
+    });
+    const data = await r.json();
+    
+    if(data.ok && data.caregiver){
+      // Show invite code modal
+      _currentInviteCode = data.caregiver.invite_code;
+      closeHomeModal();
+      setTimeout(() => {
+        document.getElementById('cg-invite-code').textContent = _currentInviteCode;
+        document.getElementById('cg-invite-code-inline').textContent = _currentInviteCode;
+        // Open invite modal
+        document.getElementById('modalBackdrop').style.display = 'block';
+        document.getElementById('modal-cg-invite').style.display = 'block';
+      }, 200);
+    } else if(data.error === 'caregiver_exists'){
+      alert('คุณมีผู้ดูแลอยู่แล้ว 1 คน — ลบคนเก่าก่อนเพิ่มใหม่');
+    } else {
+      alert('เกิดข้อผิดพลาด: ' + (data.error||data.message||'unknown'));
+    }
+  } catch(e){
+    alert('เชื่อมต่อ server ไม่ได้: ' + e.message);
+  }
+}
+
+// Copy invite code to clipboard
+async function copyInviteCode(){
+  await copyText(_currentInviteCode);
+}
+
+async function copyExistingCode(code){
+  await copyText(code);
+}
+
+async function copyText(text){
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast?.('📋 คัดลอกแล้ว: ' + text);
+    if('vibrate' in navigator) navigator.vibrate(30);
+  } catch(e) {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast?.('📋 คัดลอกแล้ว: ' + text);
+  }
+}
+
+// Share invite code via Web Share API
+async function shareInviteCode(){
+  const text = `เชิญคุณเป็นผู้ดูแลของฉันใน MedTrack!\n\n📋 รหัสเชิญ: ${_currentInviteCode}\n\nวิธีใช้:\n1. Add @หมอน้อย เป็นเพื่อนใน LINE\n2. ส่งข้อความ: /care ${_currentInviteCode}\n3. ระบบจะเชื่อมต่ออัตโนมัติ ✅`;
+  
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: 'MedTrack — เชิญเป็นผู้ดูแล',
+        text: text
+      });
+    } catch(e) {/* user cancelled */}
+  } else {
+    // Fallback: copy
+    await copyText(text);
+  }
+}
+
+// Delete caregiver
+async function deleteCaregiver(cgId, name){
+  if(!confirm(`ลบผู้ดูแล "${name}"?\n\n(หากเชื่อม LINE แล้ว ผู้ดูแลจะไม่ได้รับ alert อีก)`)) return;
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers/${cgId}`, {
+      method: 'DELETE'
+    });
+    const data = await r.json();
+    
+    if(data.ok){
+      showToast?.('🗑️ ลบแล้ว');
+      loadCaregiverList(); // Refresh
+    } else {
+      alert('ลบไม่สำเร็จ: ' + (data.error||'unknown'));
+    }
+  } catch(e){
+    alert('เชื่อมต่อ server ไม่ได้: ' + e.message);
+  }
+}
+
+// Simple toast (if not exists)
+if(typeof showToast === 'undefined'){
+  window.showToast = function(msg){
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;z-index:99999;font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.2)';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.style.opacity='0', 2000);
+    setTimeout(()=>t.remove(), 2500);
+  };
+}
+
 function openHomeModal(name){
   closeSheet();
   // โหลดข้อมูลจาก localStorage
@@ -2457,13 +2677,16 @@ function openHomeModal(name){
     });
   }
   if(name==='caregiver'){
-    // onboard บันทึกเป็น caregivers[] array — ดึงคนแรก
-    const cg = (p.caregivers && p.caregivers.length > 0) ? p.caregivers[0] : (p.caregiver||{});
-    document.getElementById('mc-name').value = cg.name||'';
-    document.getElementById('mc-phone').value = cg.phone||'';
-    document.getElementById('mc-line').value = cg.lineId||cg.line||'';
-    const rel = document.getElementById('mc-relation');
-    if(cg.rel||cg.relation) rel.value = cg.rel||cg.relation||'ลูก';
+    // Path B: Load caregivers from backend
+    loadCaregiverList();
+    // Reset form
+    document.getElementById('mc-name').value = '';
+    document.getElementById('mc-phone').value = '';
+    document.getElementById('mc-relation').value = 'ลูก';
+    // Reset threshold to 30 default
+    document.querySelectorAll('#mc-threshold-chips .chip').forEach(c => {
+      c.classList.toggle('on', c.dataset.min === '30');
+    });
   }
   if(name==='doctor'){
     document.getElementById('md-name').value = p.doctor||'';
@@ -2880,6 +3103,13 @@ function saveHomeModal(name){
   <div class="modal-box" id="modal-caregiver" style="display:none">
     <div class="modal-handle"></div>
     <div class="modal-title">👨‍👩‍👧 ผู้ดูแล / Caregiver <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    
+    <!-- Existing caregivers list (loaded from backend) -->
+    <div id="cg-existing-list" style="margin-bottom:16px"></div>
+    
+    <!-- Form section title -->
+    <div id="cg-form-title" style="font-size:14px;font-weight:600;color:#0a9c7a;margin-bottom:12px">+ เพิ่มผู้ดูแลใหม่</div>
+    
     <div class="mfield"><label>ชื่อผู้ดูแล</label><input id="mc-name" placeholder="นาง สมศรี ใจดี"></div>
     <div class="mfield"><label>ความสัมพันธ์</label>
       <select id="mc-relation">
@@ -2891,15 +3121,40 @@ function saveHomeModal(name){
       </select>
     </div>
     <div class="mfield"><label>เบอร์โทร</label><input id="mc-phone" type="tel" placeholder="08x-xxx-xxxx"></div>
-    <div class="mfield"><label>LINE ID (ถ้ามี)</label><input id="mc-line" placeholder="@line_id"></div>
-    <div class="mfield"><label>แจ้งเตือนเมื่อ</label>
-      <div class="chip-group">
-        <button class="chip on" id="mc-miss" onclick="this.classList.toggle('on')">ลืมกินยา</button>
-        <button class="chip on" id="mc-low" onclick="this.classList.toggle('on')">ยาใกล้หมด</button>
-        <button class="chip" id="mc-appt" onclick="this.classList.toggle('on')">ใกล้ถึงนัด</button>
+    <div class="mfield"><label>เตือนผู้ดูแลหากผ่านมาแล้ว</label>
+      <div class="chip-group" id="mc-threshold-chips">
+        <button class="chip" data-min="15" onclick="selectThresholdChip(this)">15 นาที</button>
+        <button class="chip on" data-min="30" onclick="selectThresholdChip(this)">30 นาที</button>
+        <button class="chip" data-min="60" onclick="selectThresholdChip(this)">60 นาที</button>
       </div>
     </div>
-    <button class="modal-save-btn" onclick="saveHomeModal('caregiver')">💾 บันทึก</button>
+    <button class="modal-save-btn" onclick="saveCaregiverNew()">💾 สร้างคำเชิญ</button>
+  </div>
+
+  <!-- Caregiver Invite Code Modal -->
+  <div class="modal-box" id="modal-cg-invite" style="display:none">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✅ สร้างคำเชิญแล้ว <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:13px;color:#64748b;margin-bottom:12px">📋 รหัสเชิญผู้ดูแล:</div>
+      <div id="cg-invite-code" style="font-size:28px;font-weight:700;letter-spacing:6px;color:#0a9c7a;background:#f0fdf4;padding:16px 24px;border:2px solid #0a9c7a;border-radius:12px;display:inline-block;font-family:monospace">--------</div>
+      
+      <div style="margin-top:20px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="cg-btn cg-btn-primary" onclick="copyInviteCode()">📋 คัดลอก</button>
+        <button class="cg-btn cg-btn-secondary" onclick="shareInviteCode()">📨 แชร์</button>
+      </div>
+    </div>
+    
+    <div style="background:#f8fafc;padding:14px;border-radius:12px;font-size:13px;color:#475569;margin-top:8px">
+      <div style="font-weight:600;color:#0a9c7a;margin-bottom:8px">💡 วิธีใช้:</div>
+      <div style="margin-bottom:6px"><b>1.</b> ผู้ดูแลเพิ่ม <b>@หมอน้อย</b> เป็นเพื่อน LINE</div>
+      <div style="margin-bottom:6px"><b>2.</b> ส่งข้อความ:</div>
+      <div style="background:#fff;padding:10px 14px;border-radius:8px;font-family:monospace;font-size:14px;color:#0a9c7a;font-weight:600;margin:4px 0">/care <span id="cg-invite-code-inline">--------</span></div>
+      <div><b>3.</b> ระบบจะเชื่อมต่ออัตโนมัติ ✅</div>
+    </div>
+    
+    <button class="modal-save-btn" onclick="closeHomeModal();openHomeModal('caregiver')" style="margin-top:16px">เสร็จสิ้น</button>
   </div>
 
   <!-- Doctor Modal -->
