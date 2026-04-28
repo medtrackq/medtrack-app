@@ -1503,31 +1503,30 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // ────────────────────────────────────────────────────────
 // initUserData() — load profile + render greeting/stats
-// Phase 3: Now also fetches today's doses + stats from backend
+// Path B (Session 8): LINE-based identity lookup
+// Priority: URL ?lineUserId → localStorage profile → onboarding redirect
 // ────────────────────────────────────────────────────────
-function initUserData(){
+async function initUserData(){
   try{
-    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
     const greetEl = document.getElementById('greetingName');
     const subEl = document.getElementById('greetingSub');
     
+    // Path B: Resolve user identity
+    const userId = await resolveUserIdentity();
+    
+    // Update greeting from current profile
+    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
     if(profile && profile.name){
-      // Returning user — show personalized greeting
-      // Use first word as first name (Thai convention) — fixes "คุณTest" bug
-      const firstName = profile.name.split(' ')[0] || profile.name;
+      // Use first word as first name (Thai convention)
+      const firstName = profile.name.trim().split(/\s+/)[0] || profile.name;
       if(greetEl) greetEl.textContent = `สวัสดีครับ คุณ${firstName} 👋`;
       if(subEl) subEl.textContent = 'วันนี้เป็นยังไงบ้างครับ?';
     } else {
-      // New user — generic greeting
       if(greetEl) greetEl.textContent = 'สวัสดีครับ 👋';
       if(subEl) subEl.textContent = 'ยินดีต้อนรับสู่ MedTrack';
     }
     
-    // Phase 3: Fetch live data from backend (if user has user_id)
-    // Order: profile.user_id → profile.id → URL param ?user_id= → default 2 (Apidej test)
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlUid = parseInt(urlParams.get('user_id'));
-    const userId = profile?.user_id || profile?.id || urlUid || 2;
+    // Load today's doses if we have a user_id
     if(userId){
       loadTodayDoses(userId);
     } else {
@@ -1541,6 +1540,101 @@ function initUserData(){
   } catch(e) {
     console.warn('initUserData error:', e);
   }
+}
+
+// ────────────────────────────────────────────────────────
+// Path B: Resolve user identity (returns user_id or null)
+// 
+// Priority order:
+//   1. URL ?lineUserId=Uxxxxx → backend lookup
+//   2. localStorage profile.user_id → trust it
+//   3. localStorage profile.line_user_id → backend lookup
+//   4. ?user_id= URL param (legacy testing) → use it
+//   5. None → redirect to onboarding (if has lineUserId) or null
+// ────────────────────────────────────────────────────────
+async function resolveUserIdentity() {
+  const params = new URLSearchParams(window.location.search);
+  const urlLineId = params.get('lineUserId');
+  const urlUid = parseInt(params.get('user_id'));
+  let profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+  
+  // 1. URL has lineUserId → backend lookup
+  if (urlLineId && urlLineId.match(/^U[a-f0-9]{32}$/)) {
+    const user = await fetchUserByLineId(urlLineId);
+    if (user) {
+      // Update localStorage with fresh profile from backend
+      saveProfileFromBackend(user);
+      return user.id;
+    }
+    // 404 — redirect to onboarding
+    console.log('[Path B] User not found, redirecting to onboarding');
+    window.location.href = `medtrack-onboard.html?lineUserId=${urlLineId}`;
+    return null;
+  }
+  
+  // 2. Profile has user_id → trust it (also refresh in background)
+  if (profile?.user_id) {
+    // Optional: refresh profile in background
+    if (profile.line_user_id) {
+      fetchUserByLineId(profile.line_user_id).then(user => {
+        if (user) saveProfileFromBackend(user);
+      }).catch(()=>{});
+    }
+    return profile.user_id;
+  }
+  
+  // 3. Profile has line_user_id → backend lookup
+  if (profile?.line_user_id && profile.line_user_id.match(/^U[a-f0-9]{32}$/)) {
+    const user = await fetchUserByLineId(profile.line_user_id);
+    if (user) {
+      saveProfileFromBackend(user);
+      return user.id;
+    }
+  }
+  
+  // 4. Legacy: ?user_id= URL param (for testing)
+  if (urlUid && !isNaN(urlUid)) return urlUid;
+  
+  // 5. Fallback: default to user_id=2 (Apidej test) ONLY if no profile exists
+  // This is for backwards compat — will remove in future
+  if (!profile) return 2;
+  
+  return null;
+}
+
+// Backend lookup helper
+async function fetchUserByLineId(lineId) {
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/users/by-line-id/${lineId}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? d.user : null;
+  } catch (e) {
+    console.warn('fetchUserByLineId error:', e);
+    return null;
+  }
+}
+
+// Save backend user profile to localStorage
+function saveProfileFromBackend(user) {
+  const existing = JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
+  const merged = {
+    ...existing,
+    user_id: user.id,
+    id: user.id,
+    name: user.name,
+    age: user.age,
+    gender: user.gender,
+    phone: user.phone,
+    line_user_id: user.line_user_id,
+    breakfast_time: user.breakfast_time,
+    lunch_time: user.lunch_time,
+    dinner_time: user.dinner_time,
+    bedtime: user.bedtime,
+    push_lead_minutes: user.push_lead_minutes,
+    chronic_conditions: user.chronic_conditions
+  };
+  localStorage.setItem('mt_user_profile', JSON.stringify(merged));
 }
 
 // ────────────────────────────────────────────────────────
@@ -1686,7 +1780,7 @@ function renderStatsBar(doses){
 async function confirmDose(doseId){
   if(!confirm('ยืนยันว่ากินยาแล้วใช่มั้ย?')) return;
   
-  // Get user_id with same fallback as initUserData
+  // Get user_id from localStorage (already resolved by initUserData)
   function getUserId(){
     const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
     const urlParams = new URLSearchParams(window.location.search);
@@ -1703,9 +1797,7 @@ async function confirmDose(doseId){
     const data = await r.json();
     
     if(data.ok){
-      // Reload widget with fresh data
       loadTodayDoses(getUserId());
-      // Brief feedback
       try { 
         if('vibrate' in navigator) navigator.vibrate(50);
       } catch(e){}
