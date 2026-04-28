@@ -227,6 +227,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .apf-fgrid{display:grid;grid-template-columns:auto 1fr;gap:3px 9px;padding:10px 13px}
 .apf-fl{font-size:11px;color:#9CA3AF;padding-top:2px}.apf-fv{font-size:13px;font-weight:500;color:#111827}
 .apf-fv.hi{color:#2563EB;font-weight:700}
+.apf-input{font-size:13px;padding:6px 10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;background:#fff;width:100%;color:#0f172a}
+.apf-input:focus{outline:none;border-color:#0a9c7a;box-shadow:0 0 0 3px rgba(10,156,122,.1)}
+.apf-edit-btn{background:#fff;color:#0a9c7a;border:1px solid #0a9c7a;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:12px}
+.apf-edit-btn:hover{background:#f0fdf4}
 .apf-instrs{padding:0 13px 10px;display:flex;flex-direction:column;gap:4px}
 .apf-instr{background:#FFFBEB;border-left:3px solid #F59E0B;padding:5px 9px;border-radius:0 8px 8px 0;font-size:11px;color:#111827}
 
@@ -854,6 +858,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
           <div class="apf-result-title">นัดพบแพทย์</div>
           <div class="apf-conf" id="apfConf">95%</div>
         </div>
+        <button class="apf-edit-btn" id="apfEditBtn" onclick="apfToggleEdit()" style="margin:8px 0">✏️ แก้ไขข้อมูล</button>
         <div class="apf-fgrid" id="apfFGrid"></div>
         <div class="apf-instrs" id="apfInstrs"></div>
       </div>
@@ -2021,12 +2026,25 @@ function apfRenderResult(r){
   const c=Math.round((r.confidence||.9)*100);
   const el=document.getElementById('apfConf');
   el.textContent=c+'%'; el.style.background=c>=90?'#0A9C7A':c>=75?'#F59E0B':'#EF4444';
-  const fields=[['👨‍⚕️ แพทย์',r.doctor_name||'-',true],['🩺 คลินิก',r.department||'-',false],
-    ['🏥 โรงพยาบาล',r.hospital_name||'-',false],['📍 สถานที่',r.building||'-',false],
-    ['📅 วันที่',r.date_str||'-',true],['⏰ เวลา',r.time_str||'-',true],
-    ['👤 ผู้ป่วย',r.patient_name||'-',false],['🪪 HN',r.hn||'-',false]];
-  document.getElementById('apfFGrid').innerHTML=fields.map(([l,v,hi])=>
-    `<span class="apf-fl">${l}</span><span class="apf-fv${hi?' hi':''}">${v}</span>`).join('');
+  
+  // Confidence-based field rendering
+  // 🟢 = high confidence (likely correct)
+  // 🟡 = medium (verify)
+  // 🔴 = empty/missing (needs input)
+  const fieldStatus = (val) => !val || val === '-' ? '🔴' : c >= 85 ? '🟢' : '🟡';
+  
+  const fields=[
+    ['👨‍⚕️ แพทย์', r.doctor_name||'-', true, fieldStatus(r.doctor_name)],
+    ['🩺 คลินิก', r.department||'-', false, fieldStatus(r.department)],
+    ['🏥 โรงพยาบาล', r.hospital_name||'-', false, fieldStatus(r.hospital_name)],
+    ['📍 สถานที่', r.building||'-', false, fieldStatus(r.building)],
+    ['📅 วันที่', r.date_str||'-', true, fieldStatus(r.date_str)],
+    ['⏰ เวลา', r.time_str||'-', true, fieldStatus(r.time_str)],
+    ['👤 ผู้ป่วย', r.patient_name||'-', false, fieldStatus(r.patient_name)],
+    ['🪪 HN', r.hn||'-', false, fieldStatus(r.hn)]
+  ];
+  document.getElementById('apfFGrid').innerHTML=fields.map(([l,v,hi,status])=>
+    `<span class="apf-fl">${status} ${l}</span><span class="apf-fv${hi?' hi':''}">${v}</span>`).join('');
   document.getElementById('apfInstrs').innerHTML=(r.instructions||[])
     .map(i=>`<div class="apf-instr">⚠️ ${i}</div>`).join('');
 }
@@ -2047,15 +2065,111 @@ document.addEventListener('click',e=>{
   if(e.target.classList.contains('apf-chip')) e.target.classList.toggle('on');
 });
 
-function apfSave(){
+// Phase 5: Save appointment to BACKEND (with verification edit support)
+async function apfSave(){
   if(!apfData) return;
-  const saved=apfGetSaved();
-  saved.unshift({id:'a_'+Date.now(),...apfData,savedAt:new Date().toISOString()});
-  apfSaveSaved(saved);
-  // update header streak pill
-  const d14=new Date(); d14.setDate(d14.getDate()+14);
-  apfGoStep(3);
-  toast('✅ บันทึกนัดแพทย์แล้ว');
+  
+  // Get user_id from resolved identity
+  const userId = getCurrentUserId();
+  if(!userId){
+    alert('ไม่พบ user_id — กรุณา login ใหม่');
+    return;
+  }
+  
+  // Use edited values if user changed them
+  const data = window._apfEditedData || apfData;
+  
+  // Validate date
+  if(!data.date_iso || !/^\d{4}-\d{2}-\d{2}$/.test(data.date_iso)){
+    alert('⚠️ กรุณาตรวจสอบวันที่นัด — ต้องอยู่ในรูป YYYY-MM-DD');
+    return;
+  }
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/appointments`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        patient_name: data.patient_name || null,
+        hn: data.hn || null,
+        hospital_name: data.hospital_name || null,
+        department: data.department || null,
+        building: data.building || null,
+        doctor_name: data.doctor_name || null,
+        appointment_date: data.date_iso,
+        appointment_time: data.time_str || null,
+        instructions: data.instructions || [],
+        note: data.note || null,
+        ai_confidence: data.confidence || null,
+        ai_raw_data: apfData,  // original AI output for reference
+      })
+    });
+    
+    const result = await r.json();
+    
+    if(result.ok && result.appointment){
+      // Also save to localStorage for legacy widget support
+      const saved = apfGetSaved();
+      saved.unshift({id: 'a_'+result.appointment.id, ...data, savedAt: new Date().toISOString()});
+      apfSaveSaved(saved);
+      
+      // Reset edit state
+      window._apfEditedData = null;
+      
+      apfGoStep(3);
+      showToast?.('✅ บันทึกนัดแพทย์แล้ว — จะแจ้งเตือนผ่าน LINE');
+    } else {
+      alert('บันทึกไม่สำเร็จ: ' + (result.error || result.message || 'unknown'));
+    }
+  } catch(e){
+    alert('เชื่อมต่อ server ไม่ได้: ' + e.message);
+  }
+}
+
+// Phase 5: Toggle edit mode for appointment fields
+function apfToggleEdit(){
+  const grid = document.getElementById('apfFGrid');
+  const isEditing = grid.classList.toggle('editing');
+  const btn = document.getElementById('apfEditBtn');
+  
+  if(isEditing){
+    btn.textContent = '💾 เสร็จแก้ไข';
+    apfRenderResultEditable(window._apfEditedData || apfData);
+  } else {
+    btn.textContent = '✏️ แก้ไขข้อมูล';
+    // Save edited values
+    apfCollectEdits();
+    apfRenderResult(window._apfEditedData || apfData);
+  }
+}
+
+// Phase 5: Collect edited values from input fields
+function apfCollectEdits(){
+  const edited = {...(window._apfEditedData || apfData)};
+  document.querySelectorAll('#apfFGrid .apf-input').forEach(inp => {
+    const field = inp.dataset.field;
+    if(field) edited[field] = inp.value.trim();
+  });
+  window._apfEditedData = edited;
+}
+
+// Phase 5: Render fields as editable inputs
+function apfRenderResultEditable(r){
+  const fields=[
+    ['👨‍⚕️ แพทย์','doctor_name',r.doctor_name||''],
+    ['🩺 คลินิก','department',r.department||''],
+    ['🏥 โรงพยาบาล','hospital_name',r.hospital_name||''],
+    ['📍 สถานที่','building',r.building||''],
+    ['📅 วันที่ (ไทย)','date_str',r.date_str||''],
+    ['📆 วันที่ (ค.ศ.)','date_iso',r.date_iso||''],
+    ['⏰ เวลา','time_str',r.time_str||''],
+    ['👤 ผู้ป่วย','patient_name',r.patient_name||''],
+    ['🪪 HN','hn',r.hn||'']
+  ];
+  document.getElementById('apfFGrid').innerHTML = fields.map(([l,k,v])=>
+    `<span class="apf-fl">${l}</span><input type="text" class="apf-input" data-field="${k}" value="${v.replace(/"/g,'&quot;')}" placeholder="(ว่าง)" />`
+  ).join('');
 }
 
 /* ── CALENDAR ── */
