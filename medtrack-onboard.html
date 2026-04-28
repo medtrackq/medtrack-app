@@ -1132,7 +1132,7 @@ function renderCaregivers(){
 function removeCaregiver(i){ caregivers.splice(i,1); renderCaregivers(); }
 
 // ── SAVE ONBOARDING ──
-function saveOnboarding(){
+async function saveOnboarding(){
   const diseases=[];
   document.querySelectorAll('#diseaseChips .chip.on').forEach(el=>diseases.push(el.textContent.trim()));
   const profile={
@@ -1166,6 +1166,59 @@ function saveOnboarding(){
     })(),
     createdAt:new Date().toISOString()
   };
+  
+  // Path B (Session 8): Submit to backend if we have lineUserId
+  const params = new URLSearchParams(window.location.search);
+  const lineUserId = params.get('lineUserId');
+  
+  if (lineUserId && lineUserId.match(/^U[a-f0-9]{32}$/)) {
+    // Submit to backend
+    try {
+      showToast('💾 กำลังบันทึกข้อมูล...');
+      const r = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/onboard', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          line_user_id: lineUserId,
+          name: profile.name,
+          age: profile.age ? parseInt(profile.age) : null,
+          gender: profile.gender,
+          phone: profile.phone,
+          breakfast_time: profile.meals.morning + ':00',
+          lunch_time: profile.meals.noon + ':00',
+          dinner_time: profile.meals.evening + ':00',
+          bedtime: profile.meals.bed + ':00',
+          push_lead_minutes: 0,
+          chronic_conditions: profile.diseases
+        })
+      });
+      const data = await r.json();
+      
+      if (data.ok && data.user) {
+        // Backend created successfully — merge IDs into profile
+        profile.user_id = data.user.id;
+        profile.id = data.user.id;
+        profile.line_user_id = lineUserId;
+        console.log('[onboard] Backend user created:', data.user.id);
+      } else if (data.error === 'user_exists') {
+        // User exists — merge their ID
+        profile.user_id = data.user_id;
+        profile.id = data.user_id;
+        profile.line_user_id = lineUserId;
+        console.log('[onboard] User already exists:', data.user_id);
+      } else {
+        // Backend error — save locally, show warning
+        console.error('[onboard] Backend error:', data);
+        showToast('⚠️ บันทึก local แล้ว — ระบบ backend ติดขัดเล็กน้อย');
+      }
+    } catch (e) {
+      console.error('[onboard] Network error:', e);
+      showToast('⚠️ บันทึก local แล้ว — เครือข่ายติดขัดเล็กน้อย');
+    }
+  } else {
+    console.log('[onboard] No lineUserId — saving local only');
+  }
+  
   localStorage.setItem(KEY, JSON.stringify(profile));
   showSuccessScreen(profile);
 }
@@ -1187,7 +1240,13 @@ function showSuccessScreen(p){
 
 function goToHome(){
   showToast('🏠 กำลังเข้าสู่หน้าหลัก...');
-  setTimeout(()=>{ window.location.href='medtrack-home.html'; },1000);
+  // Path B: Preserve lineUserId in URL for cross-device support
+  const params = new URLSearchParams(window.location.search);
+  const lineUserId = params.get('lineUserId');
+  const homeUrl = lineUserId 
+    ? `medtrack-home.html?lineUserId=${lineUserId}`
+    : 'medtrack-home.html';
+  setTimeout(()=>{ window.location.href=homeUrl; },1000);
 }
 
 // ── PROFILE HELPERS ──
