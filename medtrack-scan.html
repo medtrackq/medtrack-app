@@ -2206,6 +2206,12 @@ async function saveToBackend(medsList) {
     userMeals = {breakfast:'07:00', lunch:'12:00', dinner:'18:00', bedtime:'21:00'};
   }
   
+  // Track saved medication IDs for scan_history
+  const savedMedIds = [];
+  let firstHospital = null;
+  let firstDoctor = null;
+  let firstDispenseDate = null;
+  
   for (const m of medsList) {
     try {
       // Map meal_anchor → meal time
@@ -2254,6 +2260,11 @@ async function saveToBackend(medsList) {
         schedules: schedules
       };
       
+      // Track first hospital/doctor for scan_history
+      if (m.hospital_name && !firstHospital) firstHospital = m.hospital_name;
+      if (m.doctor_name && !firstDoctor) firstDoctor = m.doctor_name;
+      if (m.dispense_date && !firstDispenseDate) firstDispenseDate = m.dispense_date;
+      
       const res = await fetch(BACKEND + '/api/medications', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -2262,7 +2273,9 @@ async function saveToBackend(medsList) {
       
       if (res.ok) {
         const data = await res.json();
-        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + (data.medication && data.medication.id) + ' (push at ' + reminderTime + ')');
+        const medId = data.medication && data.medication.id;
+        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + medId + ' (push at ' + reminderTime + ')');
+        if (medId) savedMedIds.push(medId);
       } else {
         const errText = await res.text();
         console.error('[saveToBackend] ❌ ' + m.drug_name + ' HTTP ' + res.status + ' — ' + errText);
@@ -2272,6 +2285,63 @@ async function saveToBackend(medsList) {
     }
   }
   console.log('[saveToBackend] Done.');
+  
+  // ── 🆕 Phase 5+: SAVE TO scan_history (Session 10) ──
+  // Save scan record so it appears in "ตู้ยาของฉัน"
+  if (savedMedIds.length > 0) {
+    try {
+      // Try to capture thumbnail from first photo
+      let thumbnail = null;
+      try {
+        if (photoQueue && photoQueue.length > 0 && photoQueue[0].dataUrl) {
+          thumbnail = await compressImageToThumbnail(photoQueue[0].dataUrl, 300);
+        }
+      } catch(e) { /* ignore thumbnail errors */ }
+      
+      const scanHistoryBody = {
+        user_id: USER_ID,
+        scan_type: 'medication',
+        hospital_name: firstHospital,
+        doctor_name: firstDoctor,
+        image_thumbnail: thumbnail,
+        ai_raw_data: { medications_count: medsList.length, drugs: medsList.map(m => m.drug_name) },
+        ai_confidence: 0.85,  // assume after user confirms
+        medication_ids: savedMedIds,
+      };
+      
+      const sh = await fetch(BACKEND + '/api/scan-history', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(scanHistoryBody)
+      });
+      if (sh.ok) {
+        const shData = await sh.json();
+        console.log('[scan-history] ✅ saved id=' + shData.scan?.id + ' (' + savedMedIds.length + ' meds linked)');
+      } else {
+        console.warn('[scan-history] HTTP ' + sh.status);
+      }
+    } catch (e) {
+      console.warn('[scan-history] save failed (non-critical):', e.message);
+    }
+  }
+}
+
+// Helper: compress image to thumbnail for storage
+async function compressImageToThumbnail(srcDataUrl, maxSize = 300) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(null);
+    img.src = srcDataUrl;
+  });
 }
 </script>
 
