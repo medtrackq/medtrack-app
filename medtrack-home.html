@@ -395,6 +395,38 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .cg-btn-primary:hover{background:#089368}
 .cg-btn-secondary{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
 .cg-empty{text-align:center;padding:20px 12px;color:#94a3b8;font-size:13px;font-style:italic;background:#f8fafc;border-radius:12px}
+
+/* 📦 Med Cabinet (ตู้ยาของฉัน) styles - Session 10 */
+.mc-tabs{display:flex;gap:4px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:14px}
+.mc-tab{flex:1;padding:8px 6px;background:transparent;border:none;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;color:#64748b;font-family:inherit;transition:all .2s}
+.mc-tab.on{background:#fff;color:#0a9c7a;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.mc-tab:hover:not(.on){color:#0f172a}
+
+.mc-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .15s}
+.mc-card:hover{border-color:#0a9c7a;box-shadow:0 2px 8px rgba(10,156,122,.1)}
+.mc-card-hd{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.mc-card-thumb{width:48px;height:48px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;overflow:hidden}
+.mc-card-thumb img{width:100%;height:100%;object-fit:cover}
+.mc-card-meta{flex:1;min-width:0}
+.mc-card-date{font-size:13px;font-weight:700;color:#0f172a}
+.mc-card-hospital{font-size:12px;color:#64748b;margin-top:2px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.mc-card-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;background:#dbeafe;color:#1e40af;flex-shrink:0}
+.mc-card-badge.medication{background:#dcfce7;color:#15803d}
+.mc-card-badge.appointment{background:#fef3c7;color:#a16207}
+.mc-card-meds{font-size:13px;color:#475569;line-height:1.4}
+.mc-card-meds-bold{font-weight:600;color:#0f172a}
+
+.mc-section-title{font-size:14px;font-weight:700;color:#0f172a;margin:14px 0 8px;display:flex;align-items:center;gap:8px}
+.mc-section-count{font-size:11px;font-weight:600;background:#0a9c7a;color:#fff;padding:2px 8px;border-radius:10px}
+
+.mc-detail-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:13px}
+.mc-detail-row:last-child{border-bottom:none}
+.mc-detail-label{flex:0 0 90px;color:#64748b;font-weight:500}
+.mc-detail-value{flex:1;color:#0f172a;font-weight:500}
+
+.mc-med-item{padding:10px 12px;background:#f0fdf4;border-radius:10px;margin-bottom:6px;border-left:3px solid #0a9c7a}
+.mc-med-name{font-weight:700;color:#0f172a;font-size:14px}
+.mc-med-dose{font-size:12px;color:#475569;margin-top:2px}
 .chip{padding:5px 12px;border-radius:20px;border:1.5px solid #E5E7EB;font-size:12px;font-weight:500;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s}
 .chip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
 
@@ -792,11 +824,11 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
-    <div class="sheet-item" onclick="navTo('medtrack-scan.html')">
+    <div class="sheet-item" onclick="openMedCabinet()">
       <div class="sheet-item-ico" style="background:#EFF6FF">🗃️</div>
       <div class="sheet-item-info">
         <div class="sheet-item-title">ตู้ยาของฉัน</div>
-        <div class="sheet-item-sub">รูปยาทั้งหมดที่บันทึกไว้</div>
+        <div class="sheet-item-sub">ประวัติสแกนยา + ใบนัด</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -2114,6 +2146,27 @@ async function apfSave(){
       saved.unshift({id: 'a_'+result.appointment.id, ...data, savedAt: new Date().toISOString()});
       apfSaveSaved(saved);
       
+      // Phase 5+: Save to scan_history (Session 10)
+      try {
+        // Try to capture thumbnail from preview img
+        let thumb = null;
+        const previewImg = document.querySelector('#apfPreview img');
+        if (previewImg && previewImg.src) {
+          thumb = await mcThumbnailFromImage(previewImg.src, 300);
+        }
+        
+        await mcSaveScanHistory('appointment', {
+          hospital_name: data.hospital_name,
+          doctor_name: data.doctor_name,
+          image_thumbnail: thumb,
+          ai_raw_data: apfData,  // original AI output
+          ai_confidence: data.confidence,
+          appointment_id: result.appointment.id,
+        });
+      } catch (e) {
+        console.warn('[apfSave] scan_history save failed (non-critical):', e.message);
+      }
+      
       // Reset edit state
       window._apfEditedData = null;
       
@@ -2750,6 +2803,313 @@ if(typeof showToast === 'undefined'){
   };
 }
 
+// ════════════════════════════════════════════════════════
+// 📦 ตู้ยาของฉัน (Med Cabinet) — Session 10
+// ════════════════════════════════════════════════════════
+
+let _mcCurrentScanId = null;
+let _mcCurrentTab = 'date';
+
+// Open Med Cabinet
+function openMedCabinet(){
+  closeHomeModal();
+  document.getElementById('modalBackdrop').style.display='block';
+  document.getElementById('modal-medcab').style.display='block';
+  _mcCurrentTab = 'date';
+  document.querySelectorAll('.mc-tab').forEach(t => 
+    t.classList.toggle('on', t.dataset.view === 'date'));
+  mcLoadView('date');
+}
+
+// Switch tab
+function mcSwitchTab(view){
+  _mcCurrentTab = view;
+  document.querySelectorAll('.mc-tab').forEach(t => 
+    t.classList.toggle('on', t.dataset.view === view));
+  mcLoadView(view);
+}
+
+// Load + render view from backend
+async function mcLoadView(view){
+  const userId = getCurrentUserId();
+  if(!userId) return;
+  
+  document.getElementById('mcLoading').style.display = 'block';
+  document.getElementById('mcEmpty').style.display = 'none';
+  document.getElementById('mcContent').style.display = 'none';
+  document.getElementById('mcContent').innerHTML = '';
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history?user_id=${userId}&group_by=${view}`);
+    const data = await r.json();
+    
+    document.getElementById('mcLoading').style.display = 'none';
+    
+    if (!data.ok) throw new Error(data.error || 'load failed');
+    
+    let html = '';
+    let isEmpty = false;
+    
+    if (view === 'date') {
+      const scans = data.scans || [];
+      if (scans.length === 0) { isEmpty = true; }
+      else {
+        // Group by date
+        const byDate = {};
+        for (const s of scans) {
+          const d = new Date(s.scan_date);
+          const dKey = d.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+          if (!byDate[dKey]) byDate[dKey] = [];
+          byDate[dKey].push(s);
+        }
+        for (const [dateLabel, dateScans] of Object.entries(byDate)) {
+          html += `<div class="mc-section-title">📅 ${dateLabel} <span class="mc-section-count">${dateScans.length}</span></div>`;
+          html += dateScans.map(s => mcRenderCard(s)).join('');
+        }
+      }
+    } else if (view === 'hospital') {
+      const groups = data.groups || [];
+      if (groups.length === 0) { isEmpty = true; }
+      else {
+        for (const g of groups) {
+          html += `<div class="mc-section-title">🏥 ${g.hospital} <span class="mc-section-count">${g.count}</span></div>`;
+          html += g.scans.map(s => mcRenderCard(s)).join('');
+        }
+      }
+    } else if (view === 'medication') {
+      const meds = data.medications || [];
+      if (meds.length === 0) { isEmpty = true; }
+      else {
+        html = meds.map(m => `
+          <div class="mc-card" onclick="alert('แสดงประวัติยา ${m.name} (coming soon)')">
+            <div class="mc-card-hd">
+              <div class="mc-card-thumb">💊</div>
+              <div class="mc-card-meta">
+                <div class="mc-card-date">${m.name} ${m.dose_value || ''}${m.dose_unit || ''}</div>
+                <div class="mc-card-hospital">เคยสั่ง ${m.scan_count} ครั้ง · ${m.hospitals.length} รพ.</div>
+              </div>
+              <div class="mc-card-badge">${m.scan_count}×</div>
+            </div>
+            <div class="mc-card-meds">
+              <span class="mc-card-meds-bold">โรงพยาบาล:</span> ${m.hospitals.join(', ') || '-'}<br>
+              <span class="mc-card-meds-bold">ครั้งล่าสุด:</span> ${new Date(m.latest_scan).toLocaleDateString('th-TH')}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+    
+    if (isEmpty) {
+      document.getElementById('mcEmpty').style.display = 'block';
+    } else {
+      document.getElementById('mcContent').innerHTML = html;
+      document.getElementById('mcContent').style.display = 'block';
+    }
+  } catch (e) {
+    console.error('[mc] load error:', e);
+    document.getElementById('mcLoading').style.display = 'none';
+    document.getElementById('mcContent').style.display = 'block';
+    document.getElementById('mcContent').innerHTML = `<div class="cg-empty">⚠️ โหลดไม่สำเร็จ: ${e.message}</div>`;
+  }
+}
+
+// Render scan card
+function mcRenderCard(s){
+  const date = new Date(s.scan_date);
+  const dateStr = date.toLocaleDateString('th-TH', {year:'numeric', month:'short', day:'numeric'});
+  const timeStr = date.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+  
+  const isMed = s.scan_type === 'medication';
+  const ico = isMed ? '💊' : '📋';
+  const badge = isMed ? 'medication' : 'appointment';
+  const badgeText = isMed ? `ยา ${s.medications?.length || 0} ตัว` : 'ใบนัด';
+  
+  let medsList = '';
+  if (isMed && s.medications?.length > 0) {
+    medsList = `<div class="mc-card-meds">${s.medications.map(m => 
+      `<span class="mc-card-meds-bold">${m.name}</span> ${m.dose_value || ''}${m.dose_unit || ''}`
+    ).join(' · ')}</div>`;
+  } else if (s.ai_raw_data) {
+    const raw = typeof s.ai_raw_data === 'string' ? JSON.parse(s.ai_raw_data) : s.ai_raw_data;
+    if (raw.doctor_name) medsList = `<div class="mc-card-meds">👨‍⚕️ ${raw.doctor_name}</div>`;
+    else if (raw.date_str) medsList = `<div class="mc-card-meds">📅 ${raw.date_str}</div>`;
+  }
+  
+  return `
+    <div class="mc-card" onclick="mcOpenDetail(${s.id})">
+      <div class="mc-card-hd">
+        <div class="mc-card-thumb">${ico}</div>
+        <div class="mc-card-meta">
+          <div class="mc-card-date">${dateStr} · ${timeStr}</div>
+          <div class="mc-card-hospital">🏥 ${s.hospital_name || 'ไม่ระบุโรงพยาบาล'}</div>
+        </div>
+        <div class="mc-card-badge ${badge}">${badgeText}</div>
+      </div>
+      ${medsList}
+    </div>
+  `;
+}
+
+// Open detail view
+async function mcOpenDetail(scanId){
+  _mcCurrentScanId = scanId;
+  closeHomeModal();
+  document.getElementById('modalBackdrop').style.display='block';
+  document.getElementById('modal-medcab-detail').style.display='block';
+  document.getElementById('mcDetailImg').innerHTML = '⏳ กำลังโหลด...';
+  document.getElementById('mcDetailData').innerHTML = '';
+  document.getElementById('mcDetailNote').value = '';
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history/${scanId}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.error);
+    
+    const s = d.scan;
+    const date = new Date(s.scan_date);
+    const dateStr = date.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+    
+    document.getElementById('mcDetailTitle').innerHTML = 
+      `📋 ${dateStr} <button class="modal-close" onclick="closeHomeModal()">✕</button>`;
+    
+    // Image
+    if (s.image_thumbnail) {
+      document.getElementById('mcDetailImg').innerHTML = 
+        `<img src="${s.image_thumbnail}" style="max-width:100%;max-height:240px;border-radius:12px;cursor:zoom-in" onclick="window.open(this.src)" />`;
+    } else {
+      document.getElementById('mcDetailImg').innerHTML = 
+        '<div style="padding:40px;background:#f1f5f9;border-radius:12px;color:#94a3b8">📷 ไม่มีรูปภาพ</div>';
+    }
+    
+    // Data
+    let dataHtml = '<div class="mc-detail-row"><span class="mc-detail-label">🏥 รพ.</span><span class="mc-detail-value">' + (s.hospital_name || '-') + '</span></div>';
+    if (s.doctor_name) {
+      dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">👨‍⚕️ แพทย์</span><span class="mc-detail-value">${s.doctor_name}</span></div>`;
+    }
+    if (s.ai_confidence) {
+      dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">🤖 ความมั่นใจ</span><span class="mc-detail-value">${Math.round(s.ai_confidence * 100)}%</span></div>`;
+    }
+    
+    // Type-specific data
+    if (s.scan_type === 'medication' && s.medications?.length > 0) {
+      dataHtml += '<div style="margin-top:14px"><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px">💊 ยา ' + s.medications.length + ' ตัว</div>';
+      dataHtml += s.medications.map(m => `
+        <div class="mc-med-item">
+          <div class="mc-med-name">${m.name} ${m.dose_value || ''}${m.dose_unit || ''}</div>
+          ${m.instruction_text ? `<div class="mc-med-dose">${m.instruction_text}</div>` : ''}
+        </div>
+      `).join('');
+      dataHtml += '</div>';
+    } else if (s.scan_type === 'appointment' && s.appointment) {
+      const a = s.appointment;
+      dataHtml += '<div style="margin-top:14px"><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px">📋 ใบนัด</div>';
+      if (a.appointment_date) {
+        const ad = new Date(a.appointment_date);
+        const adThai = ad.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
+        dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">📅 วันนัด</span><span class="mc-detail-value">${adThai}</span></div>`;
+      }
+      if (a.appointment_time) dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">🕐 เวลา</span><span class="mc-detail-value">${a.appointment_time}</span></div>`;
+      if (a.department) dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">🩺 คลินิก</span><span class="mc-detail-value">${a.department}</span></div>`;
+      if (a.building) dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">📍 สถานที่</span><span class="mc-detail-value">${a.building}</span></div>`;
+      if (a.patient_name) dataHtml += `<div class="mc-detail-row"><span class="mc-detail-label">👤 ผู้ป่วย</span><span class="mc-detail-value">${a.patient_name}</span></div>`;
+      dataHtml += '</div>';
+    }
+    
+    document.getElementById('mcDetailData').innerHTML = dataHtml;
+    document.getElementById('mcDetailNote').value = s.user_note || '';
+    
+  } catch (e) {
+    document.getElementById('mcDetailImg').innerHTML = `<div style="color:#dc2626">⚠️ ${e.message}</div>`;
+  }
+}
+
+// Save note
+async function mcSaveNote(){
+  if (!_mcCurrentScanId) return;
+  const note = document.getElementById('mcDetailNote').value.trim();
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history/${_mcCurrentScanId}`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_note: note})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      showToast?.('💾 บันทึกหมายเหตุแล้ว');
+    } else {
+      alert('ไม่สำเร็จ: ' + d.error);
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// Delete scan
+async function mcDeleteScan(){
+  if (!_mcCurrentScanId) return;
+  if (!confirm('ลบประวัติการสแกนนี้?\n(ยา/นัดที่ลงทะเบียนแล้วจะไม่ถูกลบ)')) return;
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history/${_mcCurrentScanId}`, {
+      method: 'DELETE'
+    });
+    const d = await r.json();
+    if (d.ok) {
+      showToast?.('🗑️ ลบแล้ว');
+      closeHomeModal();
+      // Refresh main list
+      setTimeout(() => openMedCabinet(), 200);
+    }
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+// Helper: capture small thumbnail from image (for storage)
+async function mcThumbnailFromImage(srcImageOrDataUrl, maxSize = 300){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7));
+    };
+    img.onerror = () => resolve(null);
+    img.src = srcImageOrDataUrl;
+  });
+}
+
+// Save scan to history (called after successful AI scan)
+async function mcSaveScanHistory(scanType, payload){
+  const userId = getCurrentUserId();
+  if (!userId) return null;
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        scan_type: scanType,
+        ...payload,
+      })
+    });
+    const d = await r.json();
+    if (d.ok) {
+      console.log('[mc] saved scan history id=', d.scan.id);
+      return d.scan.id;
+    }
+  } catch (e) {
+    console.warn('[mc] save scan history failed:', e.message);
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════
+// END MED CABINET
+// ════════════════════════════════════════════════════════
+
 function openHomeModal(name){
   closeSheet();
   // โหลดข้อมูลจาก localStorage
@@ -3269,6 +3629,58 @@ function saveHomeModal(name){
     </div>
     
     <button class="modal-save-btn" onclick="closeHomeModal();openHomeModal('caregiver')" style="margin-top:16px">เสร็จสิ้น</button>
+  </div>
+
+  <!-- 📦 ตู้ยาของฉัน — Medicine Cabinet Modal (Session 10) -->
+  <div class="modal-box" id="modal-medcab" style="display:none;max-width:760px">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 ตู้ยาของฉัน <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    
+    <!-- Tabs -->
+    <div class="mc-tabs">
+      <button class="mc-tab on" data-view="date" onclick="mcSwitchTab('date')">📅 ตามวันที่</button>
+      <button class="mc-tab" data-view="hospital" onclick="mcSwitchTab('hospital')">🏥 ตามรพ.</button>
+      <button class="mc-tab" data-view="medication" onclick="mcSwitchTab('medication')">💊 ตามยา</button>
+    </div>
+    
+    <!-- Loading state -->
+    <div id="mcLoading" style="text-align:center;padding:40px;color:#94a3b8;font-size:14px">
+      ⏳ กำลังโหลด...
+    </div>
+    
+    <!-- Empty state -->
+    <div id="mcEmpty" style="display:none;text-align:center;padding:40px 20px">
+      <div style="font-size:48px;margin-bottom:12px">📭</div>
+      <div style="font-size:16px;font-weight:600;color:#475569;margin-bottom:6px">ยังไม่มีประวัติการสแกน</div>
+      <div style="font-size:13px;color:#94a3b8">เริ่มสแกนซองยาหรือใบนัดเพื่อสะสมประวัติ</div>
+    </div>
+    
+    <!-- Content area (filled by JS) -->
+    <div id="mcContent" style="display:none"></div>
+  </div>
+
+  <!-- 📦 Med Cabinet Detail Modal -->
+  <div class="modal-box" id="modal-medcab-detail" style="display:none">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="mcDetailTitle">📋 รายละเอียดการสแกน <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    
+    <!-- Image preview -->
+    <div id="mcDetailImg" style="text-align:center;margin-bottom:16px"></div>
+    
+    <!-- AI Data section -->
+    <div id="mcDetailData"></div>
+    
+    <!-- Note section -->
+    <div style="margin-top:16px">
+      <label style="font-size:13px;font-weight:600;color:#475569;display:block;margin-bottom:6px">📝 หมายเหตุของฉัน</label>
+      <textarea id="mcDetailNote" placeholder="เพิ่มหมายเหตุ..." rows="3" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;font-size:14px;resize:vertical"></textarea>
+    </div>
+    
+    <!-- Actions -->
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="mcSaveNote()" style="flex:1;padding:10px;background:#0a9c7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">💾 บันทึกหมายเหตุ</button>
+      <button onclick="mcDeleteScan()" style="padding:10px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">🗑️</button>
+    </div>
   </div>
 
   <!-- Doctor Modal -->
