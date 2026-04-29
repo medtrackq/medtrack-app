@@ -816,14 +816,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="sheet-item-arrow">›</div>
     </div>
     <div class="sheet-sec">จัดการยา</div>
-    <div class="sheet-item" onclick="navTo('medtrack-scan.html')">
-      <div class="sheet-item-ico ic-teal" style="border-radius:13px">➕</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">เพิ่มยาใหม่</div>
-        <div class="sheet-item-sub">สแกนซองหรือกรอกด้วยมือ</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
     <div class="sheet-item" onclick="openMedCabinet()">
       <div class="sheet-item-ico" style="background:#EFF6FF">🗃️</div>
       <div class="sheet-item-info">
@@ -1497,11 +1489,11 @@ function loadMedsFromStorage(){
   // จัดการยา
   mealHTML += `
     <div class="sheet-sec">จัดการยา</div>
-    <div class="sheet-item" onclick="navTo('medtrack-scan.html')">
-      <div class="sheet-item-ico ic-teal" style="border-radius:13px">➕</div>
+    <div class="sheet-item" onclick="openMedCabinet()">
+      <div class="sheet-item-ico" style="background:#EFF6FF">🗃️</div>
       <div class="sheet-item-info">
-        <div class="sheet-item-title">เพิ่มยาใหม่</div>
-        <div class="sheet-item-sub">สแกนซองหรือกรอกด้วยมือ</div>
+        <div class="sheet-item-title">ตู้ยาของฉัน</div>
+        <div class="sheet-item-sub">ประวัติสแกนยา + ใบนัด</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
