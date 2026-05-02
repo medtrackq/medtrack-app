@@ -21,6 +21,8 @@
 <meta name="theme-color" content="#1E3A8A">
 
 <!-- ================================================= -->
+
+
 <title>MedTrack</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -3077,14 +3079,12 @@ async function rsSaveRefill(){
     const data = await r.json();
     
     if (data.ok) {
-      // Show success
       btn.textContent = '✅ บันทึกแล้ว';
       btn.style.background = '#10b981';
       
-      // Reload list + refresh widget
       setTimeout(() => {
         loadRefillSetupList();
-        loadRefillStatus();  // Refresh main widget too
+        loadRefillStatus();
         document.getElementById('rsEditForm').style.display = 'none';
         document.getElementById('rsList').style.display = 'block';
         btn.disabled = false;
@@ -3099,6 +3099,41 @@ async function rsSaveRefill(){
     alert('เกิดข้อผิดพลาด: ' + e.message);
     btn.disabled = false;
     btn.textContent = '💾 บันทึก';
+  }
+}
+
+async function rsDeleteMedication(){
+  if (!_rsCurrentMed) return;
+  
+  const medName = _rsCurrentMed.name || 'ยานี้';
+  
+  // Two-step confirmation for safety
+  if (!confirm(`⚠️ ต้องการหยุดกินยา "${medName}" จริงๆ ใช่ไหม?\n\nระบบจะ:\n• หยุดเตือนยานี้\n• เก็บประวัติการกิน\n• ลบจากตารางมื้อยา\n\n(สามารถเพิ่มกลับได้ภายหลัง)`)) {
+    return;
+  }
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/medications/${_rsCurrentMed.medication_id}`, {
+      method: 'DELETE'
+    });
+    
+    const data = await r.json();
+    
+    if (data.ok || r.ok) {
+      alert(`✅ หยุดกินยา "${medName}" แล้ว`);
+      
+      // Reload list + refresh widgets
+      loadRefillSetupList();
+      loadRefillStatus();
+      document.getElementById('rsEditForm').style.display = 'none';
+      document.getElementById('rsList').style.display = 'block';
+      _rsCurrentMed = null;
+    } else {
+      throw new Error(data.message || data.error || 'Delete failed');
+    }
+  } catch(e) {
+    console.error('[refill-setup] delete failed:', e);
+    alert('เกิดข้อผิดพลาด: ' + e.message);
   }
 }
 
@@ -3312,6 +3347,21 @@ async function mcOpenDetail(scanId){
     document.getElementById('mcDetailData').innerHTML = dataHtml;
     document.getElementById('mcDetailNote').value = s.user_note || '';
     
+    // Store full scan data for delete logic
+    window._mcCurrentScan = s;
+    
+    // Update delete button label based on type
+    const deleteBtn = document.getElementById('mcDetailDeleteBtn');
+    if (deleteBtn) {
+      if (s.scan_type === 'appointment') {
+        deleteBtn.innerHTML = '🗑️ ยกเลิกนัด';
+        deleteBtn.style.padding = '10px 14px';
+      } else {
+        deleteBtn.innerHTML = '🗑️';
+        deleteBtn.style.padding = '10px 14px';
+      }
+    }
+    
   } catch (e) {
     document.getElementById('mcDetailImg').innerHTML = `<div style="color:#dc2626">⚠️ ${e.message}</div>`;
   }
@@ -3337,20 +3387,42 @@ async function mcSaveNote(){
   } catch (e) { alert('Error: ' + e.message); }
 }
 
-// Delete scan
+// Delete scan (and linked appointment if applicable)
 async function mcDeleteScan(){
   if (!_mcCurrentScanId) return;
-  if (!confirm('ลบประวัติการสแกนนี้?\n(ยา/นัดที่ลงทะเบียนแล้วจะไม่ถูกลบ)')) return;
+  
+  // Use stored full scan data
+  const scan = window._mcCurrentScan;
+  const isAppointment = scan && scan.scan_type === 'appointment';
+  const apptId = scan && scan.appointment && scan.appointment.id;
+  
+  const confirmMsg = isAppointment
+    ? '⚠️ ยกเลิกนัดนี้?\n\nระบบจะ:\n• หยุดเตือนนัดนี้ (7/3/1 วันก่อน)\n• ลบประวัติสแกน\n\n(ไม่สามารถกู้คืนได้)'
+    : '🗑️ ลบประวัติการสแกนนี้?\n(ยาที่ลงทะเบียนแล้วจะไม่ถูกลบ)';
+  
+  if (!confirm(confirmMsg)) return;
   
   try {
+    // 1. Delete linked appointment if it exists
+    if (isAppointment && apptId) {
+      try {
+        await fetch(`${MEDTRACK_BACKEND}/api/appointments/${apptId}`, {
+          method: 'DELETE'
+        });
+        console.log('[mc] Deleted linked appointment:', apptId);
+      } catch(e) {
+        console.warn('[mc] Failed to delete appointment:', e.message);
+      }
+    }
+    
+    // 2. Delete scan history
     const r = await fetch(`${MEDTRACK_BACKEND}/api/scan-history/${_mcCurrentScanId}`, {
       method: 'DELETE'
     });
     const d = await r.json();
     if (d.ok) {
-      showToast?.('🗑️ ลบแล้ว');
+      showToast?.(isAppointment ? '✅ ยกเลิกนัดแล้ว' : '🗑️ ลบแล้ว');
       closeHomeModal();
-      // Refresh main list
       setTimeout(() => openMedCabinet(), 200);
     }
   } catch (e) { alert('Error: ' + e.message); }
@@ -3973,7 +4045,7 @@ function saveHomeModal(name){
     <!-- Actions -->
     <div style="display:flex;gap:8px;margin-top:16px">
       <button onclick="mcSaveNote()" style="flex:1;padding:10px;background:#0a9c7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">💾 บันทึกหมายเหตุ</button>
-      <button onclick="mcDeleteScan()" style="padding:10px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">🗑️</button>
+      <button onclick="mcDeleteScan()" id="mcDetailDeleteBtn" style="padding:10px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">🗑️</button>
     </div>
   </div>
 
@@ -4034,6 +4106,16 @@ function saveHomeModal(name){
       <div style="display:flex;gap:8px">
         <button onclick="rsBackToList()" style="padding:12px 16px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">← กลับ</button>
         <button onclick="rsSaveRefill()" id="rsSaveBtn" style="flex:1;padding:12px;background:#0a9c7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">💾 บันทึก</button>
+      </div>
+      
+      <!-- Danger zone -->
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #fee2e2">
+        <button onclick="rsDeleteMedication()" style="width:100%;padding:10px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit;font-size:13px">
+          🗑️ หยุดกินยานี้ (ลบจากระบบ)
+        </button>
+        <p style="font-size:11px;color:#94a3b8;text-align:center;margin-top:6px;line-height:1.4">
+          ระบบจะหยุดเตือนยานี้ · ประวัติยังเก็บไว้
+        </p>
       </div>
     </div>
   </div>
