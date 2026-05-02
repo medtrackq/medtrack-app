@@ -1,0 +1,14 @@
+{
+  "name": "MedTrack Q",
+  "short_name": "MedTrack",
+  "description": "AI-powered medication management for everyone",
+  "start_url": "./medtrack-home.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#DCEEFF",
+  "theme_color": "#1E3A8A",
+  "icons": [
+    {"src": "android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
