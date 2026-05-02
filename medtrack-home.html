@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <!-- ============ ICON FOR ALL PLATFORMS ============ -->
+<!-- ============ ICON FOR ALL PLATFORMS ============ -->
 
 <!-- Browser tab favicon -->
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -560,7 +559,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
   <div class="scroll">
 
     <!-- 📦 Refill Status Widget (Layer 7) -->
-    <div id="refillWidget" style="display:none;background:linear-gradient(135deg,#fef3c7 0%,#fef9c3 100%);border:1px solid #fde68a;border-radius:14px;padding:14px 16px;margin:12px 0;cursor:pointer" onclick="openMedCabinet();mcSwitchTab('medication')">
+    <div id="refillWidget" style="display:none;background:linear-gradient(135deg,#fef3c7 0%,#fef9c3 100%);border:1px solid #fde68a;border-radius:14px;padding:14px 16px;margin:12px 0;cursor:pointer" onclick="openRefillSetup()">
       <div style="display:flex;align-items:center;gap:12px">
         <div style="font-size:28px">📦</div>
         <div style="flex:1;min-width:0">
@@ -2903,6 +2902,206 @@ if (typeof window !== 'undefined') {
     setTimeout(loadRefillStatus, 500);
   });
 }
+
+// ────────────────────────────────────────────────────────
+// 📦 Refill Setup Modal — Layer 7 UI
+// ────────────────────────────────────────────────────────
+
+let _rsCurrentMed = null;
+
+function openRefillSetup(){
+  closeHomeModal();
+  document.getElementById('homeModalOverlay').classList.add('on');
+  document.getElementById('modal-refill-setup').style.display='block';
+  
+  // Reset to list view
+  document.getElementById('rsLoading').style.display = 'block';
+  document.getElementById('rsEmpty').style.display = 'none';
+  document.getElementById('rsList').style.display = 'none';
+  document.getElementById('rsEditForm').style.display = 'none';
+  
+  loadRefillSetupList();
+}
+
+async function loadRefillSetupList(){
+  const userId = getCurrentUserId();
+  if(!userId) return;
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/medications/refill-status?user_id=${userId}`);
+    const data = await r.json();
+    
+    document.getElementById('rsLoading').style.display = 'none';
+    
+    if (!data.ok || !data.medications || data.medications.length === 0) {
+      document.getElementById('rsEmpty').style.display = 'block';
+      return;
+    }
+    
+    const list = document.getElementById('rsList');
+    list.innerHTML = data.medications.map(m => {
+      const hasData = m.total_tablets && m.start_date;
+      const statusBadge = hasData
+        ? (m.status === 'critical' || m.status === 'expired' 
+            ? `<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">⚠️ ${m.days_remaining <= 0 ? 'หมดแล้ว' : `เหลือ ${m.days_remaining} วัน`}</span>`
+            : m.status === 'warning'
+              ? `<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">📅 อีก ${m.days_remaining} วัน</span>`
+              : `<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">✓ เพียงพอ</span>`)
+        : `<span style="background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:600">⚙️ ยังไม่ได้ตั้งค่า</span>`;
+      
+      const detailLine = hasData
+        ? `จำนวน ${m.total_tablets} เม็ด · เหลือ ${m.tablets_remaining || 0} เม็ด`
+        : 'แตะเพื่อตั้งค่าจำนวน';
+      
+      return `
+        <div onclick="rsSelectMed(${m.medication_id})" style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.15s">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:2px">${m.name || 'ไม่ระบุชื่อ'}</div>
+              <div style="font-size:12px;color:#64748b">${detailLine}</div>
+            </div>
+            <div>${statusBadge}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+    
+    list.style.display = 'block';
+    
+    // Store data for later
+    window._rsAllMeds = data.medications;
+  } catch(e) {
+    console.error('[refill-setup] load failed:', e);
+    document.getElementById('rsLoading').style.display = 'none';
+    document.getElementById('rsEmpty').style.display = 'block';
+    document.getElementById('rsEmpty').innerHTML = '<p style="color:#dc2626;font-size:13px">เกิดข้อผิดพลาด ลองใหม่อีกครั้ง</p>';
+  }
+}
+
+function rsSelectMed(medId){
+  const med = window._rsAllMeds?.find(m => m.medication_id === medId);
+  if (!med) return;
+  
+  _rsCurrentMed = med;
+  
+  // Hide list, show form
+  document.getElementById('rsList').style.display = 'none';
+  document.getElementById('rsEditForm').style.display = 'block';
+  
+  // Fill form
+  document.getElementById('rsEditMedName').textContent = med.name || 'ไม่ระบุชื่อ';
+  const doseText = med.dose_value 
+    ? `${med.dose_value}${med.dose_unit || 'mg'}`
+    : '';
+  document.getElementById('rsEditMedDose').textContent = doseText;
+  
+  // Pre-fill if exists
+  if (med.start_date) {
+    const d = new Date(med.start_date);
+    document.getElementById('rsEditStartDate').value = d.toISOString().split('T')[0];
+  } else {
+    document.getElementById('rsEditStartDate').value = new Date().toISOString().split('T')[0];
+  }
+  
+  document.getElementById('rsEditTotalTablets').value = med.total_tablets || '';
+  
+  // Setup preview update
+  document.getElementById('rsEditTotalTablets').oninput = updateRsPreview;
+  document.getElementById('rsEditStartDate').onchange = updateRsPreview;
+  updateRsPreview();
+}
+
+function updateRsPreview(){
+  const totalTablets = parseInt(document.getElementById('rsEditTotalTablets').value) || 0;
+  const startDate = document.getElementById('rsEditStartDate').value;
+  
+  if (!totalTablets || !startDate || !_rsCurrentMed) {
+    document.getElementById('rsEditPreview').style.display = 'none';
+    return;
+  }
+  
+  const tabletsPerDay = _rsCurrentMed.tablets_per_day || 1;
+  const daysSupply = Math.floor(totalTablets / tabletsPerDay);
+  const start = new Date(startDate);
+  const endDate = new Date(start);
+  endDate.setDate(start.getDate() + daysSupply);
+  
+  const endText = endDate.toLocaleDateString('th-TH', {
+    year: 'numeric', month: 'long', day: 'numeric'
+  });
+  
+  document.getElementById('rsEditPreviewText').innerHTML = `
+    ยา ${totalTablets} เม็ด × ${tabletsPerDay} ต่อวัน<br>
+    = พอกินอีก <strong>${daysSupply} วัน</strong><br>
+    จะหมดประมาณ <strong>${endText}</strong>
+  `;
+  document.getElementById('rsEditPreview').style.display = 'block';
+}
+
+function rsBackToList(){
+  document.getElementById('rsEditForm').style.display = 'none';
+  document.getElementById('rsList').style.display = 'block';
+  _rsCurrentMed = null;
+}
+
+async function rsSaveRefill(){
+  if (!_rsCurrentMed) return;
+  
+  const startDate = document.getElementById('rsEditStartDate').value;
+  const totalTablets = parseInt(document.getElementById('rsEditTotalTablets').value);
+  
+  if (!startDate || !totalTablets) {
+    alert('กรุณาใส่วันที่เริ่มกินและจำนวนยา');
+    return;
+  }
+  
+  if (totalTablets < 1 || totalTablets > 9999) {
+    alert('จำนวนยาต้องอยู่ระหว่าง 1-9999 เม็ด');
+    return;
+  }
+  
+  const btn = document.getElementById('rsSaveBtn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังบันทึก...';
+  
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/medications/${_rsCurrentMed.medication_id}/refill`, {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        start_date: startDate,
+        total_tablets: totalTablets
+      })
+    });
+    
+    const data = await r.json();
+    
+    if (data.ok) {
+      // Show success
+      btn.textContent = '✅ บันทึกแล้ว';
+      btn.style.background = '#10b981';
+      
+      // Reload list + refresh widget
+      setTimeout(() => {
+        loadRefillSetupList();
+        loadRefillStatus();  // Refresh main widget too
+        document.getElementById('rsEditForm').style.display = 'none';
+        document.getElementById('rsList').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = '💾 บันทึก';
+        btn.style.background = '#0a9c7a';
+      }, 1000);
+    } else {
+      throw new Error(data.message || 'Save failed');
+    }
+  } catch(e) {
+    console.error('[refill-setup] save failed:', e);
+    alert('เกิดข้อผิดพลาด: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '💾 บันทึก';
+  }
+}
+
 // ────────────────────────────────────────────────────────
 
 // Open Med Cabinet
@@ -3775,6 +3974,67 @@ function saveHomeModal(name){
     <div style="display:flex;gap:8px;margin-top:16px">
       <button onclick="mcSaveNote()" style="flex:1;padding:10px;background:#0a9c7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">💾 บันทึกหมายเหตุ</button>
       <button onclick="mcDeleteScan()" style="padding:10px 14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">🗑️</button>
+    </div>
+  </div>
+
+  <!-- 📦 Refill Setup Modal (Layer 7) -->
+  <div class="modal-box" id="modal-refill-setup" style="display:none">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📦 ตั้งค่าจำนวนยา <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px;line-height:1.5">
+      เลือกยาที่ต้องการใส่จำนวน → ระบบจะคำนวณวันที่ยาจะหมด และแจ้งเตือนล่วงหน้า 7/3/0 วัน
+    </p>
+    
+    <!-- Loading -->
+    <div id="rsLoading" style="text-align:center;padding:20px;color:#64748b;font-size:14px">
+      กำลังโหลด...
+    </div>
+    
+    <!-- Empty state -->
+    <div id="rsEmpty" style="display:none;text-align:center;padding:30px 20px;color:#64748b">
+      <div style="font-size:36px;margin-bottom:8px">💊</div>
+      <p style="font-size:14px;font-weight:600;color:#475569;margin-bottom:4px">ยังไม่มียาในระบบ</p>
+      <p style="font-size:12px">เพิ่มยาก่อนผ่านการสแกนซองยา</p>
+    </div>
+    
+    <!-- List of medications -->
+    <div id="rsList" style="display:none;max-height:50vh;overflow-y:auto"></div>
+    
+    <!-- Edit form (shown when item selected) -->
+    <div id="rsEditForm" style="display:none">
+      <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;color:#0d9488;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">
+          กำลังตั้งค่า
+        </div>
+        <div id="rsEditMedName" style="font-size:16px;font-weight:700;color:#0f172a"></div>
+        <div id="rsEditMedDose" style="font-size:13px;color:#475569;margin-top:2px"></div>
+      </div>
+      
+      <label style="font-size:13px;font-weight:600;color:#475569;display:block;margin-bottom:6px">
+        📅 วันที่เริ่มกินยา
+      </label>
+      <input type="date" id="rsEditStartDate" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:12px">
+      
+      <label style="font-size:13px;font-weight:600;color:#475569;display:block;margin-bottom:6px">
+        💊 จำนวนเม็ดทั้งหมดที่ได้รับ
+      </label>
+      <input type="number" id="rsEditTotalTablets" min="1" max="9999" placeholder="เช่น 30, 60, 90" style="width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-family:inherit;font-size:14px;margin-bottom:6px">
+      <p style="font-size:11px;color:#64748b;margin-bottom:14px">
+        ตัวอย่าง: รพ. จ่ายยา 90 วัน × 1 เม็ด/วัน = 90 เม็ด
+      </p>
+      
+      <!-- Calculation preview -->
+      <div id="rsEditPreview" style="display:none;background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#92400e">
+        <strong>📊 ระบบจะคำนวณ:</strong><br>
+        <span id="rsEditPreviewText"></span>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;gap:8px">
+        <button onclick="rsBackToList()" style="padding:12px 16px;background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">← กลับ</button>
+        <button onclick="rsSaveRefill()" id="rsSaveBtn" style="flex:1;padding:12px;background:#0a9c7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-family:inherit">💾 บันทึก</button>
+      </div>
     </div>
   </div>
 
