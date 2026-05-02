@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MedTrack Admin · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a1218;--surface:#0f1a23;--panel:#1a2733;--border:#2a3744;
+  --text:#e2e8f0;--text-mid:#94a3b8;--text-dim:#64748b;
+  --primary:#0d9488;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --info:#3b82f6;
+}
+body{
+  font-family:'IBM Plex Sans Thai',sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;-webkit-font-smoothing:antialiased
+}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+
+/* Login screen */
+.login{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px
+}
+.login-card{
+  max-width:400px;width:100%;background:var(--panel);border:1px solid var(--border);
+  border-radius:16px;padding:32px
+}
+.login-card h1{font-size:24px;margin-bottom:8px;color:var(--primary)}
+.login-card p{font-size:14px;color:var(--text-mid);margin-bottom:24px}
+.login-card input{
+  width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;margin-bottom:12px
+}
+.login-card button{
+  width:100%;padding:12px;background:var(--primary);color:#fff;border:none;
+  border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;font-size:14px
+}
+
+/* Header */
+.header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)
+}
+.header h1{font-size:22px;color:var(--primary)}
+.header .meta{font-size:12px;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+.header .actions{display:flex;gap:8px}
+.btn{
+  padding:8px 14px;background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px
+}
+.btn:hover{background:var(--border)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* Stats grid */
+.stats{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+  gap:12px;margin-bottom:24px
+}
+.stat{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:14px;position:relative;overflow:hidden
+}
+.stat-label{
+  font-size:11px;color:var(--text-dim);text-transform:uppercase;
+  letter-spacing:0.05em;font-family:'JetBrains Mono',monospace;margin-bottom:6px
+}
+.stat-value{font-size:28px;font-weight:700;color:var(--text);line-height:1}
+.stat-sub{font-size:11px;color:var(--text-mid);margin-top:6px}
+
+/* Section */
+.section{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:20px;margin-bottom:20px
+}
+.section h2{
+  font-size:16px;margin-bottom:16px;color:var(--text);
+  display:flex;align-items:center;gap:8px
+}
+.section h2 .badge{
+  background:var(--primary);color:#fff;font-size:11px;padding:2px 8px;
+  border-radius:8px;font-weight:500
+}
+
+/* Users table */
+.user-list{display:flex;flex-direction:column;gap:8px}
+.user-row{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px;display:grid;
+  grid-template-columns:1fr 100px 100px 100px 100px;
+  gap:14px;align-items:center;cursor:pointer
+}
+.user-row:hover{border-color:var(--primary)}
+@media(max-width:768px){
+  .user-row{grid-template-columns:1fr;gap:8px}
+}
+.user-name{font-weight:600;font-size:14px}
+.user-id{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.metric{text-align:center}
+.metric-value{font-size:18px;font-weight:600;color:var(--primary)}
+.metric-label{font-size:10px;color:var(--text-dim);text-transform:uppercase}
+.adherence{font-size:14px;font-weight:600}
+.adherence.good{color:var(--success)}
+.adherence.warning{color:var(--warning)}
+.adherence.bad{color:var(--danger)}
+.adherence.none{color:var(--text-dim)}
+
+/* Activity feed */
+.activity-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto}
+.activity-item{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;display:flex;justify-content:space-between;align-items:center;
+  font-size:13px
+}
+.activity-icon{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;flex-shrink:0
+}
+.activity-icon.dose{background:#0a3a3a;color:var(--success)}
+.activity-icon.scan{background:#1a3a4a;color:var(--info)}
+.activity-meta{flex:1;margin-left:10px}
+.activity-time{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:var(--text-mid)}
+.error{
+  background:#3a0a0a;border:1px solid var(--danger);color:#fca5a5;
+  padding:14px;border-radius:8px;font-size:14px
+}
+
+/* Empty */
+.empty{
+  text-align:center;padding:30px;color:var(--text-dim)
+}
+.empty-icon{font-size:32px;margin-bottom:8px}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login">
+  <div class="login-card">
+    <h1>🔐 MedTrack Admin</h1>
+    <p>ใส่ Admin Secret เพื่อเข้าดู dashboard</p>
+    <input type="password" id="secretInput" placeholder="x-admin-secret" autocomplete="off">
+    <button onclick="login()">เข้าสู่ระบบ</button>
+    <p style="font-size:11px;color:var(--text-dim);margin-top:14px;font-family:'JetBrains Mono',monospace">
+      Tip: Bookmark เก็บ ?secret=...<br>
+      เพื่อ auto-login ครั้งถัดไป
+    </p>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="container" style="display:none">
+  
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>📊 MedTrack Admin Dashboard</h1>
+      <div class="meta" id="lastUpdate">Loading...</div>
+    </div>
+    <div class="actions">
+      <button class="btn" onclick="loadOverview()">🔄 Refresh</button>
+      <button class="btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  
+  <!-- Loading -->
+  <div id="loadingState" class="loading">กำลังโหลด...</div>
+  
+  <!-- Error -->
+  <div id="errorState" class="error" style="display:none"></div>
+  
+  <!-- Main content -->
+  <div id="mainContent" style="display:none">
+    
+    <!-- Stats Grid -->
+    <div class="stats" id="statsGrid"></div>
+    
+    <!-- Users Section -->
+    <div class="section">
+      <h2>👥 Users <span class="badge" id="userCountBadge">0</span></h2>
+      <div id="userList" class="user-list"></div>
+    </div>
+    
+    <!-- Activity Feed -->
+    <div class="section">
+      <h2>⚡ Recent Activity (24h)</h2>
+      <div id="activityList" class="activity-list"></div>
+    </div>
+    
+  </div>
+  
+</div>
+
+<script>
+const BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
+let _adminSecret = null;
+
+// On load: check URL params or localStorage
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  const urlSecret = params.get('secret');
+  const savedSecret = localStorage.getItem('mt_admin_secret');
+  
+  if (urlSecret) {
+    _adminSecret = urlSecret;
+    localStorage.setItem('mt_admin_secret', urlSecret);
+    showDashboard();
+  } else if (savedSecret) {
+    _adminSecret = savedSecret;
+    showDashboard();
+  }
+});
+
+function login(){
+  const secret = document.getElementById('secretInput').value.trim();
+  if (!secret) {
+    alert('กรุณาใส่ secret');
+    return;
+  }
+  _adminSecret = secret;
+  localStorage.setItem('mt_admin_secret', secret);
+  showDashboard();
+}
+
+function logout(){
+  _adminSecret = null;
+  localStorage.removeItem('mt_admin_secret');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+function showDashboard(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  loadOverview();
+}
+
+async function loadOverview(){
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'none';
+  
+  try {
+    const r = await fetch(`${BACKEND}/api/admin/overview`, {
+      headers: {'x-admin-secret': _adminSecret}
+    });
+    
+    if (r.status === 403) {
+      throw new Error('Secret ไม่ถูกต้อง');
+    }
+    
+    const data = await r.json();
+    
+    if (!data.ok) {
+      throw new Error(data.message || 'Failed to load');
+    }
+    
+    renderStats(data.stats);
+    renderUsers(data.users);
+    renderActivity(data.activity);
+    
+    document.getElementById('lastUpdate').textContent = 
+      `Last updated: ${new Date(data.generated_at).toLocaleString('th-TH')}`;
+    
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    
+  } catch(e) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('errorState').textContent = '❌ ' + e.message;
+    
+    if (e.message.includes('Secret')) {
+      setTimeout(() => logout(), 2000);
+    }
+  }
+}
+
+function renderStats(stats){
+  const adherence24h = stats.doses_24h > 0 
+    ? Math.round(100 * stats.taken_24h / stats.doses_24h) 
+    : null;
+  
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Total Users</div>
+      <div class="stat-value">${stats.total_users}</div>
+      <div class="stat-sub">active accounts</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Active Meds</div>
+      <div class="stat-value">${stats.total_meds}</div>
+      <div class="stat-sub">currently scheduled</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Upcoming Appts</div>
+      <div class="stat-value">${stats.upcoming_appts}</div>
+      <div class="stat-sub">future appointments</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Scans</div>
+      <div class="stat-value">${stats.total_scans}</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Doses 24h</div>
+      <div class="stat-value">${stats.taken_24h} / ${stats.doses_24h}</div>
+      <div class="stat-sub">${adherence24h !== null ? adherence24h + '% adherence' : 'no data'}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Caregivers</div>
+      <div class="stat-value">${stats.active_caregivers}</div>
+      <div class="stat-sub">linked active</div>
+    </div>
+  `;
+}
+
+function renderUsers(users){
+  document.getElementById('userCountBadge').textContent = users.length;
+  
+  if (users.length === 0) {
+    document.getElementById('userList').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">👥</div>
+        <div>ยังไม่มี users — เริ่มจาก onboard tester #1 ครับ</div>
+      </div>
+    `;
+    return;
+  }
+  
+  document.getElementById('userList').innerHTML = users.map(u => {
+    const adh = u.adherence_7d;
+    const adhClass = adh === null ? 'none' 
+      : adh >= 80 ? 'good' 
+      : adh >= 50 ? 'warning' 
+      : 'bad';
+    const adhDisplay = adh === null ? '—' : `${adh}%`;
+    
+    const lastDose = u.last_dose 
+      ? new Date(u.last_dose).toLocaleDateString('th-TH', {day:'numeric',month:'short'})
+      : 'ยังไม่กิน';
+    
+    return `
+      <div class="user-row">
+        <div>
+          <div class="user-name">${u.display_name || 'No name'}</div>
+          <div class="user-id">id=${u.id} · ${u.line_user_id ? u.line_user_id.substring(0,12) + '...' : 'no LINE'}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">${u.active_meds}</div>
+          <div class="metric-label">Meds</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value">${u.upcoming_appts}</div>
+          <div class="metric-label">Appts</div>
+        </div>
+        <div class="metric">
+          <div class="adherence ${adhClass}">${adhDisplay}</div>
+          <div class="metric-label">Adherence 7d</div>
+        </div>
+        <div class="metric">
+          <div style="font-size:13px;color:var(--text-mid)">${lastDose}</div>
+          <div class="metric-label">Last Dose</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderActivity(activity){
+  if (activity.length === 0) {
+    document.getElementById('activityList').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">⚡</div>
+        <div>ยังไม่มี activity</div>
+      </div>
+    `;
+    return;
+  }
+  
+  document.getElementById('activityList').innerHTML = activity.map(a => {
+    const time = new Date(a.event_time);
+    const timeStr = time.toLocaleString('th-TH', {hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+    
+    const icon = a.event_type === 'dose' ? '💊' : '📷';
+    const text = a.event_type === 'dose' 
+      ? `กินยา (${a.detail})`
+      : `สแกน${a.detail === 'appointment' ? 'ใบนัด' : 'ซองยา'}`;
+    
+    return `
+      <div class="activity-item">
+        <div class="activity-icon ${a.event_type}">${icon}</div>
+        <div class="activity-meta">
+          <div><strong>${a.display_name}</strong> ${text}</div>
+        </div>
+        <div class="activity-time">${timeStr}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Auto-refresh every 60 seconds
+setInterval(() => {
+  if (_adminSecret) loadOverview();
+}, 60000);
+
+// Enter key in login
+document.getElementById('secretInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+</script>
+
+</body>
+</html>
