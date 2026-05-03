@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <!-- ============ ICON FOR ALL PLATFORMS ============ -->
+<!-- ============ ICON FOR ALL PLATFORMS ============ -->
 
 <!-- Browser tab favicon -->
 <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -21,6 +21,8 @@
 <meta name="theme-color" content="#1E3A8A">
 
 <!-- ================================================= -->
+
+
 <title>MedTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1160,16 +1162,17 @@ async function analyzeAll(){
     renderQueue();renderProgItems();
     updateProgBar(i,photoQueue.length);
     try{
-      // เรียก backend — มี timeout 30 วินาที
-      const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),30000));
-      const result = await Promise.race([callAPI(photoQueue[i].base64,photoQueue[i].mime), timeoutPromise]);
+      // callAPI มี internal timeout 45 sec + AbortController
+      const result = await callAPI(photoQueue[i].base64,photoQueue[i].mime);
       photoQueue[i].result=result;photoQueue[i].status='done';
       meds.push(fixTotalDays(result));
     }catch(e){
-      console.error('[analyzeAll] error on photo',i,':',e);
+      console.error('[analyzeAll] error on photo',i,':',e.message);
       photoQueue[i].status='error';
+      photoQueue[i].errorMsg = e.message === 'timeout' 
+        ? 'หมดเวลา (45 วินาที) — ลองใหม่' 
+        : e.message;
       photoQueue[i].result=null;
-      // ไม่ fallback เป็น demo — แสดง error ให้ผู้ใช้รู้
     }
     renderQueue();renderProgItems();
   }
@@ -1218,18 +1221,34 @@ function updateProgBar(done,total){
 
 async function callAPI(b64,mime){
   // ส่งรูปไปให้ backend วิเคราะห์ — backend มี prompt ของตัวเองสำหรับซองยา
-  const res = await fetch(MEDTRACK_BACKEND + '/api/scan-medicine', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ image_base64: b64, media_type: mime })
-  });
-  if(!res.ok){
-    const er = await res.json().catch(()=>({}));
-    throw new Error(er.message || er.error || `HTTP ${res.status}`);
+  // ใช้ AbortController เพื่อ cancel fetch ถ้า timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 sec timeout per slot
+  
+  try {
+    const res = await fetch(MEDTRACK_BACKEND + '/api/scan-medicine', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ image_base64: b64, media_type: mime }),
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if(!res.ok){
+      const er = await res.json().catch(()=>({}));
+      throw new Error(er.message || er.error || `HTTP ${res.status}`);
+    }
+    const j = await res.json();
+    if(!j.ok || !j.data) throw new Error('Invalid backend response');
+    return j.data;
+  } catch(e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      throw new Error('timeout');
+    }
+    throw e;
   }
-  const j = await res.json();
-  if(!j.ok || !j.data) throw new Error('Invalid backend response');
-  return j.data;
 }
 
 /* ═══════════════════════════
