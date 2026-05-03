@@ -2222,14 +2222,22 @@ document.addEventListener('DOMContentLoaded', function(){
 // ────────────────────────────────────────────────────────
 async function saveToBackend(medsList) {
   const BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
-  const USER_ID = 2;
   
-  console.log('[saveToBackend] Saving ' + medsList.length + ' medications...');
+  // 🆔 Resolve user_id dynamically (not hardcoded!)
+  const USER_ID = await resolveUserId();
+  
+  if (!USER_ID) {
+    console.error('[saveToBackend] No user_id found — cannot save');
+    alert('❌ ไม่พบบัญชีผู้ใช้\nกรุณาเข้าหน้าหลักก่อน');
+    return;
+  }
+  
+  console.log('[saveToBackend] Saving ' + medsList.length + ' medications for user ' + USER_ID + '...');
   
   // Get user meal times to compute reminder_time
   let userMeals = null;
   try {
-    const ures = await fetch(BACKEND + '/api/users/' + USER_ID);
+    const ures = await fetchWithTimeout(BACKEND + '/api/users/' + USER_ID, {}, 10000);
     const udata = await ures.json();
     userMeals = {
       breakfast: udata.user?.breakfast_time || '07:00',
@@ -2248,6 +2256,7 @@ async function saveToBackend(medsList) {
   let firstHospital = null;
   let firstDoctor = null;
   let firstDispenseDate = null;
+  let saveErrors = 0;
   
   for (const m of medsList) {
     try {
@@ -2269,10 +2278,8 @@ async function saveToBackend(medsList) {
       const finalM = ((totalMin + 1440) % 1440) % 60;
       const reminderTime = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
       
-      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + reminderTime + ' (' + anchor + ' ' + baseMealTime + ' ' + (offsetMin>=0?'+':'') + offsetMin + 'm)');
+      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + reminderTime);
       
-      // Build schedule(s) — for now, 1 schedule per medication
-      // (frequency_per_day > 1 needs more complex logic, defer)
       const schedules = [{
         reminder_time: reminderTime,
         meal_anchor: anchor,
@@ -2287,7 +2294,7 @@ async function saveToBackend(medsList) {
         dose_unit: m.dose_unit || 'mg',
         tablets_per_dose: parseInt(m.tablets_per_dose) || 1,
         frequency_per_day: parseInt(m.frequency_per_day) || 1,
-        timing_type: 'meal',  // backend expects 'meal' not 'meal_based'
+        timing_type: 'meal',
         total_tablets: parseInt(m.total_tablets) || null,
         total_days: parseInt(m.total_days) || null,
         special_instructions: m.special_instructions || null,
@@ -2302,38 +2309,39 @@ async function saveToBackend(medsList) {
       if (m.doctor_name && !firstDoctor) firstDoctor = m.doctor_name;
       if (m.dispense_date && !firstDispenseDate) firstDispenseDate = m.dispense_date;
       
-      const res = await fetch(BACKEND + '/api/medications', {
+      // 30 sec timeout per medication save
+      const res = await fetchWithTimeout(BACKEND + '/api/medications', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
-      });
+      }, 30000);
       
       if (res.ok) {
         const data = await res.json();
         const medId = data.medication && data.medication.id;
-        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + medId + ' (push at ' + reminderTime + ')');
+        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + medId);
         if (medId) savedMedIds.push(medId);
       } else {
         const errText = await res.text();
         console.error('[saveToBackend] ❌ ' + m.drug_name + ' HTTP ' + res.status + ' — ' + errText);
+        saveErrors++;
       }
     } catch (e) {
       console.error('[saveToBackend] ERROR ' + m.drug_name + ': ' + e.message);
+      saveErrors++;
     }
   }
-  console.log('[saveToBackend] Done.');
+  console.log('[saveToBackend] Done. Saved ' + savedMedIds.length + '/' + medsList.length);
   
   // ── 🆕 Phase 5+: SAVE TO scan_history (Session 10) ──
-  // Save scan record so it appears in "ตู้ยาของฉัน"
   if (savedMedIds.length > 0) {
     try {
-      // Try to capture thumbnail from first photo
       let thumbnail = null;
       try {
         if (photoQueue && photoQueue.length > 0 && photoQueue[0].dataUrl) {
           thumbnail = await compressImageToThumbnail(photoQueue[0].dataUrl, 300);
         }
-      } catch(e) { /* ignore thumbnail errors */ }
+      } catch(e) { /* ignore */ }
       
       const scanHistoryBody = {
         user_id: USER_ID,
@@ -2342,24 +2350,96 @@ async function saveToBackend(medsList) {
         doctor_name: firstDoctor,
         image_thumbnail: thumbnail,
         ai_raw_data: { medications_count: medsList.length, drugs: medsList.map(m => m.drug_name) },
-        ai_confidence: 0.85,  // assume after user confirms
+        ai_confidence: 0.85,
         medication_ids: savedMedIds,
       };
       
-      const sh = await fetch(BACKEND + '/api/scan-history', {
+      const sh = await fetchWithTimeout(BACKEND + '/api/scan-history', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(scanHistoryBody)
-      });
+      }, 15000);
       if (sh.ok) {
         const shData = await sh.json();
-        console.log('[scan-history] ✅ saved id=' + shData.scan?.id + ' (' + savedMedIds.length + ' meds linked)');
+        console.log('[scan-history] ✅ saved id=' + shData.scan?.id);
       } else {
         console.warn('[scan-history] HTTP ' + sh.status);
       }
     } catch (e) {
       console.warn('[scan-history] save failed (non-critical):', e.message);
     }
+  }
+  
+  // Show user feedback if errors
+  if (saveErrors > 0) {
+    setTimeout(() => {
+      alert(`⚠️ บันทึกไม่ครบ\nสำเร็จ: ${savedMedIds.length}/${medsList.length} ตัว\nลองใหม่อีกครั้งภายหลัง`);
+    }, 500);
+  }
+}
+
+// 🆔 Resolve user_id from URL or localStorage
+async function resolveUserId() {
+  // 1. URL param ?user_id=X (highest priority)
+  const params = new URLSearchParams(window.location.search);
+  const urlUid = parseInt(params.get('user_id'));
+  if (urlUid) return urlUid;
+  
+  // 2. localStorage profile
+  try {
+    const profile = JSON.parse(localStorage.getItem('mt_user_profile') || '{}');
+    if (profile.user_id || profile.id) return profile.user_id || profile.id;
+    
+    // 3. line_user_id → backend lookup
+    if (profile.line_user_id) {
+      const res = await fetchWithTimeout(
+        'https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/' + profile.line_user_id,
+        {}, 10000
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user?.id) return data.user.id;
+      }
+    }
+  } catch(e) { /* ignore */ }
+  
+  // 4. URL ?lineUserId=...
+  const lineUid = params.get('lineUserId');
+  if (lineUid) {
+    try {
+      const res = await fetchWithTimeout(
+        'https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/' + lineUid,
+        {}, 10000
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user?.id) return data.user.id;
+      }
+    } catch(e) { /* ignore */ }
+  }
+  
+  // 5. Fallback for Apidej testing only
+  return 2;
+}
+
+// 🌐 Fetch with timeout helper (uses AbortController)
+async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return res;
+  } catch(e) {
+    clearTimeout(timeoutId);
+    if (e.name === 'AbortError') {
+      throw new Error('Request timeout (' + (timeoutMs/1000) + 's)');
+    }
+    throw e;
   }
 }
 
