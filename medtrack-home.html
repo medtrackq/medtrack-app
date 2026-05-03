@@ -1639,11 +1639,40 @@ async function resolveUserIdentity() {
   const urlUid = parseInt(params.get('user_id'));
   let profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
   
-  // 1. URL has lineUserId → backend lookup
+  // 🔧 Priority 0: URL ?user_id= (highest — for debugging/testing)
+  // Force-override localStorage profile when explicit user_id given
+  if (urlUid && !isNaN(urlUid)) {
+    console.log('[resolveUserIdentity] URL user_id=' + urlUid + ' — fetching fresh profile');
+    
+    // Try to fetch full user data from backend (with timeout)
+    try {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 8000);
+      const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${urlUid}`, {
+        signal: controller.signal
+      });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.user) {
+          // Replace localStorage with this user's profile
+          saveProfileFromBackend(d.user);
+          console.log('[resolveUserIdentity] ✅ Loaded user_id=' + urlUid + ' (' + d.user.name + ')');
+          return urlUid;
+        }
+      }
+    } catch(e) {
+      console.warn('[resolveUserIdentity] User fetch failed:', e.message);
+    }
+    
+    // Even if fetch failed, still use URL user_id (clear stale profile)
+    localStorage.removeItem('mt_user_profile');
+    return urlUid;
+  }
+  
+  // Priority 1: URL has lineUserId → backend lookup
   if (urlLineId && urlLineId.match(/^U[a-f0-9]{32}$/)) {
     const user = await fetchUserByLineId(urlLineId);
     if (user) {
-      // Update localStorage with fresh profile from backend
       saveProfileFromBackend(user);
       return user.id;
     }
@@ -1653,9 +1682,9 @@ async function resolveUserIdentity() {
     return null;
   }
   
-  // 2. Profile has user_id → trust it (also refresh in background)
+  // Priority 2: Profile has user_id → trust it
   if (profile?.user_id) {
-    // Optional: refresh profile in background
+    // Refresh in background
     if (profile.line_user_id) {
       fetchUserByLineId(profile.line_user_id).then(user => {
         if (user) saveProfileFromBackend(user);
@@ -1664,7 +1693,7 @@ async function resolveUserIdentity() {
     return profile.user_id;
   }
   
-  // 3. Profile has line_user_id → backend lookup
+  // Priority 3: Profile has line_user_id → backend lookup
   if (profile?.line_user_id && profile.line_user_id.match(/^U[a-f0-9]{32}$/)) {
     const user = await fetchUserByLineId(profile.line_user_id);
     if (user) {
@@ -1673,11 +1702,7 @@ async function resolveUserIdentity() {
     }
   }
   
-  // 4. Legacy: ?user_id= URL param (for testing)
-  if (urlUid && !isNaN(urlUid)) return urlUid;
-  
-  // 5. Fallback: default to user_id=2 (Apidej test) ONLY if no profile exists
-  // This is for backwards compat — will remove in future
+  // Priority 4: Fallback to user_id=2 (Apidej test) ONLY if no profile exists
   if (!profile) return 2;
   
   return null;
