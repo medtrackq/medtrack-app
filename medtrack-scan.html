@@ -22,7 +22,6 @@
 
 <!-- ================================================= -->
 
-
 <title>MedTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -2367,10 +2366,15 @@ async function saveToBackend(medsList) {
     try {
       let thumbnail = null;
       try {
-        if (photoQueue && photoQueue.length > 0 && photoQueue[0].dataUrl) {
-          thumbnail = await compressImageToThumbnail(photoQueue[0].dataUrl, 300);
+        if (photoQueue && photoQueue.length > 0) {
+          // 🎨 Create collage from all photos
+          const photoUrls = photoQueue.map(p => p.dataUrl).filter(Boolean);
+          if (photoUrls.length > 0) {
+            thumbnail = await createCollageThumbnail(photoUrls, 600);
+            console.log('[saveToBackend] Created collage from ' + photoUrls.length + ' photos');
+          }
         }
-      } catch(e) { /* ignore */ }
+      } catch(e) { console.warn('[saveToBackend] thumbnail error:', e); }
       
       const scanHistoryBody = {
         user_id: USER_ID,
@@ -2488,6 +2492,137 @@ async function compressImageToThumbnail(srcDataUrl, maxSize = 300) {
     img.onerror = () => resolve(null);
     img.src = srcDataUrl;
   });
+}
+
+// Helper: load image from dataUrl
+function loadImage(srcDataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = srcDataUrl;
+  });
+}
+
+// 🎨 Create collage from multiple photos (1, 2, 3, or 4+ images)
+async function createCollageThumbnail(photoUrls, size = 600) {
+  if (!photoUrls || photoUrls.length === 0) return null;
+  
+  // Single image — return compressed
+  if (photoUrls.length === 1) {
+    return await compressImageToThumbnail(photoUrls[0], size);
+  }
+  
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, size, size);
+    
+    // Load all images (max 4)
+    const maxImages = Math.min(photoUrls.length, 4);
+    const images = [];
+    for (let i = 0; i < maxImages; i++) {
+      try {
+        images.push(await loadImage(photoUrls[i]));
+      } catch(e) {
+        console.warn('[collage] failed to load image', i);
+      }
+    }
+    
+    if (images.length === 0) return null;
+    
+    // Layout based on count
+    const gap = 4;
+    
+    if (images.length === 2) {
+      // 2 images: side by side
+      const w = (size - gap) / 2;
+      const h = size;
+      drawImageCover(ctx, images[0], 0, 0, w, h);
+      drawImageCover(ctx, images[1], w + gap, 0, w, h);
+    } else if (images.length === 3) {
+      // 3 images: 1 left big + 2 right stacked
+      const w1 = (size - gap) / 2;
+      const w2 = w1;
+      const h = size;
+      const h2 = (size - gap) / 2;
+      drawImageCover(ctx, images[0], 0, 0, w1, h);
+      drawImageCover(ctx, images[1], w1 + gap, 0, w2, h2);
+      drawImageCover(ctx, images[2], w1 + gap, h2 + gap, w2, h2);
+    } else {
+      // 4+ images: 2x2 grid
+      const w = (size - gap) / 2;
+      const h = (size - gap) / 2;
+      drawImageCover(ctx, images[0], 0, 0, w, h);
+      drawImageCover(ctx, images[1], w + gap, 0, w, h);
+      drawImageCover(ctx, images[2], 0, h + gap, w, h);
+      drawImageCover(ctx, images[3], w + gap, h + gap, w, h);
+      
+      // "+N" badge if more than 4
+      if (photoUrls.length > 4) {
+        const badge = '+' + (photoUrls.length - 4);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(w + gap, h + gap, w, h);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 60px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badge, w + gap + w/2, h + gap + h/2);
+      }
+    }
+    
+    // Photo count badge (top-right)
+    const countText = photoUrls.length + ' รูป';
+    ctx.font = 'bold 18px sans-serif';
+    const padding = 8;
+    const metrics = ctx.measureText(countText);
+    const badgeW = metrics.width + padding * 2;
+    const badgeH = 28;
+    const badgeX = size - badgeW - 8;
+    const badgeY = 8;
+    
+    ctx.fillStyle = 'rgba(13, 148, 136, 0.95)'; // teal
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 6) :
+      ctx.rect(badgeX, badgeY, badgeW, badgeH);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(countText, badgeX + badgeW/2, badgeY + badgeH/2);
+    
+    return canvas.toDataURL('image/jpeg', 0.75);
+  } catch(e) {
+    console.warn('[collage] error:', e);
+    // Fallback to first image
+    return await compressImageToThumbnail(photoUrls[0], size);
+  }
+}
+
+// Helper: draw image with "cover" sizing (crop to fill)
+function drawImageCover(ctx, img, x, y, w, h) {
+  const imgRatio = img.width / img.height;
+  const boxRatio = w / h;
+  
+  let sx = 0, sy = 0, sw = img.width, sh = img.height;
+  
+  if (imgRatio > boxRatio) {
+    // image wider than box — crop sides
+    sw = img.height * boxRatio;
+    sx = (img.width - sw) / 2;
+  } else {
+    // image taller than box — crop top/bottom
+    sh = img.width / boxRatio;
+    sy = (img.height - sh) / 2;
+  }
+  
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
 }
 </script>
 
