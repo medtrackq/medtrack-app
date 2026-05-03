@@ -1318,8 +1318,31 @@ function renderDcards(){
 /* ═══════════════════════════
    SCHEDULE
 ═══════════════════════════ */
-function getMeals(){return{breakfast:document.getElementById('mb').value||'07:00',lunch:document.getElementById('ml').value||'12:00',dinner:document.getElementById('md').value||'18:00'};}
-function addMin(ts,off){const[h,m]=ts.split(':').map(Number);const tot=h*60+m+off;const nh=Math.floor(((tot%1440)+1440)%1440/60);const nm=((tot%60)+60)%60;return`${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;}
+function getMeals(){
+  return{
+    breakfast: document.getElementById('mb')?.value || '07:00',
+    lunch: document.getElementById('ml')?.value || '12:00',
+    dinner: document.getElementById('md')?.value || '18:00',
+    bedtime: '21:00'  // default bedtime (not editable in scan UI)
+  };
+}
+
+function addMin(ts, off){
+  // 🛡️ Safety: handle undefined/null/empty
+  if (!ts || typeof ts !== 'string' || !ts.includes(':')) {
+    console.warn('[addMin] Invalid time:', ts, '— using default 07:00');
+    ts = '07:00';
+  }
+  const [h, m] = ts.split(':').map(Number);
+  if (isNaN(h) || isNaN(m)) {
+    console.warn('[addMin] Cannot parse time:', ts);
+    return '07:00';
+  }
+  const tot = h * 60 + m + (off || 0);
+  const nh = Math.floor(((tot % 1440) + 1440) % 1440 / 60);
+  const nm = ((tot % 60) + 60) % 60;
+  return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}`;
+}
 
 function buildSchedule(medList,meals){
   const periods=[{drugs:[]},{drugs:[]},{drugs:[]},{drugs:[]}];
@@ -1354,9 +1377,15 @@ function buildSchedule(medList,meals){
       ?(med.frequency_per_day>=3?mKeys:med.frequency_per_day===2?['breakfast','dinner']:['breakfast'])
       :[anch];
     active.forEach(mk=>{
-      const time=addMin(meals[mk],off);
-      const pi=mAnch[mk]??0;
-      periods[pi].drugs.push({drug:med,time,cls,lbl});
+      // 🛡️ Validate meal key exists
+      let mealTime = meals[mk];
+      if (!mealTime) {
+        console.warn('[buildSchedule] Unknown meal_anchor:', mk, '— defaulting to breakfast');
+        mealTime = meals.breakfast || '07:00';
+      }
+      const time = addMin(mealTime, off);
+      const pi = mAnch[mk] ?? 0;
+      periods[pi].drugs.push({drug:med, time, cls, lbl});
     });
   });
 
