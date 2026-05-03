@@ -2743,8 +2743,8 @@ async function saveCaregiverNew(){
         document.getElementById('homeModalOverlay').classList.add('on');
         document.getElementById('modal-cg-invite').style.display = 'block';
       }, 200);
-    } else if(data.error === 'caregiver_exists'){
-      alert('คุณมีผู้ดูแลอยู่แล้ว 1 คน — ลบคนเก่าก่อนเพิ่มใหม่');
+    } else if(data.error === 'caregiver_limit'){
+      alert(data.message || 'มีผู้ดูแลครบจำนวนแล้ว');
     } else {
       alert('เกิดข้อผิดพลาด: ' + (data.error||data.message||'unknown'));
     }
