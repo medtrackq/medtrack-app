@@ -2683,7 +2683,9 @@ async function loadCaregiverList(){
               ${!linked && cg.invite_code ? `<div style="margin-top:6px;font-family:monospace;font-size:13px;font-weight:700;color:#0a9c7a;letter-spacing:2px">📋 ${cg.invite_code}</div>` : ''}
             </div>
             <div class="cg-card-actions">
+              ${!linked && cg.invite_code ? `<button class="cg-card-btn primary" onclick="shareInviteToLine('${cg.invite_code}', '${cg.name.replace(/'/g, "\\'")}')">📤</button>` : ''}
               ${!linked && cg.invite_code ? `<button class="cg-card-btn primary" onclick="copyExistingCode('${cg.invite_code}')">📋</button>` : ''}
+              ${linked ? `<button class="cg-card-btn primary" onclick="testCaregiverAlert(${cg.id}, '${cg.name.replace(/'/g, "\\'")}')">🧪</button>` : ''}
               <button class="cg-card-btn danger" onclick="deleteCaregiver(${cg.id}, '${cg.name.replace(/'/g, "\\'")}')">🗑️</button>
             </div>
           </div>
@@ -2758,6 +2760,50 @@ async function copyInviteCode(){
 
 async function copyExistingCode(code){
   await copyText(code);
+}
+
+// 📤 Share invite via LINE (or any messaging app)
+async function shareInviteToLine(code, caregiverName){
+  const text = `สวัสดีครับ ${caregiverName}\n\nผมขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n📋 รหัสเชิญ: ${code}\n\nวิธีใช้:\n1. กดเพิ่มเพื่อน → @785gznlp (หมอน้อย)\n2. พิมพ์ใน LINE chat: /care ${code}\n3. ระบบเชื่อมต่ออัตโนมัติ ✅\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณที่ดูแลครับ 🙏`;
+  
+  if(navigator.share){
+    try {
+      await navigator.share({
+        title: 'MedTrack — เชิญเป็นผู้ดูแล',
+        text: text
+      });
+      showToast?.('📤 เปิด share menu');
+    } catch(e) {/* user cancelled */}
+  } else {
+    // Fallback: copy to clipboard
+    await copyText(text);
+    showToast?.('📋 คัดลอกข้อความแล้ว — paste ใน LINE');
+  }
+}
+
+// 🧪 Test alert — send fake "missed dose" alert to caregiver
+async function testCaregiverAlert(cgId, name){
+  if(!confirm(`🧪 ส่ง test alert ให้ "${name}"?\n\nระบบจะส่ง LINE message ทดสอบไปที่ผู้ดูแล\nเหมือนจริงทุกอย่าง ยกเว้นไม่บันทึก dose_log`)) return;
+  
+  try {
+    const userId = getCurrentUserId();
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers/${cgId}/test-alert`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId})
+    });
+    
+    const data = await r.json();
+    
+    if(data.ok){
+      alert(`✅ ส่ง test alert ให้ ${name} แล้ว\n\nถาม ${name} ดูว่าได้รับ LINE notification ไหม`);
+    } else {
+      throw new Error(data.message || 'Test failed');
+    }
+  } catch(e) {
+    console.error('[test-alert] error:', e);
+    alert('❌ ส่งไม่สำเร็จ: ' + e.message);
+  }
 }
 
 async function copyText(text){
