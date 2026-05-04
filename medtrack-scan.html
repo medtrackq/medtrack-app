@@ -21,11 +21,35 @@
 <meta name="theme-color" content="#1E3A8A">
 
 <!-- ================================================= -->
-
 <title>MedTrack</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
+/* 🍞 Save Result Toast */
+.save-toast{
+  position:fixed; top:20px; left:50%; transform:translateX(-50%);
+  z-index:99999; min-width:300px; max-width:90vw;
+  padding:14px 18px; border-radius:14px;
+  background:#fff; border:1px solid #E4EAF0;
+  box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  font-family:'Sarabun',sans-serif;
+  animation:toast-in 0.3s ease;
+}
+.save-toast.success{ border-color:#A7E5C8; }
+.save-toast.warn{ border-color:#FFE0A8; }
+.save-toast-title{ font-weight:600; font-size:14px; color:#1A2332; margin-bottom:4px; }
+.save-toast-body{ font-size:13px; color:#5A6A7A; line-height:1.5; }
+.save-toast-list{ margin-top:6px; padding-left:16px; }
+.save-toast-list li{ margin:2px 0; }
+.save-toast-dedup{ color:#7A6520; }
+@keyframes toast-in{
+  from{ opacity:0; transform:translate(-50%,-20px); }
+  to{ opacity:1; transform:translate(-50%,0); }
+}
+@keyframes toast-out{
+  from{ opacity:1; transform:translate(-50%,0); }
+  to{ opacity:0; transform:translate(-50%,-20px); }
+}
 :root{
   --bg:#F7F8FA;--sf:#fff;--s2:#F0F4F8;--bd:#E4EAF0;
   --ac:#1A9E75;--al:#E1F5EE;--ad:#0F6E56;
@@ -2248,6 +2272,63 @@ document.addEventListener('DOMContentLoaded', function(){
 // MVP: user_id hardcoded to 2 (Apidej test user).
 // Future: replace with line_user_id mapping.
 // ────────────────────────────────────────────────────────
+// 🍞 Toast notification for save result
+function showSaveToast(newMeds, dedupedMeds, errorCount){
+  // Remove any existing toast
+  const existing = document.querySelector('.save-toast');
+  if (existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  
+  // Determine state
+  const hasNew = newMeds.length > 0;
+  const hasDedup = dedupedMeds.length > 0;
+  const hasError = errorCount > 0;
+  
+  toast.className = 'save-toast ' + (hasDedup ? 'warn' : 'success');
+  
+  // Build content
+  let html = '';
+  
+  // Title
+  if (hasNew && hasDedup) {
+    html += '<div class="save-toast-title">✅ บันทึกแล้ว ' + newMeds.length + ' ตัว · ⏭️ ข้าม ' + dedupedMeds.length + ' ตัว (ซ้ำ)</div>';
+  } else if (hasNew) {
+    html += '<div class="save-toast-title">✅ บันทึกยา ' + newMeds.length + ' ตัวสำเร็จ</div>';
+  } else if (hasDedup) {
+    html += '<div class="save-toast-title">⏭️ ยาทั้ง ' + dedupedMeds.length + ' ตัวมีอยู่แล้วในระบบ</div>';
+  }
+  
+  // Body
+  html += '<div class="save-toast-body">';
+  
+  if (hasDedup) {
+    html += '<div class="save-toast-dedup">รายการที่ซ้ำ (ใช้ของเดิม):</div>';
+    html += '<ul class="save-toast-list">';
+    dedupedMeds.forEach(m => {
+      const name = m.drug_name_en || m.drug_name;
+      html += '<li class="save-toast-dedup">' + name + ' ' + (m.dose_mg || '') + (m.dose_unit || 'mg') + '</li>';
+    });
+    html += '</ul>';
+  }
+  
+  if (hasError) {
+    html += '<div style="color:#D94040;margin-top:6px">⚠️ บันทึกไม่สำเร็จ ' + errorCount + ' ตัว</div>';
+  }
+  
+  html += '</div>';
+  
+  toast.innerHTML = html;
+  document.body.appendChild(toast);
+  
+  // Auto-dismiss after 5 sec (longer if has dedup info)
+  const duration = hasDedup ? 7000 : 4000;
+  setTimeout(() => {
+    toast.style.animation = 'toast-out 0.3s ease forwards';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
+
 async function saveToBackend(medsList) {
   const BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
   
@@ -2281,6 +2362,8 @@ async function saveToBackend(medsList) {
   
   // Track saved medication IDs for scan_history
   const savedMedIds = [];
+  const dedupedMeds = [];   // 🆕 Track deduplicated drugs
+  const newMeds = [];        // 🆕 Track newly inserted drugs
   let firstHospital = null;
   let firstDoctor = null;
   let firstDispenseDate = null;
@@ -2347,7 +2430,27 @@ async function saveToBackend(medsList) {
       if (res.ok) {
         const data = await res.json();
         const medId = data.medication && data.medication.id;
-        console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + medId);
+        const isDeduped = data.deduplicated === true;
+        
+        if (isDeduped) {
+          console.log('[saveToBackend] ⏭️ ' + m.drug_name + ' ซ้ำ → ใช้ id=' + medId);
+          dedupedMeds.push({
+            drug_name: m.drug_name,
+            drug_name_en: m.drug_name_en || '',
+            dose_mg: m.dose_mg,
+            dose_unit: m.dose_unit || 'mg',
+            id: medId
+          });
+        } else {
+          console.log('[saveToBackend] ✅ ' + m.drug_name + ' id=' + medId);
+          newMeds.push({
+            drug_name: m.drug_name,
+            drug_name_en: m.drug_name_en || '',
+            dose_mg: m.dose_mg,
+            dose_unit: m.dose_unit || 'mg',
+            id: medId
+          });
+        }
         if (medId) savedMedIds.push(medId);
       } else {
         const errText = await res.text();
@@ -2359,7 +2462,11 @@ async function saveToBackend(medsList) {
       saveErrors++;
     }
   }
-  console.log('[saveToBackend] Done. Saved ' + savedMedIds.length + '/' + medsList.length);
+  console.log('[saveToBackend] Done. Saved ' + savedMedIds.length + '/' + medsList.length 
+    + ' (new=' + newMeds.length + ', dedup=' + dedupedMeds.length + ')');
+  
+  // 🍞 Show toast notification with save summary
+  showSaveToast(newMeds, dedupedMeds, saveErrors);
   
   // ── 🆕 Phase 5+: SAVE TO scan_history (Session 10) ──
   if (savedMedIds.length > 0) {
