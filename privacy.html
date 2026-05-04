@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<title>นโยบายความเป็นส่วนตัว — MedTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    color: #1A2332;
+    background: #F7F8FA;
+    line-height: 1.7;
+    padding: 24px 16px 60px;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, #1A9E75, #0F6E56);
+    color: #fff;
+    padding: 32px 24px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 24px; font-weight: 700; }
+  header .subtitle { font-size: 14px; opacity: 0.9; margin-top: 6px; }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid #E4EAF0;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1A9E75;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E1F5EE;
+  }
+  p { margin-bottom: 12px; font-size: 14px; }
+  ul { margin-left: 24px; margin-bottom: 12px; }
+  li { font-size: 14px; margin-bottom: 6px; }
+  .meta {
+    text-align: center;
+    color: #5A6A7A;
+    font-size: 12px;
+    margin-top: 24px;
+  }
+  .back-link {
+    display: inline-block;
+    color: #1A9E75;
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back-link">← กลับหน้าหลัก</a>
+  
+  <header>
+    <h1>🛡️ นโยบายความเป็นส่วนตัว</h1>
+    <div class="subtitle">MedTrack — แอปดูแลการกินยาผู้สูงอายุ</div>
+  </header>
+  
+  <div class="card">
+    <h2>1. ข้อมูลที่เราเก็บ</h2>
+    <p>MedTrack เก็บข้อมูลเฉพาะที่จำเป็นเพื่อให้บริการ:</p>
+    <ul>
+      <li><strong>ข้อมูลส่วนบุคคล:</strong> ชื่อ-นามสกุล, อายุ, เพศ, เบอร์โทรศัพท์</li>
+      <li><strong>ข้อมูล LINE:</strong> LINE User ID (สำหรับส่งการแจ้งเตือน)</li>
+      <li><strong>ข้อมูลการแพทย์:</strong> รายการยา, ตารางกินยา, ประวัติการสแกนซองยา, ใบนัดแพทย์</li>
+      <li><strong>ข้อมูลการใช้งาน:</strong> เวลาเข้าใช้, สถิติการกินยา</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>2. วิธีใช้ข้อมูล</h2>
+    <p>เราใช้ข้อมูลของท่านเพื่อ:</p>
+    <ul>
+      <li>ส่งการแจ้งเตือนกินยาตามตารางที่ตั้งไว้</li>
+      <li>ส่งการแจ้งเตือนใบนัดแพทย์</li>
+      <li>วิเคราะห์ข้อความบนซองยา (ผ่าน AI Vision)</li>
+      <li>แจ้งผู้ดูแลเมื่อท่านไม่กินยาตามเวลา</li>
+      <li>ปรับปรุงประสิทธิภาพของแอป</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>3. การแบ่งปันข้อมูล</h2>
+    <p>เราจะ <strong>ไม่ขาย</strong> ข้อมูลของท่านให้บุคคลที่สาม ยกเว้น:</p>
+    <ul>
+      <li>ผู้ดูแลที่ท่านกำหนดเอง (Caregiver) — รับการแจ้งเตือน</li>
+      <li>ผู้ให้บริการระบบ (LINE, Anthropic AI, Railway) — เพื่อให้บริการเท่านั้น</li>
+      <li>หน่วยงานราชการ — ตามคำสั่งทางกฎหมายเท่านั้น</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>4. ความปลอดภัยของข้อมูล</h2>
+    <p>เราคุ้มครองข้อมูลของท่านด้วยมาตรการต่อไปนี้:</p>
+    <ul>
+      <li>การเข้ารหัสการสื่อสารผ่าน HTTPS/TLS</li>
+      <li>การเก็บข้อมูลในเซิร์ฟเวอร์ที่ปลอดภัย (Railway)</li>
+      <li>การจำกัดสิทธิ์การเข้าถึงข้อมูล</li>
+      <li>การสำรองข้อมูลเป็นประจำ</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>5. สิทธิ์ของท่าน</h2>
+    <p>ท่านมีสิทธิ์:</p>
+    <ul>
+      <li>ขอดูข้อมูลส่วนบุคคลของท่าน</li>
+      <li>ขอแก้ไขข้อมูลที่ไม่ถูกต้อง</li>
+      <li>ขอลบบัญชีและข้อมูลทั้งหมด</li>
+      <li>ขอย้ายข้อมูลไปยังบริการอื่น</li>
+      <li>ถอนความยินยอมเมื่อใดก็ได้</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>6. การเก็บข้อมูลเด็ก</h2>
+    <p>MedTrack ออกแบบสำหรับผู้สูงอายุและผู้ดูแล เราไม่เก็บข้อมูลของเด็กอายุต่ำกว่า 13 ปี โดยตั้งใจ หากท่านพบว่าเด็กลงทะเบียน กรุณาแจ้งให้เราทราบเพื่อลบข้อมูล</p>
+  </div>
+
+  <div class="card">
+    <h2>7. การติดต่อ</h2>
+    <p>หากท่านมีคำถามเกี่ยวกับนโยบายนี้ ติดต่อเราได้ที่:</p>
+    <ul>
+      <li>📧 Email: support@bluecode.pro</li>
+      <li>💬 LINE OA: @785gznlp (หมอน้อย)</li>
+      <li>🌐 Website: https://medtrackq.com</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>8. การเปลี่ยนแปลงนโยบาย</h2>
+    <p>เราอาจปรับปรุงนโยบายนี้เป็นครั้งคราว เราจะแจ้งให้ทราบผ่าน LINE OA หรือบนเว็บไซต์ก่อนการเปลี่ยนแปลงมีผลบังคับ</p>
+  </div>
+
+  <div class="meta">
+    มีผลบังคับใช้: 4 พฤษภาคม 2569<br>
+    © 2026 MedTrack by Bluecode (This AI & Solution Group)
+  </div>
+</div>
+</body>
+</html>
