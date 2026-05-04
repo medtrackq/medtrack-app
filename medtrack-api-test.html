@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- ============ ICON FOR ALL PLATFORMS ============ -->
+
+<!-- Browser tab favicon -->
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+
+<!-- iOS Home Screen -->
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MedTrack">
+
+<!-- Android / PWA -->
+<link rel="manifest" href="site.webmanifest">
+<meta name="theme-color" content="#1E3A8A">
+
+<!-- ================================================= -->
+
+
+<title>MedTrack Backend — API Test Console v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf8f4;
+    --bg-card: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-muted: #8a8a8a;
+    --rule: #e8e4dc;
+    --accent: #d94f2b;
+    --accent-soft: #fef0eb;
+    --success: #2d6e3e;
+    --success-soft: #e7f3ea;
+    --error: #c03621;
+    --error-soft: #fde8e4;
+    --warning: #a06a1f;
+    --warning-soft: #fcf3e2;
+    --push: #5b3a9e;
+    --push-soft: #ede5fa;
+    --code-bg: #1e1e1e;
+    --code-ink: #e8e8e8;
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  
+  body {
+    font-family: 'IBM Plex Sans Thai', 'Fraunces', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 32px 16px 80px;
+    background-image: 
+      radial-gradient(circle at 20% 10%, rgba(217, 79, 43, 0.03) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(91, 58, 158, 0.03) 0%, transparent 40%);
+    min-height: 100vh;
+  }
+
+  .container { max-width: 880px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 24px;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 0;
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .brand-name {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .brand-name em {
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  .version-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 2px;
+    letter-spacing: 0.08em;
+  }
+  .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 28px;
+    padding: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+  }
+  .status-item { display: flex; flex-direction: column; gap: 4px; }
+  .status-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .status-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-muted);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .status-dot.ok    { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+  .status-dot.error { background: var(--error); box-shadow: 0 0 0 3px var(--error-soft); }
+  .status-dot.wait  { background: var(--warning); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  /* Section divider */
+  .section-title {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-title h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .section-title .badge-section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .section-title .badge-section.crud { background: var(--accent-soft); color: var(--accent); }
+  .section-title .badge-section.push { background: var(--push-soft); color: var(--push); }
+
+  /* Secret input panel */
+  .secret-panel {
+    background: var(--push-soft);
+    border: 1px solid var(--push);
+    border-radius: 4px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+  }
+  .secret-panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--push);
+    margin-bottom: 6px;
+  }
+  .secret-panel-desc {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .secret-input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--rule);
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--bg-card);
+    transition: border-color 0.15s;
+  }
+  .secret-input:focus {
+    outline: none;
+    border-color: var(--push);
+  }
+
+  /* Test card */
+  .test-card {
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .test-card:hover {
+    border-color: var(--ink-soft);
+    box-shadow: var(--shadow-md);
+  }
+  .test-card.is-passing { border-color: var(--success); }
+  .test-card.is-failing { border-color: var(--error); }
+  .test-card.is-push { background: linear-gradient(to right, var(--bg-card) 70%, rgba(91, 58, 158, 0.02)); }
+
+  .test-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    gap: 16px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .test-meta { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+  .test-num {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--ink-muted);
+    line-height: 1;
+    font-feature-settings: "lnum";
+    min-width: 36px;
+  }
+  .test-info { flex: 1; min-width: 0; }
+  .test-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+  }
+  .test-desc {
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .test-desc code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    background: var(--bg);
+    padding: 1px 6px;
+    border-radius: 2px;
+    color: var(--ink-soft);
+  }
+
+  /* Button */
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 18px;
+    border: 1.5px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled {
+    background: var(--ink-muted);
+    border-color: var(--ink-muted);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+  .btn.is-loading {
+    background: var(--warning);
+    border-color: var(--warning);
+  }
+  .btn.btn-push {
+    background: var(--push);
+    border-color: var(--push);
+  }
+  .btn.btn-push:hover {
+    background: #4a2f80;
+    border-color: #4a2f80;
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn-ghost:hover {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  /* Result area */
+  .test-result {
+    padding: 0 22px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s, padding 0.3s;
+  }
+  .test-result.is-open {
+    max-height: 1200px;
+    padding: 18px 22px 22px;
+  }
+  .result-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .result-status.is-success { color: var(--success); }
+  .result-status.is-error { color: var(--error); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .badge.success { background: var(--success-soft); color: var(--success); }
+  .badge.error { background: var(--error-soft); color: var(--error); }
+
+  .result-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-muted);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .assertions {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-left: 3px solid var(--accent);
+    border-radius: 2px;
+  }
+  .assertion-line {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin: 4px 0;
+  }
+  .assertion-line.pass { color: var(--success); }
+  .assertion-line.fail { color: var(--error); }
+
+  .info-block {
+    padding: 12px 14px;
+    background: var(--push-soft);
+    border-left: 3px solid var(--push);
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  .info-block strong { color: var(--push); font-family: 'JetBrains Mono', monospace; }
+
+  .code-block {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 14px 16px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .code-block .k { color: #c586c0; }
+  .code-block .s { color: #ce9178; }
+  .code-block .n { color: #b5cea8; }
+  .code-block .b { color: #569cd6; }
+
+  .run-all-wrap {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .push-instructions {
+    background: var(--warning-soft);
+    border-left: 3px solid var(--warning);
+    padding: 16px 20px;
+    border-radius: 2px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+  .push-instructions strong { color: var(--warning); }
+
+  /* Summary */
+  .summary {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--ink);
+    color: var(--bg);
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 20px;
+  }
+  .summary-item { text-align: center; }
+  .summary-num {
+    font-family: 'Fraunces', serif;
+    font-size: 42px;
+    font-weight: 600;
+    line-height: 1;
+    font-feature-settings: "lnum";
+  }
+  .summary-num.ok { color: #7bc68c; }
+  .summary-num.fail { color: #ff8a70; }
+  .summary-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-top: 6px;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 20px 12px 60px; }
+    .brand-name { font-size: 28px; }
+    .test-header { flex-direction: column; align-items: stretch; }
+    .test-meta { width: 100%; }
+    .btn { width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <h1 class="brand-name">MedTrack <em>API</em> Console</h1>
+      <span class="version-pill">v1.4.2 · v2.1</span>
+    </div>
+    <p class="subtitle">// Session 3 · Medications CRUD + Push Test · 23 Apr 2026</p>
+  </header>
+
+  <!-- Status bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-item">
+      <span class="status-label">Backend</span>
+      <span class="status-value"><span class="status-dot" id="dotBackend"></span><span id="backendStatus">checking...</span></span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Database</span>
+      <span class="status-value"><span class="status-dot" id="dotDB"></span><span id="dbStatus">—</span></span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Scheduler</span>
+      <span class="status-value"><span class="status-dot" id="dotScheduler"></span><span id="schedulerStatus">—</span></span>
+    </div>
+    <div class="status-item">
+      <span class="status-label">Bangkok Time</span>
+      <span class="status-value" id="bangkokTime">—</span>
+    </div>
+  </div>
+
+  <!-- ═══ SECTION 1: CRUD Tests ═══ -->
+  <div class="section-title">
+    <h2>Medications CRUD</h2>
+    <span class="badge-section crud">Tests 1–7</span>
+  </div>
+
+  <div class="run-all-wrap">
+    <button class="btn btn-ghost" id="runCrud">▶ Run All CRUD Tests</button>
+  </div>
+
+  <div id="crudList"></div>
+
+  <!-- ═══ SECTION 2: Real LINE Push Test ═══ -->
+  <div class="section-title">
+    <h2>Real LINE Push</h2>
+    <span class="badge-section push">Tests 8–10</span>
+  </div>
+
+  <div class="push-instructions">
+    <strong>📋 วิธีการ:</strong> Test 8 จะสร้างยา "Vitamin C" ด้วย reminder_time = เวลาปัจจุบัน (ปรับ breakfast_time ของ user ชั่วคราว) · Test 9 จะ trigger scheduler ทันที · Test 10 ตรวจ push_logs<br>
+    <strong>🔔 ผลลัพธ์:</strong> ถ้าทุก test PASS → คุณจะได้รับข้อความ LINE จาก "หมอน้อย" ใน @medtrack
+  </div>
+
+  <!-- Secret input -->
+  <div class="secret-panel">
+    <div class="secret-panel-title">🔑 Scheduler Trigger Secret</div>
+    <div class="secret-panel-desc">
+      ใส่ <code>SCHEDULER_TRIGGER_SECRET</code> ที่ตั้งไว้ใน Railway Environment Variables (เก็บเฉพาะในหน่วยความจำ browser — ไม่ส่งที่ไหน)
+    </div>
+    <input type="password" class="secret-input" id="triggerSecret" placeholder="paste secret here..." autocomplete="off">
+  </div>
+
+  <div id="pushList"></div>
+
+  <!-- Summary -->
+  <div class="summary" id="summary" style="display:none;">
+    <div class="summary-item">
+      <div class="summary-num" id="sumTotal">0</div>
+      <div class="summary-label">Total</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num ok" id="sumPass">0</div>
+      <div class="summary-label">Passed</div>
+    </div>
+    <div class="summary-item">
+      <div class="summary-num fail" id="sumFail">0</div>
+      <div class="summary-label">Failed</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  MedTrack API Test Console v2
+// ═══════════════════════════════════════════════════════════════════
+
+const BASE = 'https://medtrack-backend-production-7731.up.railway.app';
+const USER_ID = 2;
+
+// State
+const createdMedIds = [];
+let pushTestMedId = null;  // medication created by Test 8
+let savedBreakfastTime = null;  // to restore after push test
+
+// Utility: get HH:mm in Bangkok timezone (right now)
+function nowBangkokHHmm() {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date());
+}
+
+// Utility: add N minutes to HH:mm time → HH:mm
+function addMinutes(hhmm, n) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = (h * 60 + m + n + 1440) % 1440;
+  const hh = String(Math.floor(total / 60)).padStart(2, '0');
+  const mm = String(total % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+// ── CRUD Tests (1-7) ──
+const CRUD_TESTS = [
+  {
+    id: 1,
+    title: 'Health Check',
+    desc: 'GET /health — ตรวจ backend, DB, scheduler',
+    run: async () => {
+      const res = await fetch(`${BASE}/health`);
+      const data = await res.json();
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'status = "ok"',        pass: data.status === 'ok' },
+          { label: 'db = "connected"',     pass: data.db === 'connected' },
+          { label: 'scheduler = "active"', pass: data.scheduler === 'active' },
+        ]
+      };
+    }
+  },
+  {
+    id: 2,
+    title: 'GET medications — current state',
+    desc: 'GET /api/medications?user_id=2',
+    run: async () => {
+      const res = await fetch(`${BASE}/api/medications?user_id=${USER_ID}`);
+      const data = await res.json();
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'ok = true',            pass: data.ok === true },
+          { label: 'medications is array', pass: Array.isArray(data.medications) },
+        ]
+      };
+    }
+  },
+  {
+    id: 3,
+    title: 'POST Metformin (2 doses)',
+    desc: 'หลังอาหารเช้า + หลังอาหารเย็น · <code>reminder_time</code> ต้อง = 07:15 และ 18:15',
+    run: async () => {
+      const res = await fetch(`${BASE}/api/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          drug_name: 'Metformin',
+          dose_mg: 500,
+          dose_unit: 'mg',
+          tablets_per_dose: 1,
+          frequency_per_day: 2,
+          timing_type: 'meal',
+          total_tablets: 60,
+          total_days: 30,
+          schedules: [
+            { meal_anchor: 'breakfast', meal_relation: 'after' },
+            { meal_anchor: 'dinner', meal_relation: 'after' }
+          ]
+        })
+      });
+      const data = await res.json();
+      if (data.medication?.id) createdMedIds.push(data.medication.id);
+      const byAnchor = {};
+      (data.schedules || []).forEach(x => byAnchor[x.meal_anchor] = x.reminder_time);
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'ok = true',                    pass: data.ok === true },
+          { label: 'medication.id exists',         pass: !!data.medication?.id },
+          { label: 'drug_name = "Metformin"',      pass: data.medication?.drug_name === 'Metformin' },
+          { label: 'schedules.length = 2',         pass: data.schedules?.length === 2 },
+          { label: 'breakfast reminder = "07:15"', pass: byAnchor.breakfast === '07:15' },
+          { label: 'dinner reminder = "18:15"',    pass: byAnchor.dinner === '18:15' },
+        ]
+      };
+    }
+  },
+  {
+    id: 4,
+    title: 'POST Omeprazole (before breakfast)',
+    desc: '<code>reminder_time</code> ต้อง = 06:45',
+    run: async () => {
+      const res = await fetch(`${BASE}/api/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          drug_name: 'Omeprazole',
+          dose_mg: 20,
+          dose_unit: 'mg',
+          tablets_per_dose: 1,
+          schedules: [{ meal_anchor: 'breakfast', meal_relation: 'before' }]
+        })
+      });
+      const data = await res.json();
+      if (data.medication?.id) createdMedIds.push(data.medication.id);
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'ok = true',                pass: data.ok === true },
+          { label: 'reminder_time = "06:45"',  pass: data.schedules?.[0]?.reminder_time === '06:45' },
+        ]
+      };
+    }
+  },
+  {
+    id: 5,
+    title: 'POST Lorazepam (bedtime)',
+    desc: '<code>reminder_time</code> ต้อง = 21:00',
+    run: async () => {
+      const res = await fetch(`${BASE}/api/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          drug_name: 'Lorazepam',
+          dose_mg: 0.5,
+          dose_unit: 'mg',
+          tablets_per_dose: 1,
+          schedules: [{ meal_anchor: 'bedtime', meal_relation: '' }]
+        })
+      });
+      const data = await res.json();
+      if (data.medication?.id) createdMedIds.push(data.medication.id);
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'ok = true',               pass: data.ok === true },
+          { label: 'reminder_time = "21:00"', pass: data.schedules?.[0]?.reminder_time === '21:00' },
+          { label: 'meal_anchor = "bedtime"', pass: data.schedules?.[0]?.meal_anchor === 'bedtime' },
+        ]
+      };
+    }
+  },
+  {
+    id: 6,
+    title: 'GET medications (list all)',
+    desc: 'ต้องเห็นยาที่สร้างใน session นี้',
+    run: async () => {
+      const res = await fetch(`${BASE}/api/medications?user_id=${USER_ID}`);
+      const data = await res.json();
+      const names = (data.medications || []).map(m => m.drug_name);
+      return {
+        data, status: res.status,
+        assertions: [
+          { label: 'ok = true',                        pass: data.ok === true },
+          { label: 'medications.length >= 3',          pass: (data.medications?.length || 0) >= 3 },
+          { label: 'has Metformin',                    pass: names.includes('Metformin') },
+          { label: 'has Omeprazole',                   pass: names.includes('Omeprazole') },
+          { label: 'has Lorazepam',                    pass: names.includes('Lorazepam') },
+        ]
+      };
+    }
+  },
+  {
+    id: 7,
+    title: 'DELETE medication (cleanup)',
+    desc: 'ลบยาตัวแรกที่สร้างในเซสชัน',
+    run: async () => {
+      if (createdMedIds.length === 0) throw new Error('ไม่มียาให้ลบ — รัน Test 3 ก่อน');
+      const targetId = createdMedIds[0];
+      const delRes = await fetch(`${BASE}/api/medications/${targetId}`, { method: 'DELETE' });
+      const delData = await delRes.json();
+      const listRes = await fetch(`${BASE}/api/medications?user_id=${USER_ID}`);
+      const listData = await listRes.json();
+      const stillThere = (listData.medications || []).some(m => m.id === targetId);
+      return {
+        data: { delete_response: delData, list_after: listData },
+        status: delRes.status,
+        assertions: [
+          { label: 'delete ok = true',              pass: delData.ok === true },
+          { label: `id = ${targetId} returned`,     pass: delData.id === targetId },
+          { label: 'deleted med not in list',       pass: !stillThere },
+        ]
+      };
+    }
+  },
+];
+
+// ── Push Tests (8-10) ──
+const PUSH_TESTS = [
+  {
+    id: 8,
+    title: 'Setup: create Vitamin C at NOW+1 min',
+    desc: 'ปรับ <code>breakfast_time</code> ของ user → สร้างยา Vitamin C → reminder_time = เวลาปัจจุบัน <strong>+1 นาที</strong> (buffer เผื่อ clock skew)',
+    isPush: true,
+    run: async () => {
+      // Step 1: Get user's current breakfast_time (to restore later)
+      const userRes = await fetch(`${BASE}/api/users/${USER_ID}`);
+      const userData = await userRes.json();
+      if (!userData.ok) throw new Error('Cannot fetch user');
+      savedBreakfastTime = userData.user.breakfast_time.substring(0, 5);
+      
+      // Step 2: Target = NOW + 1 min (gives buffer for API roundtrip)
+      const nowHHmm = nowBangkokHHmm();
+      const targetHHmm = addMinutes(nowHHmm, 1);
+      
+      // reminder_time = breakfast_time + 15min → breakfast_time = target - 15
+      const newBreakfastTime = addMinutes(targetHHmm, -15);
+      
+      // Step 3: PATCH user's breakfast_time
+      const patchRes = await fetch(`${BASE}/api/users/${USER_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ breakfast_time: newBreakfastTime + ':00' })
+      });
+      const patchData = await patchRes.json();
+      if (!patchData.ok) throw new Error('PATCH failed: ' + JSON.stringify(patchData));
+      
+      // Step 4: Create Vitamin C
+      const medRes = await fetch(`${BASE}/api/medications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: USER_ID,
+          drug_name: 'Vitamin C (PUSH TEST)',
+          dose_mg: 500,
+          dose_unit: 'mg',
+          tablets_per_dose: 1,
+          schedules: [{ meal_anchor: 'breakfast', meal_relation: 'after' }]
+        })
+      });
+      const medData = await medRes.json();
+      if (medData.medication?.id) {
+        pushTestMedId = medData.medication.id;
+        createdMedIds.push(medData.medication.id);
+      }
+      
+      const reminderTime = medData.schedules?.[0]?.reminder_time;
+      
+      // Store target time for Test 9/10 to use
+      window.__pushTestTargetTime = targetHHmm;
+      
+      return {
+        data: {
+          user_update: patchData,
+          medication: medData,
+          now_bangkok: nowHHmm,
+          target_time: targetHHmm,
+          new_breakfast_time: newBreakfastTime,
+          reminder_time_set_to: reminderTime,
+          next_step: `⏳ รอให้ clock ถึง ${targetHHmm} แล้วค่อยรัน Test 9 — Test 9 จะ auto-wait ให้ถ้ายังไม่ถึง`,
+        },
+        status: medRes.status,
+        assertions: [
+          { label: 'PATCH user succeeded',            pass: patchData.ok === true },
+          { label: 'Medication created',              pass: medData.ok === true },
+          { label: `reminder_time = ${targetHHmm}`,   pass: reminderTime === targetHHmm },
+        ]
+      };
+    }
+  },
+  {
+    id: 9,
+    title: 'Trigger scheduler (auto-wait for target)',
+    desc: 'รอให้ถึงเวลา target ก่อน → POST /api/scheduler/trigger → ยิง push',
+    isPush: true,
+    run: async () => {
+      const secret = document.getElementById('triggerSecret').value.trim();
+      if (!secret) throw new Error('กรุณาใส่ SCHEDULER_TRIGGER_SECRET ในช่องด้านบนก่อน');
+      
+      const target = window.__pushTestTargetTime;
+      if (!target) throw new Error('รัน Test 8 ก่อน (target time ยังไม่ถูกตั้ง)');
+      
+      // Smart wait: wait until current Bangkok time >= target
+      let waitedSeconds = 0;
+      while (waitedSeconds < 90) {  // max 90s wait
+        const now = nowBangkokHHmm();
+        if (now === target) break;
+        // If target has passed already (e.g. 11:50 now, target 11:48), exit immediately
+        const [nh, nm] = now.split(':').map(Number);
+        const [th, tm] = target.split(':').map(Number);
+        if (nh * 60 + nm > th * 60 + tm) break;
+        await new Promise(r => setTimeout(r, 1000));
+        waitedSeconds++;
+      }
+      
+      // Also wait ~3 seconds into the target minute (clock skew buffer)
+      await new Promise(r => setTimeout(r, 3000));
+      
+      const triggerTimeBangkok = nowBangkokHHmm();
+      const res = await fetch(`${BASE}/api/scheduler/trigger`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-scheduler-secret': secret
+        }
+      });
+      const data = await res.json();
+      
+      // Wait for push to propagate
+      await new Promise(r => setTimeout(r, 2000));
+      
+      return {
+        data: {
+          ...data,
+          waited_seconds: waitedSeconds,
+          target_time: target,
+          triggered_at_bangkok: triggerTimeBangkok,
+          time_matches: triggerTimeBangkok === target,
+        },
+        status: res.status,
+        assertions: [
+          { label: 'HTTP 200',                                pass: res.status === 200 },
+          { label: 'ok = true',                               pass: data.ok === true },
+          { label: 'triggered_at exists',                     pass: !!data.triggered_at },
+          { label: `trigger time matches target ${target}`,   pass: triggerTimeBangkok === target },
+        ]
+      };
+    }
+  },
+  {
+    id: 10,
+    title: 'Verify push_logs + restore',
+    desc: 'ตรวจ push_logs ว่ามี entry status=sent ของการ trigger ล่าสุด',
+    isPush: true,
+    run: async () => {
+      const res = await fetch(`${BASE}/api/push-logs?user_id=${USER_ID}&limit=10`);
+      const data = await res.json();
+      
+      const logs = data.logs || [];
+      const recentLog = logs[0];  // most recent
+      
+      // Was it sent in the last 3 minutes?
+      let recentAndSent = false;
+      if (recentLog && recentLog.sent_at) {
+        const sentTime = new Date(recentLog.sent_at).getTime();
+        const ageSeconds = (Date.now() - sentTime) / 1000;
+        recentAndSent = recentLog.status === 'sent' && ageSeconds < 180;
+      }
+      
+      // Was this log for pushTestMedId?
+      const schedIds = recentLog?.schedule_ids || [];
+      
+      // Cleanup: delete Vitamin C test med
+      if (pushTestMedId) {
+        await fetch(`${BASE}/api/medications/${pushTestMedId}`, { method: 'DELETE' });
+      }
+      
+      // Cleanup: restore breakfast_time
+      if (savedBreakfastTime) {
+        await fetch(`${BASE}/api/users/${USER_ID}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ breakfast_time: savedBreakfastTime + ':00' })
+        });
+      }
+      
+      return {
+        data: {
+          most_recent_log: recentLog,
+          total_logs_last_10: logs.length,
+          monthly_push_count: data.monthly_push_count,
+          quota_limit: data.quota_limit,
+          cleanup: { restored_breakfast_time: savedBreakfastTime, deleted_med_id: pushTestMedId }
+        },
+        status: res.status,
+        assertions: [
+          { label: 'push_logs endpoint OK',            pass: data.ok === true },
+          { label: 'has at least 1 log entry',         pass: logs.length > 0 },
+          { label: 'most recent log is "sent"',        pass: recentLog?.status === 'sent' },
+          { label: 'sent within last 3 minutes',       pass: recentAndSent },
+          { label: 'quota_limit returned',             pass: data.quota_limit === 500 },
+        ]
+      };
+    }
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+//  Rendering
+// ═══════════════════════════════════════════════════════════════════
+function renderTestCard(t) {
+  return `
+    <article class="test-card ${t.isPush ? 'is-push' : ''}" id="card-${t.id}">
+      <header class="test-header">
+        <div class="test-meta">
+          <span class="test-num">${String(t.id).padStart(2, '0')}</span>
+          <div class="test-info">
+            <div class="test-title">${t.title}</div>
+            <div class="test-desc">${t.desc}</div>
+          </div>
+        </div>
+        <button class="btn ${t.isPush ? 'btn-push' : ''}" data-test="${t.id}">Run Test</button>
+      </header>
+      <div class="test-result" id="result-${t.id}"></div>
+    </article>
+  `;
+}
+
+function renderTests() {
+  document.getElementById('crudList').innerHTML = CRUD_TESTS.map(renderTestCard).join('');
+  document.getElementById('pushList').innerHTML = PUSH_TESTS.map(renderTestCard).join('');
+  
+  document.querySelectorAll('button[data-test]').forEach(btn => {
+    btn.addEventListener('click', () => runSingle(parseInt(btn.dataset.test)));
+  });
+}
+
+function syntaxHighlight(json) {
+  const str = JSON.stringify(json, null, 2);
+  return str
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"([^"\\]*(?:\\.[^"\\]*)*)"(\s*:)/g, '<span class="k">"$1"</span>$2')
+    .replace(/:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g, ': <span class="s">"$1"</span>')
+    .replace(/:\s*(-?\d+\.?\d*)/g, ': <span class="n">$1</span>')
+    .replace(/:\s*(true|false|null)/g, ': <span class="b">$1</span>');
+}
+
+async function runSingle(id) {
+  const test = [...CRUD_TESTS, ...PUSH_TESTS].find(t => t.id === id);
+  if (!test) return;
+  
+  const card = document.getElementById(`card-${id}`);
+  const resultEl = document.getElementById(`result-${id}`);
+  const btn = card.querySelector('button[data-test]');
+  
+  card.classList.remove('is-passing', 'is-failing');
+  btn.classList.add('is-loading');
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  
+  const startTime = performance.now();
+  let resultHTML = '';
+  let allPassed = false;
+  
+  try {
+    const result = await test.run();
+    const duration = Math.round(performance.now() - startTime);
+    allPassed = result.assertions.every(a => a.pass);
+    const passCount = result.assertions.filter(a => a.pass).length;
+    
+    let extraInfo = '';
+    if (id === 9 && allPassed) {
+      extraInfo = '<div class="info-block">🔔 <strong>ตรวจ LINE ของคุณตอนนี้!</strong> ถ้า push สำเร็จ จะเห็นข้อความจาก @medtrack ภายใน 1-2 วินาที</div>';
+    }
+    
+    resultHTML = `
+      <div class="result-status ${allPassed ? 'is-success' : 'is-error'}">
+        <span class="badge ${allPassed ? 'success' : 'error'}">
+          ${allPassed ? '✓ PASS' : '✗ FAIL'}
+        </span>
+        ${passCount} / ${result.assertions.length} assertions passed
+      </div>
+      <div class="result-meta">
+        <span>HTTP ${result.status}</span>
+        <span>${duration}ms</span>
+      </div>
+      ${extraInfo}
+      <div class="assertions">
+        ${result.assertions.map(a => `
+          <div class="assertion-line ${a.pass ? 'pass' : 'fail'}">
+            ${a.pass ? '✓' : '✗'} ${a.label}
+          </div>
+        `).join('')}
+      </div>
+      <div class="code-block">${syntaxHighlight(result.data)}</div>
+    `;
+    
+    card.classList.add(allPassed ? 'is-passing' : 'is-failing');
+  } catch (e) {
+    resultHTML = `
+      <div class="result-status is-error">
+        <span class="badge error">✗ ERROR</span>
+        Request failed
+      </div>
+      <div class="assertions">
+        <div class="assertion-line fail">✗ ${e.message}</div>
+      </div>
+    `;
+    card.classList.add('is-failing');
+  }
+  
+  resultEl.innerHTML = resultHTML;
+  resultEl.classList.add('is-open');
+  
+  btn.classList.remove('is-loading');
+  btn.disabled = false;
+  btn.textContent = allPassed ? '✓ Passed — Run Again' : '↻ Retry';
+  
+  updateSummary();
+}
+
+function updateSummary() {
+  const cards = document.querySelectorAll('.test-card');
+  let pass = 0, fail = 0, ran = 0;
+  cards.forEach(c => {
+    if (c.classList.contains('is-passing')) { pass++; ran++; }
+    else if (c.classList.contains('is-failing')) { fail++; ran++; }
+  });
+  if (ran === 0) {
+    document.getElementById('summary').style.display = 'none';
+    return;
+  }
+  document.getElementById('summary').style.display = 'grid';
+  document.getElementById('sumTotal').textContent = ran;
+  document.getElementById('sumPass').textContent = pass;
+  document.getElementById('sumFail').textContent = fail;
+}
+
+async function runBatch(tests) {
+  for (const t of tests) {
+    await runSingle(t.id);
+    await new Promise(r => setTimeout(r, 200));
+  }
+}
+
+document.getElementById('runCrud').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = '⟳ Running…';
+  await runBatch(CRUD_TESTS);
+  e.target.disabled = false;
+  e.target.textContent = '▶ Run All CRUD Tests';
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  Backend status check on load
+// ═══════════════════════════════════════════════════════════════════
+async function checkBackendStatus() {
+  const dotBackend = document.getElementById('dotBackend');
+  const dotDB = document.getElementById('dotDB');
+  const dotScheduler = document.getElementById('dotScheduler');
+  dotBackend.classList.add('wait');
+  
+  try {
+    const res = await fetch(`${BASE}/health`);
+    const data = await res.json();
+    dotBackend.classList.remove('wait');
+    
+    const ok = data.status === 'ok';
+    dotBackend.classList.add(ok ? 'ok' : 'error');
+    document.getElementById('backendStatus').textContent = ok ? 'online' : 'degraded';
+    
+    dotDB.classList.add(data.db === 'connected' ? 'ok' : 'error');
+    document.getElementById('dbStatus').textContent = data.db || 'unknown';
+    
+    dotScheduler.classList.add(data.scheduler === 'active' ? 'ok' : 'error');
+    document.getElementById('schedulerStatus').textContent = data.scheduler || 'unknown';
+  } catch (e) {
+    dotBackend.classList.remove('wait');
+    dotBackend.classList.add('error');
+    document.getElementById('backendStatus').textContent = 'offline';
+    dotDB.classList.add('error');
+    document.getElementById('dbStatus').textContent = 'unreachable';
+    dotScheduler.classList.add('error');
+    document.getElementById('schedulerStatus').textContent = 'unreachable';
+  }
+}
+
+// Live clock for Bangkok time
+function updateClock() {
+  document.getElementById('bangkokTime').textContent = nowBangkokHHmm();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════════════════
+renderTests();
+checkBackendStatus();
+updateClock();
+setInterval(updateClock, 10000);  // update clock every 10s
+</script>
+
+</body>
+</html>
