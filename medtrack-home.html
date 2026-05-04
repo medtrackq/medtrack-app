@@ -800,6 +800,16 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
+    
+    <div class="sheet-sec">บัญชีผู้ใช้</div>
+    <div class="sheet-item" onclick="logoutUser()" style="cursor:pointer">
+      <div class="sheet-item-ico" style="background:#FEE2E2">🚪</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title" style="color:#DC2626">ออกจากระบบ</div>
+        <div class="sheet-item-sub">Logout · ออกจากบัญชีนี้</div>
+      </div>
+      <div class="sheet-item-arrow" style="color:#DC2626">›</div>
+    </div>
   </div>
 </div>
 
@@ -1401,6 +1411,23 @@ const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
     console.warn('[auth] verify failed (network?), continuing:', e);
   }
 })();
+
+// 🚪 Logout — clear session + redirect
+function logoutUser() {
+  const confirmed = confirm('ออกจากระบบหรือไม่?\n\n(ใช้ได้เครื่องอื่น login ต่อได้)');
+  if (!confirmed) return;
+  
+  // Clear all auth data
+  localStorage.removeItem('mt_session_token');
+  localStorage.removeItem('mt_user_profile');
+  localStorage.removeItem('mt_caregiver_relationship');
+  
+  // Clear caches
+  sessionStorage.clear();
+  
+  // Redirect to login
+  window.location.href = '/medtrack-app/medtrack-login.html';
+}
 
 let currentSheet = null;
 
@@ -2552,9 +2579,9 @@ function openSheetLine(){
 const LINE_CONFIG = {
   channelId:    '2009822703',
   accessToken:  'pexbSuSq7Eu5ZxHZ+NWt4u01ahbz3gUun5h3hE1JD290+PLRVsX9SAoy3V/h3MJd1sGr2uaMve0/t7NfiN3Th2K6WwH4VrbLmWTn66927766v2afInZkBiO/Q19JcsWVsVwYaKjH1SUOV44jHKp8YAdB04t89/1O/w1cDnyilFU=',
-  oaId:         '@785gznlp',
-  addFriendUrl: 'https://line.me/ti/p/@785gznlp',
-  qrUrl:        'https://qr-official.line.me/gs/M_785gznlp_GW.png?oat_content=qr',
+  oaId:         '@medtrack',
+  addFriendUrl: 'https://line.me/ti/p/@medtrack',
+  qrUrl:        'https://qr-official.line.me/gs/M_medtrack_GW.png?oat_content=qr',
 };
 
 function homeLineConnect(){
@@ -2972,7 +2999,7 @@ async function copyExistingCode(code){
 
 // 📤 Share invite via LINE (or any messaging app)
 async function shareInviteToLine(code, caregiverName){
-  const text = `สวัสดีครับ ${caregiverName}\n\nผมขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n📋 รหัสเชิญ: ${code}\n\nวิธีใช้:\n1. กดเพิ่มเพื่อน → @785gznlp (หมอน้อย)\n2. พิมพ์ใน LINE chat: /care ${code}\n3. ระบบเชื่อมต่ออัตโนมัติ ✅\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณที่ดูแลครับ 🙏`;
+  const text = `สวัสดีครับ ${caregiverName}\n\nผมขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n📋 รหัสเชิญ: ${code}\n\nวิธีใช้:\n1. กดเพิ่มเพื่อน → @medtrack (หมอน้อย)\n2. พิมพ์ใน LINE chat: /care ${code}\n3. ระบบเชื่อมต่ออัตโนมัติ ✅\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณที่ดูแลครับ 🙏`;
   
   if(navigator.share){
     try {
@@ -3935,15 +3962,15 @@ function saveHomeModal(name){
 
     <!-- QR Code จริง MedTrack LINE OA -->
     <div style="text-align:center;background:#F9FAFB;border-radius:14px;padding:16px;margin-bottom:14px;border:1px solid #E5E7EB">
-      <img src="https://qr-official.line.me/gs/M_785gznlp_GW.png?oat_content=qr"
+      <img src="https://qr-official.line.me/gs/M_medtrack_GW.png?oat_content=qr"
            alt="QR Code LINE หมอน้อย"
            style="width:160px;height:160px;display:block;margin:0 auto 8px;border-radius:8px">
       <div style="font-size:13px;font-weight:700;color:#06C755">MedTrack หมอน้อย</div>
-      <div style="font-size:11px;color:#6B7280;margin-top:2px">@785gznlp</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px">@medtrack</div>
     </div>
 
     <div style="display:flex;gap:8px">
-      <button onclick="window.open('https://line.me/ti/p/@785gznlp','_blank');homeLineConnect();" style="flex:1;padding:13px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+      <button onclick="window.open('https://line.me/ti/p/@medtrack','_blank');homeLineConnect();" style="flex:1;padding:13px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
         💚 Add หมอน้อย
       </button>
       <button onclick="homeLineSimulate()" style="padding:12px 14px;background:#F0F4F8;border:1.5px solid #E5E7EB;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#6B7280">
