@@ -22,6 +22,7 @@
 
 <!-- ================================================= -->
 
+
 <title>MedTrack</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <style>
@@ -1340,6 +1341,67 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
 const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
 
+// 🔐 AUTH GATE — verify session before showing app
+(async function authGate() {
+  // Bypass for debug user_id parameter (test mode)
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('user_id')) {
+    console.log('[auth] debug mode — user_id param present, skip auth');
+    return;
+  }
+  
+  const token = localStorage.getItem('mt_session_token');
+  
+  // No token → go to login
+  if (!token) {
+    console.log('[auth] no token, redirecting to login');
+    window.location.replace('/medtrack-app/medtrack-login.html');
+    return;
+  }
+  
+  // Verify token with backend
+  try {
+    const res = await fetch(`${MEDTRACK_BACKEND}/api/auth/verify`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({session_token: token})
+    });
+    
+    if (!res.ok) {
+      console.log('[auth] token invalid, clearing and redirecting');
+      localStorage.removeItem('mt_session_token');
+      window.location.replace('/medtrack-app/medtrack-login.html');
+      return;
+    }
+    
+    const data = await res.json();
+    if (data.user) {
+      // Update profile from backend (always fresh)
+      const existing = JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
+      const merged = {
+        ...existing,
+        user_id: data.user.id,
+        id: data.user.id,
+        name: data.user.name,
+        age: data.user.age,
+        gender: data.user.gender,
+        phone: data.user.phone,
+        line_user_id: data.user.line_user_id,
+        breakfast_time: data.user.breakfast_time,
+        lunch_time: data.user.lunch_time,
+        dinner_time: data.user.dinner_time,
+        bedtime: data.user.bedtime,
+        push_lead_minutes: data.user.push_lead_minutes
+      };
+      localStorage.setItem('mt_user_profile', JSON.stringify(merged));
+      console.log('[auth] ✅ verified user_id=' + data.user.id);
+    }
+  } catch(e) {
+    // Network error — allow continue with cached profile
+    console.warn('[auth] verify failed (network?), continuing:', e);
+  }
+})();
+
 let currentSheet = null;
 
 function openSheet(name) {
@@ -1691,8 +1753,27 @@ async function initUserData(){
     // Path B: Resolve user identity
     const userId = await resolveUserIdentity();
     
+    // 🔧 Always fetch fresh profile from backend (don't trust localStorage)
+    let profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+    
+    if (userId && (!profile || !profile.name || profile.user_id !== userId)) {
+      console.log('[initUserData] Profile incomplete, fetching from backend...');
+      try {
+        const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${userId}`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.user) {
+            saveProfileFromBackend(d.user);
+            profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+            console.log('[initUserData] ✅ Profile loaded:', profile?.name);
+          }
+        }
+      } catch(e) {
+        console.warn('[initUserData] profile fetch failed:', e);
+      }
+    }
+    
     // Update greeting from current profile
-    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
     if(profile && profile.name){
       // Use first word as first name (Thai convention)
       const firstName = profile.name.trim().split(/\s+/)[0] || profile.name;
