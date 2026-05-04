@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<title>เงื่อนไขการใช้งาน — MedTrack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Sarabun', sans-serif;
+    color: #1A2332;
+    background: #F7F8FA;
+    line-height: 1.7;
+    padding: 24px 16px 60px;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, #1A9E75, #0F6E56);
+    color: #fff;
+    padding: 32px 24px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+  header h1 { font-size: 24px; font-weight: 700; }
+  header .subtitle { font-size: 14px; opacity: 0.9; margin-top: 6px; }
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid #E4EAF0;
+  }
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1A9E75;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E1F5EE;
+  }
+  p { margin-bottom: 12px; font-size: 14px; }
+  ul { margin-left: 24px; margin-bottom: 12px; }
+  li { font-size: 14px; margin-bottom: 6px; }
+  .warning {
+    background: #FEF3DC;
+    border-left: 4px solid #E8A020;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .danger {
+    background: #FDEAEA;
+    border-left: 4px solid #D94040;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .meta {
+    text-align: center;
+    color: #5A6A7A;
+    font-size: 12px;
+    margin-top: 24px;
+  }
+  .back-link {
+    display: inline-block;
+    color: #1A9E75;
+    text-decoration: none;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .back-link:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="/" class="back-link">← กลับหน้าหลัก</a>
+  
+  <header>
+    <h1>📜 เงื่อนไขการใช้งาน</h1>
+    <div class="subtitle">MedTrack — แอปดูแลการกินยาผู้สูงอายุ</div>
+  </header>
+
+  <div class="card">
+    <h2>1. การยอมรับเงื่อนไข</h2>
+    <p>การใช้งาน MedTrack ถือว่าท่านได้อ่านและยอมรับเงื่อนไขทั้งหมดนี้ หากไม่ยอมรับ กรุณาหยุดใช้งานทันที</p>
+  </div>
+
+  <div class="card">
+    <h2>2. ลักษณะของบริการ</h2>
+    <p>MedTrack เป็นแอปช่วยจดจำและแจ้งเตือนการกินยา ไม่ใช่อุปกรณ์การแพทย์ ไม่ทดแทนการปรึกษาแพทย์หรือเภสัชกร</p>
+    
+    <div class="warning">
+      ⚠️ <strong>คำเตือนสำคัญ:</strong><br>
+      MedTrack ไม่สามารถวินิจฉัย รักษา หรือให้คำแนะนำทางการแพทย์ได้ การตัดสินใจเรื่องยาควรปรึกษาแพทย์หรือเภสัชกรเท่านั้น
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>3. ความรับผิดชอบของผู้ใช้</h2>
+    <ul>
+      <li>ใส่ข้อมูลที่ถูกต้องและเป็นจริง</li>
+      <li>ตรวจสอบข้อมูลที่ AI สแกนจากซองยาก่อนยืนยัน</li>
+      <li>ไม่ใช้บริการเพื่อวัตถุประสงค์ผิดกฎหมาย</li>
+      <li>ไม่แชร์บัญชีของท่านกับผู้อื่น</li>
+      <li>รักษาความปลอดภัยของบัญชี LINE</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>4. ข้อจำกัดของบริการ</h2>
+    
+    <div class="danger">
+      🛑 <strong>ห้าม:</strong> ใช้ MedTrack แทนการตัดสินใจเรื่องยาในกรณีฉุกเฉิน<br>
+      ❗ หากเป็นภาวะฉุกเฉิน โทร <strong>1669</strong> ทันที
+    </div>
+
+    <p>ข้อจำกัดของระบบ:</p>
+    <ul>
+      <li>การแจ้งเตือนผ่าน LINE อาจล่าช้าหรือพลาดได้ในบางครั้ง</li>
+      <li>AI Vision อาจอ่านซองยาผิดพลาด — ต้องตรวจสอบเสมอ</li>
+      <li>ระบบอาจไม่พร้อมให้บริการบางช่วงเพื่อบำรุงรักษา</li>
+      <li>ไม่รับประกันความถูกต้อง 100% ของข้อมูล</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>5. ทรัพย์สินทางปัญญา</h2>
+    <p>MedTrack, โลโก้, ภาพประกอบ และเนื้อหาทั้งหมดเป็นทรัพย์สินของ Bluecode (This AI & Solution Group) ห้ามคัดลอก ดัดแปลง หรือใช้ในเชิงพาณิชย์โดยไม่ได้รับอนุญาต</p>
+  </div>
+
+  <div class="card">
+    <h2>6. การยกเลิกบัญชี</h2>
+    <p>ท่านสามารถยกเลิกบัญชีได้ทุกเมื่อโดยติดต่อทาง LINE OA @785gznlp ข้อมูลทั้งหมดจะถูกลบภายใน 30 วัน</p>
+    <p>เราขอสงวนสิทธิ์ในการระงับบัญชีหากพบการใช้งานที่ผิดเงื่อนไข</p>
+  </div>
+
+  <div class="card">
+    <h2>7. การจำกัดความรับผิด</h2>
+    <p>Bluecode ไม่รับผิดชอบต่อ:</p>
+    <ul>
+      <li>การพลาดการกินยาเนื่องจากไม่ได้รับการแจ้งเตือน</li>
+      <li>การวินิจฉัยผิดพลาดจาก AI Vision</li>
+      <li>ความเสียหายจากการตัดสินใจที่อิงข้อมูลในแอป</li>
+      <li>การหยุดบริการชั่วคราวหรือถาวร</li>
+    </ul>
+    <p>การใช้งาน MedTrack ถือเป็นการยอมรับความเสี่ยงเหล่านี้ ผู้ใช้ควรปรึกษาแพทย์/เภสัชกรเป็นหลักเสมอ</p>
+  </div>
+
+  <div class="card">
+    <h2>8. การเปลี่ยนแปลงเงื่อนไข</h2>
+    <p>เราอาจปรับปรุงเงื่อนไขนี้เป็นครั้งคราว การใช้งานต่อหลังการเปลี่ยนแปลงถือว่ายอมรับเงื่อนไขใหม่</p>
+  </div>
+
+  <div class="card">
+    <h2>9. กฎหมายที่ใช้บังคับ</h2>
+    <p>เงื่อนไขนี้อยู่ภายใต้กฎหมายไทย กรณีพิพาทให้ใช้ศาลในประเทศไทยเป็นเขตอำนาจ</p>
+  </div>
+
+  <div class="card">
+    <h2>10. การติดต่อ</h2>
+    <p>หากมีคำถามเกี่ยวกับเงื่อนไขนี้:</p>
+    <ul>
+      <li>📧 Email: support@bluecode.pro</li>
+      <li>💬 LINE OA: @785gznlp (หมอน้อย)</li>
+      <li>🌐 Website: https://medtrackq.com</li>
+    </ul>
+  </div>
+
+  <div class="meta">
+    มีผลบังคับใช้: 4 พฤษภาคม 2569<br>
+    © 2026 MedTrack by Bluecode (This AI & Solution Group)
+  </div>
+</div>
+</body>
+</html>
