@@ -1497,9 +1497,9 @@ function ob4SimConnect(){
 // ── INIT ──
 (function(){
   const p=loadProfile();
-  // 🔧 New user check: name อาจมาจาก LINE login
-  // ต้องกรอก age + gender + meal times = ถึงเรียก "completed onboarding"
-  const isCompleted = p && p.name && p.age && p.gender && p.breakfast_time;
+  // 🔧 Check ที่ไม่ใช้ meal_time (DB มี default)
+  // ถ้ามี name + age + gender = onboarding completed
+  const isCompleted = p && p.name && p.age && p.gender;
   
   if(isCompleted){
     // Returning user with completed profile → auto-redirect to home
