@@ -1497,13 +1497,17 @@ function ob4SimConnect(){
 // ── INIT ──
 (function(){
   const p=loadProfile();
-  if(p&&p.name){
-    // Returning user → auto-redirect to home (Phase B fix)
-    // Show brief welcome toast then redirect
+  // 🔧 New user check: name อาจมาจาก LINE login
+  // ต้องกรอก age + gender + meal times = ถึงเรียก "completed onboarding"
+  const isCompleted = p && p.name && p.age && p.gender && p.breakfast_time;
+  
+  if(isCompleted){
+    // Returning user with completed profile → auto-redirect to home
     showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
     setTimeout(()=>{ window.location.href='medtrack-home.html'; }, 1200);
     return; // skip onboarding init
   }
+  // New user OR incomplete profile → run onboarding
   initOb();
 })();
 // Fix: removed dead code call to syncSplashLang() — function never defined
