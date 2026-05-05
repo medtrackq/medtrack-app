@@ -4,26 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- ============ ICON FOR ALL PLATFORMS ============ -->
-
-<!-- Browser tab favicon -->
-<link rel="icon" type="image/x-icon" href="favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-
-<!-- iOS Home Screen -->
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MedTrack">
-
-<!-- Android / PWA -->
-<link rel="manifest" href="site.webmanifest">
-<meta name="theme-color" content="#1E3A8A">
-
-<!-- ================================================= -->
-
-
 <title>กำลังเข้าสู่ระบบ...</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
@@ -176,11 +156,15 @@ window.addEventListener('DOMContentLoaded', async () => {
       <div class="spinner"></div>
     `;
     
-    // Redirect to home (with onboarding if new user)
+    // Redirect to home (with onboarding if new user OR incomplete profile)
     setTimeout(() => {
-      const target = data.user.is_new 
-        ? '/medtrack-app/medtrack-onboarding.html' 
+      // 🔧 New user OR profile incomplete (no age/gender/breakfast_time) → onboard
+      const u = data.user;
+      const isCompleted = u.age && u.gender && u.breakfast_time;
+      const target = (data.user.is_new || !isCompleted)
+        ? '/medtrack-app/medtrack-onboard.html' 
         : '/medtrack-app/medtrack-home.html';
+      console.log('[callback] redirect to:', target, 'is_new=', data.user.is_new, 'completed=', isCompleted);
       window.location.href = target;
     }, 1500);
     
