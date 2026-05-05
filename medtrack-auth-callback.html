@@ -158,13 +158,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     // Redirect to home (with onboarding if new user OR incomplete profile)
     setTimeout(() => {
-      // 🔧 New user OR profile incomplete (no age/gender/breakfast_time) → onboard
+      // 🔧 New user OR profile incomplete (no age/gender) → onboard
+      // Note: meal_times have DB defaults, so we check age + gender instead
       const u = data.user;
-      const isCompleted = u.age && u.gender && u.breakfast_time;
+      const isCompleted = u.age && u.gender;
       const target = (data.user.is_new || !isCompleted)
         ? '/medtrack-app/medtrack-onboard.html' 
         : '/medtrack-app/medtrack-home.html';
-      console.log('[callback] redirect to:', target, 'is_new=', data.user.is_new, 'completed=', isCompleted);
+      console.log('[callback] redirect to:', target, 'is_new=', data.user.is_new, 'age=', u.age, 'gender=', u.gender);
       window.location.href = target;
     }, 1500);
     
