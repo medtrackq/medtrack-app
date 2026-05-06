@@ -1765,6 +1765,33 @@ document.addEventListener('DOMContentLoaded', function(){
   });
   // Initialize user data from localStorage
   initUserData();
+  
+  // 🔧 Add digit-only restrictions for phone fields
+  ['mp-phone', 'md-phone', 'mc-phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function(e) {
+        // Allow digits, dash, space, plus only
+        const cleaned = e.target.value.replace(/[^\d\-\s\+]/g, '');
+        if (cleaned !== e.target.value) {
+          e.target.value = cleaned;
+        }
+      });
+    }
+  });
+  
+  // 🔧 Add digit-only restrictions for number fields
+  ['mp-age', 'mp-weight', 'mp-height'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', function(e) {
+        const cleaned = e.target.value.replace(/[^\d.]/g, '');
+        if (cleaned !== e.target.value) {
+          e.target.value = cleaned;
+        }
+      });
+    }
+  });
 });
 
 // ────────────────────────────────────────────────────────
@@ -3768,6 +3795,8 @@ function openHomeModal(name){
     document.getElementById('mp-age').value = p.age||'';
     document.getElementById('mp-weight').value = p.weight||'';
     document.getElementById('mp-height').value = p.height||'';
+    document.getElementById('mp-phone').value = p.phone||'';
+    document.getElementById('mp-hn').value = p.hn||'';
     const diseases = p.diseases||[];
     document.getElementById('mp-disease').value = diseases.join(', ');
     // แสดง chips
@@ -3859,6 +3888,8 @@ function saveHomeModal(name){
     p.age = document.getElementById('mp-age').value;
     p.weight = document.getElementById('mp-weight').value;
     p.height = document.getElementById('mp-height').value;
+    p.phone = document.getElementById('mp-phone').value.trim();
+    p.hn = document.getElementById('mp-hn').value.trim();
     p.gender = _genderVal;
     p.sex = _genderVal;
     p.diseases = document.getElementById('mp-disease').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -3867,7 +3898,29 @@ function saveHomeModal(name){
     p.treatment_rights = p.rights;
     localStorage.setItem('mt_user_profile', JSON.stringify(p));
     // อัปเดต greeting ใน home
-    if(p.name) document.getElementById('greetName').textContent = 'สวัสดีครับ '+p.name+' 👋';
+    if(p.name) {
+      const greetEl = document.getElementById('greetingName');
+      if (greetEl) greetEl.textContent = 'สวัสดีครับ คุณ' + (p.name.split(/\s+/)[0]||p.name) + ' 👋';
+    }
+    
+    // 🔧 PATCH backend if user_id exists (logged in via OAuth)
+    const userId = p.user_id || p.id;
+    if (userId) {
+      fetch(`${MEDTRACK_BACKEND}/api/users/${userId}`, {
+        method: 'PATCH',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          name: p.name,
+          age: p.age ? parseInt(p.age) : null,
+          gender: p.gender,
+          phone: p.phone
+        })
+      }).then(r => r.json()).then(d => {
+        if (d.user) console.log('[profile] ✅ Backend updated');
+        else console.warn('[profile] backend warn:', d);
+      }).catch(e => console.warn('[profile] backend error:', e));
+    }
+    
     toast('✅ บันทึกประวัติผู้ใช้แล้ว');
   }
   if(name==='caregiver'){
@@ -4198,6 +4251,10 @@ function saveHomeModal(name){
     <div class="mfield-row">
       <div class="mfield"><label>น้ำหนัก (กก.)</label><input id="mp-weight" type="number" placeholder="65"></div>
       <div class="mfield"><label>ส่วนสูง (ซม.)</label><input id="mp-height" type="number" placeholder="170"></div>
+    </div>
+    <div class="mfield-row">
+      <div class="mfield"><label>📞 เบอร์โทรศัพท์</label><input id="mp-phone" type="tel" inputmode="numeric" placeholder="081-234-5678"></div>
+      <div class="mfield"><label>HN (เลขผู้ป่วย)</label><input id="mp-hn" placeholder="HN12345"></div>
     </div>
     <div class="mfield">
       <label>โรคประจำตัว</label>
