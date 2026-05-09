@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — Pharmacist Dashboard (NIT Pilot Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink-deep: #0F1A2E;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --paper: #FAFAF7;
+  --paper-warm: #F4EDE0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --accent: #C8392F;
+  --accent-soft: #E76F5A;
+  --teal: #2B7A7A;
+  --teal-deep: #15494A;
+  --teal-soft: #4FA8A8;
+  --gold: #B8893A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #E5E7EB;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink-deep);
+}
+
+/* LAYOUT */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 24px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-brand {
+  padding: 0 24px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 16px;
+}
+.sidebar-brand h1 {
+  font-size: 22px;
+  color: var(--paper);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+.sidebar-brand h1 .accent { color: var(--accent-soft); }
+.sidebar-brand .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 600;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 14px;
+  border-left: 3px solid transparent;
+  font-weight: 500;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,0.05);
+  color: var(--paper);
+}
+.nav-item.active {
+  background: rgba(231,111,90,0.1);
+  color: var(--accent-soft);
+  border-left-color: var(--accent-soft);
+  font-weight: 600;
+}
+.nav-icon { font-size: 16px; flex-shrink: 0; }
+
+.sidebar-footer {
+  position: absolute;
+  bottom: 24px;
+  left: 24px;
+  right: 24px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+.sidebar-footer strong {
+  color: rgba(255,255,255,0.6);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* MAIN */
+.main {
+  padding: 24px 32px;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* TOP BAR */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.topbar-left h1 {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+.topbar-left .subtitle {
+  color: var(--ink-light);
+  font-size: 14px;
+}
+.topbar-right {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--card);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+}
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+.user-name { font-weight: 600; font-size: 13px; }
+.user-role { font-size: 11px; color: var(--ink-light); }
+
+/* DEMO BANNER */
+.demo-banner {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFE8B0 100%);
+  border-left: 4px solid var(--gold);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.demo-banner strong { color: var(--gold); font-family: 'Bai Jamjuree', sans-serif; }
+
+/* STATS GRID */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--card);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--accent);
+}
+.stat-card.green { border-color: var(--green); }
+.stat-card.yellow { border-color: var(--yellow); }
+.stat-card.red { border-color: var(--red); }
+.stat-card.teal { border-color: var(--teal); }
+
+.stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 600;
+}
+.stat-value {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink-deep);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-value .unit { font-size: 18px; color: var(--ink-light); }
+.stat-trend {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+.stat-trend.up { color: var(--green); }
+.stat-trend.down { color: var(--red); }
+.stat-trend.neutral { color: var(--ink-light); }
+
+/* SECTION HEADERS */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+.section-header h2 {
+  font-size: 18px;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+}
+.section-action {
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 500;
+}
+.section-action:hover { text-decoration: underline; }
+
+/* CARDS */
+.card {
+  background: var(--card);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+/* TABLE */
+.table-wrap {
+  background: var(--card);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-toolbar {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.filter-group {
+  display: flex;
+  gap: 6px;
+}
+.filter-pill {
+  padding: 6px 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: all 0.15s;
+  font-weight: 500;
+}
+.filter-pill.active {
+  background: var(--ink-deep);
+  color: white;
+  border-color: var(--ink-deep);
+}
+.search-box {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  min-width: 220px;
+  font-family: 'Sarabun', sans-serif;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead {
+  background: var(--bg);
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  font-weight: 700;
+  white-space: nowrap;
+}
+td {
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+}
+tbody tr {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+tbody tr:hover { background: rgba(0,0,0,0.02); }
+
+/* STATUS PILLS */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+.pill.green { background: var(--green-soft); color: var(--green); }
+.pill.yellow { background: var(--yellow-soft); color: #92400E; }
+.pill.red { background: var(--red-soft); color: var(--red); }
+.pill.teal { background: #CCFBF1; color: var(--teal-deep); }
+
+/* PROGRESS BAR */
+.progress {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 100px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  transition: width 0.3s;
+}
+.progress-fill.green { background: var(--green); }
+.progress-fill.yellow { background: var(--yellow); }
+.progress-fill.red { background: var(--red); }
+
+/* ALERTS LIST */
+.alert-list { display: grid; gap: 8px; }
+.alert-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--red-soft);
+  border-left: 3px solid var(--red);
+  border-radius: 4px;
+  font-size: 13px;
+}
+.alert-item.warn {
+  background: var(--yellow-soft);
+  border-left-color: var(--yellow);
+}
+.alert-item .icon { font-size: 18px; flex-shrink: 0; }
+.alert-item .content { flex: 1; }
+.alert-item .name {
+  font-weight: 600;
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+.alert-item .detail {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-top: 2px;
+}
+.alert-item .action {
+  padding: 6px 12px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ACTIVITY FEED */
+.activity-feed { display: grid; gap: 8px; }
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  align-items: center;
+}
+.activity-item:hover { background: var(--bg); }
+.activity-time {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree', sans-serif;
+  flex-shrink: 0;
+  width: 60px;
+}
+.activity-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.activity-icon.confirm { background: var(--green-soft); color: var(--green); }
+.activity-icon.miss { background: var(--red-soft); color: var(--red); }
+.activity-icon.scan { background: #DBEAFE; color: #1D4ED8; }
+.activity-icon.refill { background: var(--yellow-soft); color: #92400E; }
+
+/* TWO COL LAYOUT */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.three-col {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* CHART */
+.chart-container {
+  height: 200px;
+  position: relative;
+  margin-top: 12px;
+}
+.chart-container svg { width: 100%; height: 100%; }
+
+/* CALENDAR HEATMAP */
+.heatmap {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-top: 12px;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  background: var(--line);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--ink-light);
+  cursor: pointer;
+}
+.heatmap-cell.confirmed { background: var(--green); }
+.heatmap-cell.missed { background: var(--red); }
+.heatmap-cell.partial { background: var(--yellow); }
+.heatmap-cell.future { background: var(--bg); border: 1px dashed var(--line); }
+
+.heatmap-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  font-size: 10px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* DETAIL VIEW */
+.detail-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,26,46,0.6);
+  z-index: 100;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.detail-modal.active { display: flex; }
+.detail-content {
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.detail-header {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 24px 32px;
+  position: relative;
+}
+.detail-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+.detail-close:hover { background: rgba(255,255,255,0.2); }
+.detail-name {
+  font-size: 24px;
+  margin-bottom: 4px;
+  color: var(--paper);
+}
+.detail-meta {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.detail-meta span { display: flex; align-items: center; gap: 4px; }
+
+.detail-body {
+  padding: 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.metric-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.metric-card {
+  background: var(--bg);
+  padding: 16px;
+  border-radius: 6px;
+  text-align: center;
+}
+.metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  margin-bottom: 4px;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 600;
+}
+.metric-value {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink-deep);
+}
+
+.med-list { margin-top: 12px; }
+.med-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 80px;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  font-size: 13px;
+}
+.med-row:last-child { border-bottom: none; }
+.med-name { font-weight: 600; }
+.med-name small {
+  display: block;
+  color: var(--ink-light);
+  font-weight: 400;
+  font-size: 11px;
+}
+
+/* VIEWS */
+.view { display: none; }
+.view.active { display: block; }
+
+/* DRUG ANALYTICS */
+.drug-row {
+  display: grid;
+  grid-template-columns: 30px 2fr 1fr 1fr 100px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  font-size: 13px;
+}
+.drug-rank {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 800;
+  color: var(--accent);
+  font-size: 14px;
+}
+.drug-name { font-weight: 600; }
+.drug-info { color: var(--ink-light); font-size: 12px; }
+
+.bar-chart-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bar-chart-h .bar {
+  flex: 1;
+  height: 8px;
+  background: var(--line);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.bar-chart-h .bar-fill {
+  height: 100%;
+  border-radius: 100px;
+}
+.bar-chart-h .bar-value {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  width: 40px;
+  text-align: right;
+}
+
+/* TRENDS */
+.trend-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+  .app { grid-template-columns: 60px 1fr; }
+  .sidebar { padding: 16px 0; }
+  .sidebar-brand { padding: 0 12px 16px; }
+  .sidebar-brand h1 { font-size: 14px; }
+  .sidebar-brand .label, .sidebar-footer { display: none; }
+  .nav-item { padding: 12px; justify-content: center; }
+  .nav-item span:not(.nav-icon) { display: none; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .topbar-left h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>MedTrack<span class="accent">.</span></h1>
+      <div class="label">Pharmacist Portal</div>
+    </div>
+    
+    <div class="nav-item active" data-view="overview">
+      <span class="nav-icon">📊</span>
+      <span>Overview</span>
+    </div>
+    <div class="nav-item" data-view="patients">
+      <span class="nav-icon">👥</span>
+      <span>Patients</span>
+    </div>
+    <div class="nav-item" data-view="atrisk">
+      <span class="nav-icon">⚠️</span>
+      <span>At-Risk</span>
+    </div>
+    <div class="nav-item" data-view="drugs">
+      <span class="nav-icon">💊</span>
+      <span>Drugs</span>
+    </div>
+    <div class="nav-item" data-view="trends">
+      <span class="nav-icon">📈</span>
+      <span>Trends</span>
+    </div>
+    <div class="nav-item" data-view="reports">
+      <span class="nav-icon">📄</span>
+      <span>Reports</span>
+    </div>
+
+    <div class="sidebar-footer">
+      <strong>NIT Pilot</strong>
+      Day 38 of 90<br/>
+      Adherence: 73% avg
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="page-title">Overview Dashboard</h1>
+        <div class="subtitle" id="page-subtitle">ภาพรวม pilot ของ NIT — 9 พฤษภาคม 2569</div>
+      </div>
+      <div class="topbar-right">
+        <div class="user-info">
+          <div class="user-avatar">ภส</div>
+          <div>
+            <div class="user-name">เภสัชกร NIT</div>
+            <div class="user-role">Pharmacist · Pilot Lead</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO BANNER -->
+    <div class="demo-banner">
+      <span style="font-size: 18px;">🎭</span>
+      <div>
+        <strong>DEMO MODE</strong> — ข้อมูลจำลอง 15 patients · 3 เดือน adherence data 
+        · สำหรับนำเสนอ NIT · ระบบจริงจะใช้ข้อมูล pilot patients
+      </div>
+    </div>
+
+    <!-- VIEW: OVERVIEW -->
+    <div class="view active" id="view-overview">
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card teal">
+          <div class="stat-label">Total Patients</div>
+          <div class="stat-value">15<span class="unit"> คน</span></div>
+          <div class="stat-trend up">↗ +2 this month</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Avg Adherence</div>
+          <div class="stat-value">73<span class="unit">%</span></div>
+          <div class="stat-trend up">↗ +5% vs last month</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">At-Risk</div>
+          <div class="stat-value">4<span class="unit"> คน</span></div>
+          <div class="stat-trend down">↘ +1 this week</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">This Week Activity</div>
+          <div class="stat-value">312<span class="unit"> doses</span></div>
+          <div class="stat-trend up">↗ +18 vs last week</div>
+        </div>
+      </div>
+
+      <!-- Two col -->
+      <div class="three-col">
+        <div>
+          <!-- Critical Alerts -->
+          <div class="card">
+            <div class="section-header">
+              <h2>🚨 Critical Alerts</h2>
+              <span class="section-action">ดูทั้งหมด →</span>
+            </div>
+            <div class="alert-list" id="alert-list"></div>
+          </div>
+
+          <!-- Adherence Chart -->
+          <div class="card">
+            <div class="section-header">
+              <h2>📈 Weekly Adherence Trend</h2>
+              <span class="section-action">12 weeks</span>
+            </div>
+            <div class="chart-container">
+              <svg viewBox="0 0 600 200" preserveAspectRatio="none" id="trend-chart"></svg>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Activity Feed -->
+          <div class="card">
+            <div class="section-header">
+              <h2>⚡ Live Activity</h2>
+              <span class="section-action">↻ Refresh</span>
+            </div>
+            <div class="activity-feed" id="activity-feed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Today Summary -->
+      <div class="card">
+        <div class="section-header">
+          <h2>📅 Today's Summary · 9 พ.ค. 2569</h2>
+        </div>
+        <div class="stats-grid">
+          <div style="padding: 12px;">
+            <div class="stat-label">Doses Scheduled</div>
+            <div class="stat-value" style="font-size: 24px;">62</div>
+          </div>
+          <div style="padding: 12px;">
+            <div class="stat-label">✅ Confirmed</div>
+            <div class="stat-value" style="font-size: 24px; color: var(--green);">45</div>
+            <div style="font-size: 12px; color: var(--ink-light);">73% on time</div>
+          </div>
+          <div style="padding: 12px;">
+            <div class="stat-label">❌ Missed</div>
+            <div class="stat-value" style="font-size: 24px; color: var(--red);">11</div>
+            <div style="font-size: 12px; color: var(--ink-light);">18% miss rate</div>
+          </div>
+          <div style="padding: 12px;">
+            <div class="stat-label">⏳ Pending</div>
+            <div class="stat-value" style="font-size: 24px; color: var(--gold);">6</div>
+            <div style="font-size: 12px; color: var(--ink-light);">9% awaiting</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: PATIENTS -->
+    <div class="view" id="view-patients">
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-group">
+            <div class="filter-pill active" data-filter="all">ทั้งหมด (15)</div>
+            <div class="filter-pill" data-filter="atrisk">At-Risk (4)</div>
+            <div class="filter-pill" data-filter="active">Active (15)</div>
+            <div class="filter-pill" data-filter="watch">Watch (3)</div>
+          </div>
+          <input type="text" class="search-box" placeholder="🔍 ค้นหาชื่อหรือ HN..." id="search-input"/>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ผู้ป่วย</th>
+              <th>อายุ</th>
+              <th>HN</th>
+              <th>ยา</th>
+              <th>Adherence</th>
+              <th>Status</th>
+              <th>Last Activity</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="patient-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW: AT-RISK -->
+    <div class="view" id="view-atrisk">
+      <div class="card">
+        <div class="section-header">
+          <h2>⚠️ At-Risk Patients · ต้อง intervention</h2>
+        </div>
+        <p style="color: var(--ink-light); margin-bottom: 16px; font-size: 13px;">
+          ผู้ป่วยที่ adherence < 70% หรือพลาดยา > 5 ครั้ง/สัปดาห์ — เรียงตาม urgency
+        </p>
+        <div id="atrisk-list"></div>
+      </div>
+    </div>
+
+    <!-- VIEW: DRUGS -->
+    <div class="view" id="view-drugs">
+      
+      <div class="two-col">
+        <div class="card">
+          <div class="section-header">
+            <h2>💊 Top Prescribed Drugs</h2>
+            <span class="section-action">By patient count</span>
+          </div>
+          <div id="top-drugs"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <h2>⚠️ Most Missed Drugs</h2>
+            <span class="section-action">By miss rate</span>
+          </div>
+          <div id="missed-drugs"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2>🕒 Time-of-Day Adherence Pattern</h2>
+        </div>
+        <p style="color: var(--ink-light); margin-bottom: 16px; font-size: 13px;">
+          Insight: <strong style="color: var(--accent);">Evening doses (18:00-21:00) มี miss rate สูงที่สุด</strong> — 
+          ควรพิจารณาเพิ่ม reminder หรือเปลี่ยนเวลายา
+        </p>
+        <div class="chart-container" style="height: 240px;">
+          <svg viewBox="0 0 600 240" preserveAspectRatio="none" id="time-chart"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: TRENDS -->
+    <div class="view" id="view-trends">
+      
+      <div class="trend-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Pilot Goal Progress</div>
+          <div class="stat-value">73<span class="unit">%</span></div>
+          <div style="margin-top: 12px;">
+            <div class="progress">
+              <div class="progress-fill green" style="width: 97%;"></div>
+            </div>
+            <div style="font-size: 11px; color: var(--ink-light); margin-top: 6px;">
+              Goal: 75% adherence · 97% to target
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card teal">
+          <div class="stat-label">Patient Engagement</div>
+          <div class="stat-value">93<span class="unit">%</span></div>
+          <div style="margin-top: 12px;">
+            <div style="font-size: 12px; color: var(--ink-light);">
+              Active daily: 14/15 · Active weekly: 15/15
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2>📈 12-Week Adherence Journey</h2>
+        </div>
+        <div class="chart-container" style="height: 300px;">
+          <svg viewBox="0 0 800 300" preserveAspectRatio="none" id="big-trend-chart"></svg>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="section-header">
+            <h2>📊 Period Comparison</h2>
+          </div>
+          <div id="period-comparison"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-header">
+            <h2>🎯 Pilot Insights</h2>
+          </div>
+          <ul style="font-size: 14px; line-height: 2; padding-left: 20px;">
+            <li><strong>Adherence improving:</strong> 65% → 73% in 8 weeks</li>
+            <li><strong>Best time slot:</strong> Morning doses 88% adherence</li>
+            <li><strong>Worst time slot:</strong> 9 PM doses 65% adherence</li>
+            <li><strong>Most reliable patient:</strong> นางสมศรี (95% adherence)</li>
+            <li><strong>Common challenge:</strong> Atorvastatin evening doses</li>
+            <li><strong>Caregiver impact:</strong> +15% adherence with active caregivers</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: REPORTS -->
+    <div class="view" id="view-reports">
+      <div class="card">
+        <div class="section-header">
+          <h2>📄 Quick Reports</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px;">
+          <div style="padding: 16px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer;">
+            <div style="font-family: 'Bai Jamjuree'; font-weight: 700; margin-bottom: 4px;">📊 Weekly Summary</div>
+            <div style="font-size: 12px; color: var(--ink-light);">Adherence trends · Top issues · Action items</div>
+          </div>
+          <div style="padding: 16px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer;">
+            <div style="font-family: 'Bai Jamjuree'; font-weight: 700; margin-bottom: 4px;">📋 Monthly Report</div>
+            <div style="font-size: 12px; color: var(--ink-light);">Comprehensive 30-day analysis</div>
+          </div>
+          <div style="padding: 16px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer;">
+            <div style="font-family: 'Bai Jamjuree'; font-weight: 700; margin-bottom: 4px;">🩺 Pre-Clinic Reports</div>
+            <div style="font-size: 12px; color: var(--ink-light);">Today's clinic patients ready</div>
+          </div>
+          <div style="padding: 16px; border: 1px solid var(--line); border-radius: 6px; cursor: pointer;">
+            <div style="font-family: 'Bai Jamjuree'; font-weight: 700; margin-bottom: 4px;">📤 Hospital Audit Export</div>
+            <div style="font-size: 12px; color: var(--ink-light);">CSV/PDF for IRB/admin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-header">
+          <h2>📂 Recent Reports</h2>
+        </div>
+        <div id="recent-reports">
+          <div style="padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600;">Weekly Summary · Week 12</div>
+              <div style="font-size: 12px; color: var(--ink-light);">8 พ.ค. 2569 · 4 หน้า · PDF</div>
+            </div>
+            <button style="padding: 6px 14px; background: var(--ink-deep); color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download</button>
+          </div>
+          <div style="padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600;">Monthly Report · April 2569</div>
+              <div style="font-size: 12px; color: var(--ink-light);">1 พ.ค. 2569 · 12 หน้า · PDF</div>
+            </div>
+            <button style="padding: 6px 14px; background: var(--ink-deep); color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download</button>
+          </div>
+          <div style="padding: 12px 0; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 600;">NIT Pilot Update · Mid-Pilot</div>
+              <div style="font-size: 12px; color: var(--ink-light);">15 เม.ย. 2569 · 8 หน้า · PDF</div>
+            </div>
+            <button style="padding: 6px 14px; background: var(--ink-deep); color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">Download</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="detail-modal" id="patient-detail">
+  <div class="detail-content">
+    <div class="detail-header">
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+      <div class="detail-name" id="detail-name">Patient Name</div>
+      <div class="detail-meta" id="detail-meta"></div>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// MOCK DATA — Realistic Stroke Patients (NIT Pilot Demo)
+// ═══════════════════════════════════════════════════════════════
+
+const PATIENTS = [
+  {
+    id: 1, name: 'นางสมศรี ใจดี', age: 68, gender: 'หญิง', hn: 'NIT-2026-0042',
+    diagnosis: 'Ischemic Stroke (CVA, 8 เดือน)', strokeMonths: 8,
+    caregivers: 2, drugs: 5, adherence: 95, status: 'good',
+    lastActivity: '15 นาที', trend: 'stable', joinDate: '2026-02-09',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 98, missed: 2 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 92, missed: 7 },
+      { name: 'Amlodipine', name_en: 'Amlodipine', dose: '5mg', schedule: 'เช้า 7:00', adherence: 96, missed: 4 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', adherence: 92, missed: 14 },
+      { name: 'Sertraline', name_en: 'Sertraline', dose: '50mg', schedule: 'เช้า 7:00', adherence: 97, missed: 3 }
+    ]
+  },
+  {
+    id: 2, name: 'นายสมชาย เก่งมาก', age: 72, gender: 'ชาย', hn: 'NIT-2026-0043',
+    diagnosis: 'Hemorrhagic Stroke (CVA, 4 เดือน) + DM2 + HTN', strokeMonths: 4,
+    caregivers: 1, drugs: 6, adherence: 45, status: 'risk',
+    lastActivity: '2 วัน', trend: 'declining', joinDate: '2026-02-09',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 60, missed: 36 },
+      { name: 'Clopidogrel', name_en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', adherence: 55, missed: 40 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 30, missed: 63 },
+      { name: 'Losartan', name_en: 'Losartan', dose: '50mg', schedule: 'เช้า 7:00', adherence: 50, missed: 45 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '850mg', schedule: 'เช้า + เย็น', adherence: 42, missed: 104 },
+      { name: 'Glipizide', name_en: 'Glipizide', dose: '5mg', schedule: 'เช้า 7:00', adherence: 35, missed: 58 }
+    ]
+  },
+  {
+    id: 3, name: 'นางสมหญิง สบายดี', age: 70, gender: 'หญิง', hn: 'NIT-2026-0044',
+    diagnosis: 'Ischemic Stroke (CVA, 12 เดือน) + AF', strokeMonths: 12,
+    caregivers: 3, drugs: 4, adherence: 88, status: 'good',
+    lastActivity: '1 ชั่วโมง', trend: 'improving', joinDate: '2026-02-12',
+    medications: [
+      { name: 'Warfarin', name_en: 'Warfarin', dose: '3mg', schedule: 'เย็น 18:00', adherence: 92, missed: 7 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 82, missed: 16 },
+      { name: 'Bisoprolol', name_en: 'Bisoprolol', dose: '2.5mg', schedule: 'เช้า 7:00', adherence: 95, missed: 5 },
+      { name: 'Furosemide', name_en: 'Furosemide', dose: '40mg', schedule: 'เช้า 7:00', adherence: 84, missed: 14 }
+    ]
+  },
+  {
+    id: 4, name: 'นายประยูร แสนดี', age: 65, gender: 'ชาย', hn: 'NIT-2026-0045',
+    diagnosis: 'TIA + Stroke risk factors', strokeMonths: 0,
+    caregivers: 1, drugs: 3, adherence: 92, status: 'good',
+    lastActivity: '30 นาที', trend: 'stable', joinDate: '2026-02-15',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 96, missed: 4 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 88, missed: 11 },
+      { name: 'Amlodipine', name_en: 'Amlodipine', dose: '5mg', schedule: 'เช้า 7:00', adherence: 92, missed: 7 }
+    ]
+  },
+  {
+    id: 5, name: 'นางสุดา ขยันดี', age: 75, gender: 'หญิง', hn: 'NIT-2026-0046',
+    diagnosis: 'Recurrent Stroke (3rd) + DM2', strokeMonths: 18,
+    caregivers: 2, drugs: 7, adherence: 38, status: 'risk',
+    lastActivity: '3 วัน', trend: 'declining', joinDate: '2026-02-15',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 50, missed: 45 },
+      { name: 'Clopidogrel', name_en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', adherence: 45, missed: 50 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '80mg', schedule: 'ก่อนนอน 21:00', adherence: 25, missed: 67 },
+      { name: 'Losartan', name_en: 'Losartan', dose: '100mg', schedule: 'เช้า + เย็น', adherence: 35, missed: 117 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '1000mg', schedule: 'เช้า + เย็น', adherence: 30, missed: 126 },
+      { name: 'Insulin Glargine', name_en: 'Insulin', dose: '20 units', schedule: 'ก่อนนอน 21:00', adherence: 40, missed: 54 },
+      { name: 'Donepezil', name_en: 'Donepezil', dose: '10mg', schedule: 'ก่อนนอน 21:00', adherence: 38, missed: 56 }
+    ]
+  },
+  {
+    id: 6, name: 'นายบุญเลิศ มีสุข', age: 69, gender: 'ชาย', hn: 'NIT-2026-0047',
+    diagnosis: 'Ischemic Stroke (CVA, 6 เดือน)', strokeMonths: 6,
+    caregivers: 2, drugs: 4, adherence: 78, status: 'watch',
+    lastActivity: '4 ชั่วโมง', trend: 'stable', joinDate: '2026-02-18',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 88, missed: 11 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 62, missed: 34 },
+      { name: 'Telmisartan', name_en: 'Telmisartan', dose: '40mg', schedule: 'เช้า 7:00', adherence: 85, missed: 14 },
+      { name: 'Hydrochlorothiazide', name_en: 'HCTZ', dose: '12.5mg', schedule: 'เช้า 7:00', adherence: 78, missed: 20 }
+    ]
+  },
+  {
+    id: 7, name: 'นางอุไร ดีใจ', age: 71, gender: 'หญิง', hn: 'NIT-2026-0048',
+    diagnosis: 'Ischemic Stroke (CVA, 14 เดือน) + Depression', strokeMonths: 14,
+    caregivers: 1, drugs: 5, adherence: 72, status: 'watch',
+    lastActivity: '5 ชั่วโมง', trend: 'improving', joinDate: '2026-02-20',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 88, missed: 11 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 58, missed: 38 },
+      { name: 'Sertraline', name_en: 'Sertraline', dose: '100mg', schedule: 'เช้า 7:00', adherence: 76, missed: 22 },
+      { name: 'Amlodipine', name_en: 'Amlodipine', dose: '5mg', schedule: 'เช้า 7:00', adherence: 82, missed: 16 },
+      { name: 'Trazodone', name_en: 'Trazodone', dose: '50mg', schedule: 'ก่อนนอน 22:00', adherence: 56, missed: 40 }
+    ]
+  },
+  {
+    id: 8, name: 'นายมานพ ตั้งใจ', age: 67, gender: 'ชาย', hn: 'NIT-2026-0049',
+    diagnosis: 'Ischemic Stroke + DM2 (CVA, 9 เดือน)', strokeMonths: 9,
+    caregivers: 2, drugs: 5, adherence: 81, status: 'good',
+    lastActivity: '2 ชั่วโมง', trend: 'stable', joinDate: '2026-02-22',
+    medications: [
+      { name: 'Clopidogrel', name_en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', adherence: 92, missed: 7 },
+      { name: 'Rosuvastatin', name_en: 'Rosuvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 68, missed: 29 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', adherence: 84, missed: 29 },
+      { name: 'Empagliflozin', name_en: 'Empagliflozin', dose: '10mg', schedule: 'เช้า 7:00', adherence: 88, missed: 11 },
+      { name: 'Lisinopril', name_en: 'Lisinopril', dose: '10mg', schedule: 'เช้า 7:00', adherence: 76, missed: 22 }
+    ]
+  },
+  {
+    id: 9, name: 'นางพิมพ์ใจ ฉลาดดี', age: 73, gender: 'หญิง', hn: 'NIT-2026-0050',
+    diagnosis: 'Ischemic Stroke (CVA, 7 เดือน)', strokeMonths: 7,
+    caregivers: 3, drugs: 4, adherence: 90, status: 'good',
+    lastActivity: '45 นาที', trend: 'improving', joinDate: '2026-02-25',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 95, missed: 5 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 86, missed: 13 },
+      { name: 'Valsartan', name_en: 'Valsartan', dose: '80mg', schedule: 'เช้า 7:00', adherence: 92, missed: 7 },
+      { name: 'Citalopram', name_en: 'Citalopram', dose: '20mg', schedule: 'เช้า 7:00', adherence: 87, missed: 12 }
+    ]
+  },
+  {
+    id: 10, name: 'นายวิชาญ คิดได้', age: 64, gender: 'ชาย', hn: 'NIT-2026-0051',
+    diagnosis: 'TIA + Multiple risk factors', strokeMonths: 0,
+    caregivers: 1, drugs: 3, adherence: 85, status: 'good',
+    lastActivity: '1 ชั่วโมง', trend: 'stable', joinDate: '2026-02-28',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 92, missed: 6 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 75, missed: 19 },
+      { name: 'Metoprolol', name_en: 'Metoprolol', dose: '25mg', schedule: 'เช้า + เย็น', adherence: 88, missed: 18 }
+    ]
+  },
+  {
+    id: 11, name: 'นางลูกจันทร์ ทำดี', age: 78, gender: 'หญิง', hn: 'NIT-2026-0052',
+    diagnosis: 'Recurrent Stroke + Mild Dementia', strokeMonths: 24,
+    caregivers: 2, drugs: 6, adherence: 52, status: 'risk',
+    lastActivity: '1 วัน', trend: 'declining', joinDate: '2026-03-01',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 65, missed: 24 },
+      { name: 'Dipyridamole', name_en: 'Dipyridamole', dose: '200mg', schedule: 'เช้า + เย็น', adherence: 48, missed: 73 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', adherence: 35, missed: 46 },
+      { name: 'Donepezil', name_en: 'Donepezil', dose: '10mg', schedule: 'ก่อนนอน 21:00', adherence: 42, missed: 41 },
+      { name: 'Memantine', name_en: 'Memantine', dose: '10mg', schedule: 'เช้า + เย็น', adherence: 55, missed: 63 },
+      { name: 'Amlodipine', name_en: 'Amlodipine', dose: '5mg', schedule: 'เช้า 7:00', adherence: 68, missed: 22 }
+    ]
+  },
+  {
+    id: 12, name: 'นายเสริม จริงใจ', age: 70, gender: 'ชาย', hn: 'NIT-2026-0053',
+    diagnosis: 'Ischemic Stroke + AF + DM2', strokeMonths: 5,
+    caregivers: 2, drugs: 6, adherence: 76, status: 'watch',
+    lastActivity: '3 ชั่วโมง', trend: 'stable', joinDate: '2026-03-03',
+    medications: [
+      { name: 'Apixaban', name_en: 'Apixaban', dose: '5mg', schedule: 'เช้า + เย็น', adherence: 88, missed: 18 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 65, missed: 26 },
+      { name: 'Metoprolol', name_en: 'Metoprolol', dose: '50mg', schedule: 'เช้า + เย็น', adherence: 78, missed: 33 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', adherence: 75, missed: 38 },
+      { name: 'Linagliptin', name_en: 'Linagliptin', dose: '5mg', schedule: 'เช้า 7:00', adherence: 82, missed: 14 },
+      { name: 'Furosemide', name_en: 'Furosemide', dose: '20mg', schedule: 'เช้า 7:00', adherence: 70, missed: 22 }
+    ]
+  },
+  {
+    id: 13, name: 'นางมาลี รักดี', age: 66, gender: 'หญิง', hn: 'NIT-2026-0054',
+    diagnosis: 'Ischemic Stroke (CVA, 10 เดือน)', strokeMonths: 10,
+    caregivers: 1, drugs: 4, adherence: 87, status: 'good',
+    lastActivity: '15 นาที', trend: 'improving', joinDate: '2026-03-05',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 96, missed: 3 },
+      { name: 'Pravastatin', name_en: 'Pravastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 78, missed: 16 },
+      { name: 'Enalapril', name_en: 'Enalapril', dose: '10mg', schedule: 'เช้า + เย็น', adherence: 86, missed: 21 },
+      { name: 'Sertraline', name_en: 'Sertraline', dose: '50mg', schedule: 'เช้า 7:00', adherence: 88, missed: 9 }
+    ]
+  },
+  {
+    id: 14, name: 'นายธวัช ขยันมาก', age: 68, gender: 'ชาย', hn: 'NIT-2026-0055',
+    diagnosis: 'Lacunar Stroke + HTN + DM2', strokeMonths: 11,
+    caregivers: 2, drugs: 5, adherence: 65, status: 'watch',
+    lastActivity: '6 ชั่วโมง', trend: 'declining', joinDate: '2026-03-08',
+    medications: [
+      { name: 'Cilostazol', name_en: 'Cilostazol', dose: '100mg', schedule: 'เช้า + เย็น', adherence: 70, missed: 45 },
+      { name: 'Atorvastatin', name_en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', adherence: 48, missed: 39 },
+      { name: 'Olmesartan', name_en: 'Olmesartan', dose: '20mg', schedule: 'เช้า 7:00', adherence: 72, missed: 21 },
+      { name: 'Metformin', name_en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', adherence: 68, missed: 48 },
+      { name: 'Pioglitazone', name_en: 'Pioglitazone', dose: '15mg', schedule: 'เช้า 7:00', adherence: 65, missed: 26 }
+    ]
+  },
+  {
+    id: 15, name: 'นางพรพรรณ มีน้ำใจ', age: 74, gender: 'หญิง', hn: 'NIT-2026-0056',
+    diagnosis: 'Ischemic Stroke (CVA, 8 เดือน)', strokeMonths: 8,
+    caregivers: 3, drugs: 4, adherence: 91, status: 'good',
+    lastActivity: '1 ชั่วโมง', trend: 'stable', joinDate: '2026-03-10',
+    medications: [
+      { name: 'Aspirin', name_en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', adherence: 96, missed: 3 },
+      { name: 'Rosuvastatin', name_en: 'Rosuvastatin', dose: '10mg', schedule: 'ก่อนนอน 21:00', adherence: 82, missed: 13 },
+      { name: 'Candesartan', name_en: 'Candesartan', dose: '8mg', schedule: 'เช้า 7:00', adherence: 94, missed: 5 },
+      { name: 'Indapamide', name_en: 'Indapamide', dose: '1.5mg', schedule: 'เช้า 7:00', adherence: 92, missed: 6 }
+    ]
+  }
+];
+
+const ALERTS = [
+  { name: 'นางสุดา ขยันดี', detail: 'พลาดยา 8 ครั้ง · 7 วันที่ผ่านมา · adherence ลดลง', priority: 'high' },
+  { name: 'นายสมชาย เก่งมาก', detail: 'ไม่ login 2 วัน · refill ใกล้หมด (3 วัน)', priority: 'high' },
+  { name: 'นางลูกจันทร์ ทำดี', detail: 'Adherence < 55% · Atorvastatin มี issue', priority: 'high' },
+  { name: 'นายธวัช ขยันมาก', detail: 'Adherence ลดลงเรื่อยๆ · ต้อง check-in', priority: 'medium' }
+];
+
+const ACTIVITIES = [
+  { time: '14:30', icon: 'confirm', text: 'นางสมศรี ใจดี กิน Aspirin (เช้า)' },
+  { time: '14:25', icon: 'confirm', text: 'นางพรพรรณ มีน้ำใจ กิน Aspirin' },
+  { time: '14:18', icon: 'miss', text: 'นายสมชาย เก่งมาก พลาด Atorvastatin (เย็น)' },
+  { time: '14:10', icon: 'scan', text: 'นางมาลี รักดี สแกนยาใหม่ Sertraline 50mg' },
+  { time: '13:55', icon: 'confirm', text: 'นายมานพ ตั้งใจ กิน Metformin' },
+  { time: '13:42', icon: 'refill', text: 'นางสุดา ขยันดี · Insulin ใกล้หมด (3 วัน)' },
+  { time: '13:30', icon: 'miss', text: 'นางลูกจันทร์ ทำดี พลาด Donepezil' },
+  { time: '13:15', icon: 'confirm', text: 'นางสมหญิง สบายดี กิน Warfarin' }
+];
+
+const TOP_DRUGS = [
+  { name: 'Aspirin (ASA)', dose: '81mg', patients: 11, adherence: 84 },
+  { name: 'Atorvastatin', dose: '20-80mg', patients: 11, adherence: 60 },
+  { name: 'Metformin', dose: '500-1000mg', patients: 5, adherence: 60 },
+  { name: 'Amlodipine', dose: '5mg', patients: 4, adherence: 85 },
+  { name: 'Clopidogrel', dose: '75mg', patients: 3, adherence: 64 },
+  { name: 'Sertraline', dose: '50-100mg', patients: 3, adherence: 87 },
+  { name: 'Losartan', dose: '50-100mg', patients: 2, adherence: 43 },
+  { name: 'Donepezil', dose: '10mg', patients: 2, adherence: 40 }
+];
+
+const MISSED_DRUGS = [
+  { name: 'Atorvastatin (ก่อนนอน 21:00)', missRate: 40, reason: 'Evening doses · forget after dinner' },
+  { name: 'Insulin Glargine (ก่อนนอน)', missRate: 60, reason: 'Injection ยาก' },
+  { name: 'Donepezil (ก่อนนอน 21:00)', missRate: 60, reason: 'Evening · cognitive issues' },
+  { name: 'Trazodone (ก่อนนอน 22:00)', missRate: 44, reason: 'หลังนอนแล้วลืม' },
+  { name: 'Memantine (เย็น)', missRate: 45, reason: 'Twice daily complex' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════════════
+
+function renderAlerts() {
+  const container = document.getElementById('alert-list');
+  container.innerHTML = ALERTS.map(a => `
+    <div class="alert-item ${a.priority === 'medium' ? 'warn' : ''}">
+      <span class="icon">${a.priority === 'high' ? '🔴' : '🟡'}</span>
+      <div class="content">
+        <div class="name">${a.name}</div>
+        <div class="detail">${a.detail}</div>
+      </div>
+      <button class="action">View</button>
+    </div>
+  `).join('');
+}
+
+function renderActivity() {
+  const container = document.getElementById('activity-feed');
+  container.innerHTML = ACTIVITIES.map(a => `
+    <div class="activity-item">
+      <div class="activity-time">${a.time}</div>
+      <div class="activity-icon ${a.icon}">${
+        a.icon === 'confirm' ? '✓' : a.icon === 'miss' ? '✗' : a.icon === 'scan' ? '📷' : '📦'
+      }</div>
+      <div style="flex: 1; font-size: 13px;">${a.text}</div>
+    </div>
+  `).join('');
+}
+
+function getStatusPill(status) {
+  const map = {
+    good: { class: 'green', label: '🟢 Good' },
+    watch: { class: 'yellow', label: '🟡 Watch' },
+    risk: { class: 'red', label: '🔴 At-Risk' }
+  };
+  const s = map[status];
+  return `<span class="pill ${s.class}">${s.label}</span>`;
+}
+
+function getProgressClass(adherence) {
+  if (adherence >= 80) return 'green';
+  if (adherence >= 70) return 'yellow';
+  return 'red';
+}
+
+function renderPatients(filter = 'all') {
+  let filtered = PATIENTS;
+  if (filter === 'atrisk') filtered = PATIENTS.filter(p => p.status === 'risk');
+  if (filter === 'watch') filtered = PATIENTS.filter(p => p.status === 'watch');
+  
+  const search = document.getElementById('search-input')?.value?.toLowerCase() || '';
+  if (search) {
+    filtered = filtered.filter(p => 
+      p.name.toLowerCase().includes(search) || 
+      p.hn.toLowerCase().includes(search)
+    );
+  }
+  
+  const container = document.getElementById('patient-table');
+  container.innerHTML = filtered.map(p => `
+    <tr onclick="showDetail(${p.id})">
+      <td><strong>${p.name}</strong></td>
+      <td>${p.age}</td>
+      <td><code style="background: var(--bg); padding: 2px 8px; border-radius: 3px; font-family: 'Bai Jamjuree'; font-size: 11px;">${p.hn}</code></td>
+      <td>${p.drugs}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="progress" style="width: 80px;">
+            <div class="progress-fill ${getProgressClass(p.adherence)}" style="width: ${p.adherence}%;"></div>
+          </div>
+          <strong style="font-family: 'Bai Jamjuree'; font-size: 13px;">${p.adherence}%</strong>
+        </div>
+      </td>
+      <td>${getStatusPill(p.status)}</td>
+      <td style="font-size: 12px; color: var(--ink-light);">${p.lastActivity}</td>
+      <td><button class="action" style="padding: 4px 10px; background: white; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; cursor: pointer;">View</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderAtRisk() {
+  const atRisk = PATIENTS.filter(p => p.status === 'risk' || p.status === 'watch')
+    .sort((a, b) => a.adherence - b.adherence);
+  
+  const container = document.getElementById('atrisk-list');
+  container.innerHTML = atRisk.map(p => `
+    <div style="padding: 16px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 12px; background: ${p.status === 'risk' ? 'var(--red-soft)' : 'var(--yellow-soft)'};">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 16px; align-items: center;">
+        <div>
+          <div style="font-family: 'Bai Jamjuree'; font-weight: 700; font-size: 16px; margin-bottom: 4px;">
+            ${p.status === 'risk' ? '🔴' : '🟡'} ${p.name}
+          </div>
+          <div style="font-size: 12px; color: var(--ink-light);">
+            อายุ ${p.age} · ${p.diagnosis} · ${p.drugs} ยา
+          </div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-family: 'Bai Jamjuree'; font-weight: 800; font-size: 24px; color: ${p.status === 'risk' ? 'var(--red)' : '#92400E'};">${p.adherence}%</div>
+          <div style="font-size: 10px; color: var(--ink-light); text-transform: uppercase;">Adherence</div>
+        </div>
+        <div style="font-size: 12px;">
+          <div style="margin-bottom: 4px;"><strong>Trend:</strong> ${p.trend === 'declining' ? '📉 Declining' : p.trend === 'improving' ? '📈 Improving' : '↔️ Stable'}</div>
+          <div><strong>Last:</strong> ${p.lastActivity}</div>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button onclick="showDetail(${p.id})" style="padding: 8px 12px; background: var(--ink-deep); color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">View</button>
+          <button style="padding: 8px 12px; background: var(--accent); color: white; border: none; border-radius: 4px; font-size: 12px; cursor: pointer;">📱 LINE</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTopDrugs() {
+  const container = document.getElementById('top-drugs');
+  const max = Math.max(...TOP_DRUGS.map(d => d.patients));
+  container.innerHTML = TOP_DRUGS.map((d, i) => `
+    <div class="drug-row">
+      <div class="drug-rank">${(i + 1).toString().padStart(2, '0')}</div>
+      <div>
+        <div class="drug-name">${d.name}</div>
+        <div class="drug-info">${d.dose}</div>
+      </div>
+      <div style="font-size: 12px; color: var(--ink-light);">${d.patients} patients</div>
+      <div class="bar-chart-h">
+        <div class="bar"><div class="bar-fill" style="width: ${(d.patients/max)*100}%; background: var(--teal);"></div></div>
+      </div>
+      <div style="font-family: 'Bai Jamjuree'; font-weight: 700; text-align: right;">${d.adherence}%</div>
+    </div>
+  `).join('');
+}
+
+function renderMissedDrugs() {
+  const container = document.getElementById('missed-drugs');
+  container.innerHTML = MISSED_DRUGS.map((d, i) => `
+    <div style="padding: 12px 0; border-bottom: 1px solid var(--line);">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+        <div style="font-weight: 600; font-size: 13px;">${d.name}</div>
+        <div style="font-family: 'Bai Jamjuree'; font-weight: 800; color: var(--red); font-size: 16px;">${d.missRate}%</div>
+      </div>
+      <div style="font-size: 11px; color: var(--ink-light); margin-bottom: 6px;">${d.reason}</div>
+      <div class="progress"><div class="progress-fill red" style="width: ${d.missRate}%;"></div></div>
+    </div>
+  `).join('');
+}
+
+function drawTrendChart(svgId, big = false) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  
+  const data = [62, 64, 67, 65, 68, 70, 69, 72, 73, 71, 73, 75];
+  const w = big ? 800 : 600;
+  const h = big ? 300 : 200;
+  const pad = big ? 40 : 24;
+  const chartW = w - pad * 2;
+  const chartH = h - pad * 2;
+  const max = 100;
+  const min = 50;
+  
+  const points = data.map((v, i) => {
+    const x = pad + (i / (data.length - 1)) * chartW;
+    const y = pad + chartH - ((v - min) / (max - min)) * chartH;
+    return { x, y, v, i };
+  });
+  
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${points[points.length-1].x} ${pad + chartH} L ${pad} ${pad + chartH} Z`;
+  
+  const gridLines = [60, 70, 80, 90].map(v => {
+    const y = pad + chartH - ((v - min) / (max - min)) * chartH;
+    return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="#E5E7EB" stroke-dasharray="2,4"/>
+            <text x="${pad-6}" y="${y+4}" fill="#9CA3AF" font-size="${big ? 11 : 9}" text-anchor="end" font-family="Bai Jamjuree">${v}%</text>`;
+  }).join('');
+  
+  const labels = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+  const xLabels = points.map((p, i) => 
+    `<text x="${p.x}" y="${h - 6}" fill="#9CA3AF" font-size="${big ? 11 : 9}" text-anchor="middle" font-family="Bai Jamjuree">${labels[i]}</text>`
+  ).join('');
+  
+  const dots = points.map(p => 
+    `<circle cx="${p.x}" cy="${p.y}" r="${big ? 5 : 3}" fill="#C8392F"/>`
+  ).join('');
+  
+  const valueLabels = big ? points.map(p => 
+    `<text x="${p.x}" y="${p.y - 12}" fill="#1A2840" font-size="11" text-anchor="middle" font-family="Bai Jamjuree" font-weight="700">${p.v}%</text>`
+  ).join('') : '';
+  
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="grad-${svgId}" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#C8392F" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="#C8392F" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    <path d="${areaPath}" fill="url(#grad-${svgId})"/>
+    <path d="${linePath}" fill="none" stroke="#C8392F" stroke-width="${big ? 3 : 2}"/>
+    ${dots}
+    ${valueLabels}
+    ${xLabels}
+  `;
+}
+
+function drawTimeChart() {
+  const svg = document.getElementById('time-chart');
+  if (!svg) return;
+  
+  const data = [
+    { time: '6:00', label: 'เช้า', adherence: 88 },
+    { time: '12:00', label: 'เที่ยง', adherence: 78 },
+    { time: '18:00', label: 'เย็น', adherence: 72 },
+    { time: '21:00', label: 'ก่อนนอน', adherence: 65 }
+  ];
+  
+  const w = 600, h = 240;
+  const pad = 50;
+  const chartW = w - pad * 2;
+  const chartH = h - pad * 2;
+  
+  const barW = chartW / data.length * 0.6;
+  const gap = chartW / data.length * 0.4;
+  
+  const bars = data.map((d, i) => {
+    const x = pad + i * (chartW / data.length) + gap / 2;
+    const barH = (d.adherence / 100) * chartH;
+    const y = pad + chartH - barH;
+    const color = d.adherence >= 80 ? '#16A34A' : d.adherence >= 70 ? '#EAB308' : '#DC2626';
+    return `
+      <rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="${color}" rx="4"/>
+      <text x="${x + barW/2}" y="${y - 8}" fill="#1A2840" font-size="14" text-anchor="middle" font-family="Bai Jamjuree" font-weight="700">${d.adherence}%</text>
+      <text x="${x + barW/2}" y="${h - 24}" fill="#1A2840" font-size="13" text-anchor="middle" font-family="Bai Jamjuree" font-weight="600">${d.label}</text>
+      <text x="${x + barW/2}" y="${h - 8}" fill="#9CA3AF" font-size="11" text-anchor="middle" font-family="Bai Jamjuree">${d.time}</text>
+    `;
+  }).join('');
+  
+  const gridLines = [25, 50, 75, 100].map(v => {
+    const y = pad + chartH - (v/100) * chartH;
+    return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="#E5E7EB" stroke-dasharray="2,4"/>
+            <text x="${pad-8}" y="${y+4}" fill="#9CA3AF" font-size="11" text-anchor="end" font-family="Bai Jamjuree">${v}%</text>`;
+  }).join('');
+  
+  svg.innerHTML = gridLines + bars;
+}
+
+function renderPeriodComparison() {
+  const container = document.getElementById('period-comparison');
+  const data = [
+    { label: 'Adherence Rate', current: '73%', previous: '65%', change: '+8%', up: true },
+    { label: 'Active Patients (daily)', current: '14/15', previous: '12/15', change: '+2', up: true },
+    { label: 'Refill Compliance', current: '92%', previous: '78%', change: '+14%', up: true },
+    { label: 'Caregiver Engagement', current: '68%', previous: '52%', change: '+16%', up: true },
+    { label: 'Missed Doses', current: '45', previous: '67', change: '-22', up: true }
+  ];
+  
+  container.innerHTML = data.map(d => `
+    <div style="padding: 12px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+      <div style="font-size: 13px; color: var(--ink);">${d.label}</div>
+      <div style="display: flex; gap: 16px; align-items: center;">
+        <div style="font-size: 12px; color: var(--ink-light);">${d.previous} → <strong style="color: var(--ink-deep); font-family: 'Bai Jamjuree';">${d.current}</strong></div>
+        <div style="font-family: 'Bai Jamjuree'; font-weight: 700; color: ${d.up ? 'var(--green)' : 'var(--red)'}; font-size: 13px;">
+          ${d.up ? '↗' : '↘'} ${d.change}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showDetail(id) {
+  const p = PATIENTS.find(x => x.id === id);
+  if (!p) return;
+  
+  document.getElementById('detail-name').textContent = p.name;
+  document.getElementById('detail-meta').innerHTML = `
+    <span>👤 อายุ ${p.age} · ${p.gender}</span>
+    <span>🏥 ${p.hn}</span>
+    <span>🩺 ${p.diagnosis}</span>
+    <span>👨‍👩‍👧 Caregivers: ${p.caregivers}</span>
+  `;
+  
+  // Generate 30-day heatmap
+  const days = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const adher = p.adherence + (Math.random() - 0.5) * 30;
+    const status = adher >= 85 ? 'confirmed' : adher >= 60 ? 'partial' : 'missed';
+    days.push({ status, day: today.getDate() - i });
+  }
+  
+  // Pad to start on Sunday
+  while (days.length % 7 !== 0) {
+    days.unshift({ status: 'future', day: '' });
+  }
+  
+  const heatmapHTML = days.map(d => 
+    `<div class="heatmap-cell ${d.status}" title="${d.day}">${d.day || ''}</div>`
+  ).join('');
+  
+  document.getElementById('detail-body').innerHTML = `
+    <div class="metric-row">
+      <div class="metric-card">
+        <div class="metric-label">Overall</div>
+        <div class="metric-value" style="color: ${p.adherence >= 80 ? 'var(--green)' : p.adherence >= 70 ? 'var(--yellow)' : 'var(--red)'};">${p.adherence}%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">This Week</div>
+        <div class="metric-value">${Math.min(100, p.adherence + 5)}%</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Streak</div>
+        <div class="metric-value">${Math.floor(Math.random() * 14) + 3} days</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 12px; font-size: 16px;">💊 Medications (${p.drugs})</h3>
+    <div class="med-list">
+      ${p.medications.map(m => `
+        <div class="med-row">
+          <div class="med-name">${m.name}<small>${m.name_en} · ${m.dose}</small></div>
+          <div style="font-size: 12px; color: var(--ink-light);">${m.schedule}</div>
+          <div style="font-size: 12px;">Missed: <strong>${m.missed}</strong></div>
+          <div class="progress" style="width: 100%;">
+            <div class="progress-fill ${getProgressClass(m.adherence)}" style="width: ${m.adherence}%;"></div>
+          </div>
+          <div style="font-family: 'Bai Jamjuree'; font-weight: 700; text-align: right;">${m.adherence}%</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <h3 style="margin: 24px 0 12px; font-size: 16px;">📅 30-Day Pattern</h3>
+    <div class="heatmap-labels">
+      <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+    </div>
+    <div class="heatmap">${heatmapHTML}</div>
+    <div style="display: flex; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--ink-light);">
+      <span>🟩 Confirmed</span>
+      <span>🟨 Partial</span>
+      <span>🟥 Missed</span>
+    </div>
+
+    <h3 style="margin: 24px 0 12px; font-size: 16px;">📝 Pharmacist Notes</h3>
+    <div style="background: var(--bg); padding: 16px; border-radius: 6px; font-size: 13px; line-height: 1.7;">
+      <strong>5 พ.ค. 2569:</strong> Patient reports occasional forgetfulness with evening doses.
+      Caregiver (daughter) added for additional reminders.<br/><br/>
+      <strong>1 เม.ย. 2569:</strong> Started pilot. Initial adherence baseline established.
+      Patient and family motivated.
+    </div>
+
+    <div style="display: flex; gap: 8px; margin-top: 24px;">
+      <button style="flex: 1; padding: 10px 16px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-family: 'Bai Jamjuree'; font-weight: 600;">📱 Send LINE Reminder</button>
+      <button style="flex: 1; padding: 10px 16px; background: var(--ink-deep); color: white; border: none; border-radius: 6px; cursor: pointer; font-family: 'Bai Jamjuree'; font-weight: 600;">📄 Generate Doctor Report</button>
+      <button style="padding: 10px 16px; background: white; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-family: 'Bai Jamjuree'; font-weight: 600;">📝 Add Note</button>
+    </div>
+  `;
+  
+  document.getElementById('patient-detail').classList.add('active');
+}
+
+function closeDetail() {
+  document.getElementById('patient-detail').classList.remove('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+
+const TITLES = {
+  overview: { title: 'Overview Dashboard', sub: 'ภาพรวม pilot ของ NIT — 9 พฤษภาคม 2569' },
+  patients: { title: 'All Patients', sub: '15 pilot patients · NIT — เลือกดู detail' },
+  atrisk: { title: 'At-Risk Patients', sub: 'ผู้ป่วยที่ต้อง intervention · เรียงตาม urgency' },
+  drugs: { title: 'Drug Analytics', sub: 'Drug-level insights สำหรับ pilot pharmacist' },
+  trends: { title: 'Trends & Patterns', sub: '12 weeks ของ adherence journey' },
+  reports: { title: 'Reports Hub', sub: 'Generate + manage clinical reports' }
+};
+
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const view = item.dataset.view;
+    
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + view).classList.add('active');
+    
+    document.getElementById('page-title').textContent = TITLES[view].title;
+    document.getElementById('page-subtitle').textContent = TITLES[view].sub;
+    
+    // Re-render specific views when navigated to
+    if (view === 'patients') renderPatients();
+    if (view === 'atrisk') renderAtRisk();
+    if (view === 'drugs') {
+      renderTopDrugs();
+      renderMissedDrugs();
+      setTimeout(drawTimeChart, 50);
+    }
+    if (view === 'trends') {
+      setTimeout(() => drawTrendChart('big-trend-chart', true), 50);
+      renderPeriodComparison();
+    }
+  });
+});
+
+// Filter pills
+document.querySelectorAll('.filter-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    renderPatients(p.dataset.filter);
+  });
+});
+
+// Search
+document.getElementById('search-input')?.addEventListener('input', () => renderPatients());
+
+// Modal
+document.getElementById('patient-detail').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeDetail();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+
+renderAlerts();
+renderActivity();
+renderPatients();
+drawTrendChart('trend-chart');
+
+</script>
+
+</body>
+</html>
