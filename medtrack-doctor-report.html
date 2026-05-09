@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — Doctor Report (NIT Pilot Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink-deep: #0F1A2E;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --paper: #FAFAF7;
+  --paper-warm: #F4EDE0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --accent: #C8392F;
+  --accent-soft: #E76F5A;
+  --teal: #2B7A7A;
+  --teal-deep: #15494A;
+  --gold: #B8893A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --green-deep: #166534;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --yellow-deep: #92400E;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #E5E7EB;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--ink-deep);
+}
+
+/* TOP BAR */
+.topbar {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand h1 {
+  font-size: 20px;
+  color: var(--paper);
+}
+.brand h1 .accent { color: var(--accent-soft); }
+.brand .label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 600;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 100px;
+  font-size: 13px;
+}
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-family: 'Bai Jamjuree';
+  font-size: 13px;
+}
+.user-name { color: var(--paper); font-weight: 600; }
+.user-role { color: rgba(255,255,255,0.6); font-size: 11px; }
+
+/* CONTAINER */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+/* DEMO BANNER */
+.demo-banner {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFE8B0 100%);
+  border-left: 4px solid var(--gold);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.demo-banner strong { color: var(--gold); font-family: 'Bai Jamjuree', sans-serif; }
+
+/* PATIENT SEARCH (LANDING) */
+.search-section {
+  background: var(--card);
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+.search-section h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.search-section .subtitle {
+  color: var(--ink-light);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.search-box-large {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: 'Sarabun', sans-serif;
+}
+.search-box-large:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.quick-access {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.quick-access-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+  margin-bottom: 12px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+.quick-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.quick-card {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.quick-card:hover {
+  border-color: var(--accent);
+  background: white;
+}
+.quick-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.quick-meta {
+  font-size: 11px;
+  color: var(--ink-light);
+}
+.quick-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: white;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 6px;
+  letter-spacing: 0.05em;
+  font-family: 'Bai Jamjuree';
+}
+
+/* REPORT VIEW */
+.report-view { display: none; }
+.report-view.active { display: block; }
+
+/* PATIENT HEADER */
+.patient-header {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 32px;
+  border-radius: 12px 12px 0 0;
+  position: relative;
+}
+.report-actions-top {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+}
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-size: 16px;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.2); }
+
+.patient-name {
+  font-size: 32px;
+  color: var(--paper);
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.patient-tags {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.patient-tag {
+  background: rgba(231,111,90,0.2);
+  color: var(--accent-soft);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+.patient-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+}
+.meta-item {
+  font-size: 13px;
+}
+.meta-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+.meta-value {
+  color: var(--paper);
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+
+/* KEY METRICS */
+.key-metrics {
+  background: white;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.metric {
+  text-align: center;
+  padding: 16px;
+  border-radius: 8px;
+  background: var(--bg);
+}
+.metric-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+.metric-value {
+  font-family: 'Bai Jamjuree';
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink-deep);
+}
+.metric-value .unit { font-size: 24px; color: var(--ink-light); }
+.metric-extra {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-top: 8px;
+}
+.metric.green .metric-value { color: var(--green); }
+.metric.yellow .metric-value { color: var(--yellow); }
+.metric.red .metric-value { color: var(--red); }
+
+/* REPORT BODY */
+.report-body {
+  background: white;
+  padding: 32px;
+  border-radius: 0 0 12px 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+
+.report-section {
+  margin-bottom: 32px;
+}
+.report-section:last-child { margin-bottom: 0; }
+.section-title {
+  font-size: 18px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Bai Jamjuree';
+}
+
+/* MEDICATIONS TABLE */
+.med-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.med-table thead {
+  background: var(--bg);
+}
+.med-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  font-weight: 700;
+  font-family: 'Bai Jamjuree';
+}
+.med-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.med-table tr:last-child td { border-bottom: none; }
+.med-name-cell {
+  font-weight: 600;
+}
+.med-name-cell small {
+  display: block;
+  font-weight: 400;
+  color: var(--ink-light);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.adherence-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.adherence-bar {
+  flex: 1;
+  max-width: 120px;
+  height: 8px;
+  background: var(--line);
+  border-radius: 100px;
+  overflow: hidden;
+}
+.adherence-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.3s;
+}
+.adherence-fill.green { background: var(--green); }
+.adherence-fill.yellow { background: var(--yellow); }
+.adherence-fill.red { background: var(--red); }
+.adherence-num {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 14px;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* CALENDAR HEATMAP */
+.calendar-section {
+  background: var(--bg);
+  padding: 24px;
+  border-radius: 8px;
+}
+.calendar-labels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--ink-light);
+  text-align: center;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.day-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  position: relative;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+.day-cell.full {
+  background: var(--green);
+  color: white;
+}
+.day-cell.partial {
+  background: var(--yellow);
+  color: var(--ink-deep);
+}
+.day-cell.missed {
+  background: var(--red);
+  color: white;
+}
+.day-cell.empty {
+  background: var(--bg);
+  color: var(--ink-light);
+  border: 1px dashed var(--line);
+}
+.day-cell.today {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.calendar-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+/* CONCERNS */
+.concerns-list {
+  display: grid;
+  gap: 12px;
+}
+.concern-item {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 16px;
+  background: var(--red-soft);
+  border-left: 3px solid var(--red);
+  border-radius: 6px;
+}
+.concern-item.warn {
+  background: var(--yellow-soft);
+  border-left-color: var(--yellow);
+}
+.concern-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.concern-content {
+  flex: 1;
+}
+.concern-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.concern-detail {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+/* RECOMMENDATIONS */
+.rec-list {
+  background: var(--paper-warm);
+  border-left: 3px solid var(--gold);
+  padding: 20px 24px;
+  border-radius: 6px;
+}
+.rec-list h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: 'Bai Jamjuree';
+}
+.rec-list ul {
+  list-style: none;
+  padding-left: 0;
+}
+.rec-list li {
+  padding: 6px 0;
+  padding-left: 24px;
+  position: relative;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.rec-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* NOTES */
+.notes-card {
+  background: var(--bg);
+  padding: 20px;
+  border-radius: 8px;
+}
+.note-entry {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.note-entry:last-child { border-bottom: none; }
+.note-date {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.note-author {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  color: var(--ink-light);
+  background: white;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: normal;
+  text-transform: none;
+  font-weight: 500;
+}
+.note-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+/* TREND CHART */
+.trend-chart {
+  width: 100%;
+  height: 240px;
+}
+.chart-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* DOCTOR ACTIONS */
+.doctor-actions {
+  background: white;
+  padding: 24px 32px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.action-section h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  font-family: 'Bai Jamjuree';
+}
+.note-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: 'Sarabun';
+  font-size: 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: var(--accent-soft); }
+.btn-secondary {
+  background: var(--ink-deep);
+  color: white;
+}
+.btn-tertiary {
+  background: white;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+/* BACK BUTTON */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 16px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+.back-btn:hover { background: var(--bg); }
+
+/* PRINT */
+@media print {
+  body { background: white; }
+  .topbar, .demo-banner, .doctor-actions, .back-btn, .report-actions-top { display: none !important; }
+  .report-body, .patient-header { box-shadow: none; }
+  .patient-header { border-radius: 0; }
+  .report-section { page-break-inside: avoid; }
+}
+
+@media (max-width: 768px) {
+  .container { padding: 16px; }
+  .topbar { padding: 12px 16px; }
+  .quick-list { grid-template-columns: 1fr; }
+  .key-metrics { grid-template-columns: 1fr; gap: 12px; padding: 20px; }
+  .patient-header { padding: 20px; }
+  .patient-name { font-size: 24px; }
+  .patient-meta-grid { grid-template-columns: repeat(2, 1fr); }
+  .report-body { padding: 20px; }
+  .doctor-actions { grid-template-columns: 1fr; padding: 20px; }
+  .med-table { font-size: 12px; }
+  .med-table th, .med-table td { padding: 8px; }
+  .adherence-cell { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .calendar-grid { gap: 2px; }
+  .day-cell { font-size: 9px; }
+  .metric-value { font-size: 36px; }
+  .report-actions-top { position: relative; top: 0; right: 0; margin-bottom: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand">
+    <div>
+      <h1>MedTrack<span class="accent">.</span></h1>
+      <div class="label">Doctor Report Portal</div>
+    </div>
+  </div>
+  <div class="user-info">
+    <div class="user-avatar">นพ</div>
+    <div>
+      <div class="user-name">นพ. ศักดิ์ชัย ศรีสุข</div>
+      <div class="user-role">Neurologist · NIT</div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner">
+    <span style="font-size: 18px;">🎭</span>
+    <div>
+      <strong>DEMO MODE</strong> — ข้อมูลจำลอง · 
+      สำหรับนำเสนอ NIT · ระบบจริงจะใช้ patient data จาก pilot
+    </div>
+  </div>
+
+  <!-- LANDING / SEARCH -->
+  <div id="landing-view">
+    <div class="search-section">
+      <h2>Patient Adherence Reports</h2>
+      <p class="subtitle">ค้นหาผู้ป่วยเพื่อดูรายงาน adherence — สำหรับใช้ใน clinic visit</p>
+      
+      <input type="text" class="search-box-large" placeholder="🔍 พิมพ์ชื่อผู้ป่วยหรือ HN..." id="search-box"/>
+      
+      <div class="quick-access">
+        <div class="quick-access-title">📅 วันนี้ที่นัด clinic — 9 พฤษภาคม 2569</div>
+        <div class="quick-list" id="today-patients"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORT VIEW -->
+  <div id="report-view" class="report-view">
+    <button class="back-btn" onclick="showLanding()">← กลับ</button>
+
+    <!-- PATIENT HEADER -->
+    <div class="patient-header">
+      <div class="report-actions-top">
+        <button class="btn-icon" onclick="window.print()" title="Print">🖨️</button>
+        <button class="btn-icon" title="Save PDF">💾</button>
+        <button class="btn-icon" title="Share">📤</button>
+      </div>
+      <h1 class="patient-name" id="patient-name">นางสมศรี ใจดี</h1>
+      <div class="patient-tags" id="patient-tags"></div>
+      <div class="patient-meta-grid">
+        <div class="meta-item">
+          <div class="meta-label">HN</div>
+          <div class="meta-value" id="meta-hn">NIT-2026-0042</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Age · Gender</div>
+          <div class="meta-value" id="meta-demo">68 · หญิง</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Last Visit</div>
+          <div class="meta-value" id="meta-last">14 มี.ค. 2569</div>
+        </div>
+        <div class="meta-item">
+          <div class="meta-label">Next Visit</div>
+          <div class="meta-value" id="meta-next">15 พ.ค. 2569 · 10:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KEY METRICS -->
+    <div class="key-metrics" id="key-metrics"></div>
+
+    <!-- REPORT BODY -->
+    <div class="report-body">
+
+      <!-- MEDICATIONS -->
+      <div class="report-section">
+        <h3 class="section-title">💊 Medication Adherence</h3>
+        <table class="med-table">
+          <thead>
+            <tr>
+              <th>Medication</th>
+              <th>Schedule</th>
+              <th>Total</th>
+              <th>Taken</th>
+              <th>Missed</th>
+              <th style="min-width: 200px;">Adherence</th>
+            </tr>
+          </thead>
+          <tbody id="med-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- 30-DAY PATTERN -->
+      <div class="report-section">
+        <h3 class="section-title">📅 Last 30 Days Pattern</h3>
+        <div class="calendar-section">
+          <div class="calendar-labels">
+            <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+          <div class="calendar-legend">
+            <div class="legend-item"><div class="legend-swatch" style="background: var(--green);"></div> Full adherence</div>
+            <div class="legend-item"><div class="legend-swatch" style="background: var(--yellow);"></div> Partial (some missed)</div>
+            <div class="legend-item"><div class="legend-swatch" style="background: var(--red);"></div> All missed</div>
+            <div class="legend-item"><div class="legend-swatch" style="background: var(--bg); border: 1px dashed var(--line);"></div> No data</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONCERNS -->
+      <div class="report-section" id="concerns-section">
+        <h3 class="section-title">⚠️ Clinical Concerns</h3>
+        <div class="concerns-list" id="concerns-list"></div>
+      </div>
+
+      <!-- TREND -->
+      <div class="report-section">
+        <h3 class="section-title">📈 Adherence Trend (12 weeks)</h3>
+        <svg class="chart-svg trend-chart" id="trend-chart" viewBox="0 0 800 240" preserveAspectRatio="none"></svg>
+      </div>
+
+      <!-- RECOMMENDATIONS -->
+      <div class="report-section">
+        <h3 class="section-title">💡 Pharmacist Recommendations</h3>
+        <div class="rec-list" id="rec-list"></div>
+      </div>
+
+      <!-- PHARMACIST NOTES -->
+      <div class="report-section">
+        <h3 class="section-title">📝 Pharmacist Notes</h3>
+        <div class="notes-card" id="pharm-notes"></div>
+      </div>
+
+      <!-- DOCTOR'S PREVIOUS NOTES -->
+      <div class="report-section">
+        <h3 class="section-title">🩺 Previous Doctor Notes</h3>
+        <div class="notes-card" id="doctor-notes"></div>
+      </div>
+
+    </div>
+
+    <!-- DOCTOR ACTIONS -->
+    <div class="doctor-actions">
+      <div class="action-section">
+        <h4>📝 Add Visit Note</h4>
+        <textarea class="note-input" placeholder="บันทึกการตรวจวันนี้... (clinical observations, treatment changes)"></textarea>
+      </div>
+      <div class="action-section">
+        <h4>🎯 Quick Actions</h4>
+        <div class="action-buttons">
+          <button class="btn btn-primary">💾 Save Note</button>
+          <button class="btn btn-secondary">📱 Send LINE Message</button>
+          <button class="btn btn-tertiary">🖨️ Print Report</button>
+          <button class="btn btn-tertiary">📤 Share with Pharmacist</button>
+        </div>
+        <div style="margin-top: 12px; padding: 12px; background: var(--bg); border-radius: 6px; font-size: 12px; color: var(--ink-light);">
+          <strong style="color: var(--ink);">Audit:</strong> 
+          Report viewed at 9 พ.ค. 2569 · 10:32 by นพ.ศักดิ์ชัย<br/>
+          Last updated by pharmacist: 8 พ.ค. 2569 · 14:30
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PATIENT DATA — สำหรับ Demo
+// ═══════════════════════════════════════════════════════════════
+
+const PATIENTS = [
+  {
+    id: 1,
+    name: 'นางสมศรี ใจดี',
+    age: 68,
+    gender: 'หญิง',
+    hn: 'NIT-2026-0042',
+    diagnosis: 'Ischemic Stroke (CVA, 8 เดือน)',
+    tags: ['Stroke', 'CVA · 8 mo', 'HTN', 'DM2'],
+    lastVisit: '14 มี.ค. 2569',
+    nextVisit: '15 พ.ค. 2569 · 10:00',
+    metrics: {
+      overall: 95,
+      thisPeriod: 96,
+      streak: 14
+    },
+    medications: [
+      { name: 'Aspirin', en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', total: 90, taken: 88, missed: 2, adherence: 98 },
+      { name: 'Atorvastatin', en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', total: 90, taken: 83, missed: 7, adherence: 92 },
+      { name: 'Amlodipine', en: 'Amlodipine', dose: '5mg', schedule: 'เช้า 7:00', total: 90, taken: 86, missed: 4, adherence: 96 },
+      { name: 'Metformin', en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', total: 180, taken: 166, missed: 14, adherence: 92 },
+      { name: 'Sertraline', en: 'Sertraline', dose: '50mg', schedule: 'เช้า 7:00', total: 90, taken: 87, missed: 3, adherence: 97 }
+    ],
+    concerns: [
+      { type: 'warn', icon: '⚠️', title: 'Atorvastatin Evening Doses', detail: 'พลาด 7 ครั้ง · ส่วนใหญ่เป็นวันสุดสัปดาห์ · พิจารณาเปลี่ยนเป็นเช้า' }
+    ],
+    recommendations: [
+      'พิจารณาคงยาเดิม — adherence ดีมาก (95%)',
+      'แนะนำ caregiver ให้ช่วยเตือน Atorvastatin ตอนเย็น',
+      'Refill ในรอบนี้: Aspirin, Atorvastatin (พอใช้ 30 วัน)',
+      'Continue current regimen · re-evaluate in 3 months'
+    ],
+    pharmNotes: [
+      { date: '5 พ.ค. 2569', author: 'ภสญ.NIT', text: 'Patient compliant. Caregiver (daughter) very engaged. Reports occasional forgetfulness with evening doses. Suggested setting bedtime alarm.' },
+      { date: '15 เม.ย. 2569', author: 'ภสญ.NIT', text: 'Initial pilot enrollment. Patient and family motivated. Baseline adherence ~88%.' }
+    ],
+    doctorNotes: [
+      { date: '14 มี.ค. 2569', author: 'นพ.ศักดิ์ชัย', text: 'Stable post-stroke. Continue current regimen. BP well-controlled. HbA1c 6.8%. Discussed importance of medication adherence with patient and caregiver. Re-evaluate at next visit.' }
+    ],
+    pattern: 'mostly-good' // for calendar generation
+  },
+  {
+    id: 2,
+    name: 'นายสมชาย เก่งมาก',
+    age: 72,
+    gender: 'ชาย',
+    hn: 'NIT-2026-0043',
+    diagnosis: 'Hemorrhagic Stroke (CVA, 4 เดือน) + DM2 + HTN',
+    tags: ['Stroke', 'Hemorrhagic · 4 mo', 'HTN', 'DM2', 'AT-RISK'],
+    lastVisit: '20 เม.ย. 2569',
+    nextVisit: '12 พ.ค. 2569 · 09:00',
+    metrics: {
+      overall: 45,
+      thisPeriod: 38,
+      streak: 0
+    },
+    medications: [
+      { name: 'Aspirin', en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', total: 90, taken: 54, missed: 36, adherence: 60 },
+      { name: 'Clopidogrel', en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', total: 90, taken: 50, missed: 40, adherence: 55 },
+      { name: 'Atorvastatin', en: 'Atorvastatin', dose: '40mg', schedule: 'ก่อนนอน 21:00', total: 90, taken: 27, missed: 63, adherence: 30 },
+      { name: 'Losartan', en: 'Losartan', dose: '50mg', schedule: 'เช้า 7:00', total: 90, taken: 45, missed: 45, adherence: 50 },
+      { name: 'Metformin', en: 'Metformin', dose: '850mg', schedule: 'เช้า + เย็น', total: 180, taken: 76, missed: 104, adherence: 42 },
+      { name: 'Glipizide', en: 'Glipizide', dose: '5mg', schedule: 'เช้า 7:00', total: 90, taken: 32, missed: 58, adherence: 35 }
+    ],
+    concerns: [
+      { type: 'critical', icon: '🚨', title: 'Critical Adherence — 45%', detail: 'Patient adherence ต่ำมาก · stroke recurrence risk สูง · ต้อง intervene' },
+      { type: 'critical', icon: '⚠️', title: 'Missed Atorvastatin 70% of doses', detail: 'Patient ไม่ได้กิน statins ตามนัดบ่อย · cardiovascular risk' },
+      { type: 'critical', icon: '📵', title: 'No App Activity 2 Days', detail: 'ไม่ได้ login MedTrack 2 วัน · เภสัชโทรไม่ติด · ลูกชายแจ้งว่าผู้ป่วยเริ่ม withdraw' },
+      { type: 'warn', icon: '💊', title: 'Refill Soon', detail: 'Insulin ใกล้หมด (3 วัน) · Metformin (5 วัน)' }
+    ],
+    recommendations: [
+      'URGENT: ต้องคุยกับผู้ป่วยและ caregiver เรื่อง adherence',
+      'พิจารณา simplification of regimen — รวมยาบางตัว?',
+      'อาจต้อง social work consult — assess barriers',
+      'Discuss dose modification — currently 6 medications difficult',
+      'Consider home health visit',
+      'ติดตามใกล้ชิดในรอบ 1 เดือนข้างหน้า'
+    ],
+    pharmNotes: [
+      { date: '7 พ.ค. 2569', author: 'ภสญ.NIT', text: 'URGENT: Patient missed 5 doses this week. Called daughter — patient experiencing depression post-stroke. Refusing some medications. Recommend doctor visit ASAP.' },
+      { date: '1 พ.ค. 2569', author: 'ภสญ.NIT', text: 'Adherence declining. Patient reports feeling overwhelmed by medication schedule. Caregiver tries to help but works full-time. Discussed caregiver app access.' },
+      { date: '15 เม.ย. 2569', author: 'ภสญ.NIT', text: 'Patient enrolled but skeptical. 6 medications complex. Initial education on importance.' }
+    ],
+    doctorNotes: [
+      { date: '20 เม.ย. 2569', author: 'นพ.ศักดิ์ชัย', text: 'Recovering from hemorrhagic stroke. BP control improving but adherence concerns. Discussed pill burden. Will monitor closely.' }
+    ],
+    pattern: 'declining'
+  },
+  {
+    id: 3,
+    name: 'นางสุดา ขยันดี',
+    age: 75,
+    gender: 'หญิง',
+    hn: 'NIT-2026-0046',
+    diagnosis: 'Recurrent Ischemic Stroke (3rd, 18 เดือน) + DM2 + Mild Cognitive Impairment',
+    tags: ['Recurrent Stroke', '3rd Episode', 'DM2', 'MCI', 'AT-RISK'],
+    lastVisit: '10 เม.ย. 2569',
+    nextVisit: '15 พ.ค. 2569 · 11:00',
+    metrics: {
+      overall: 38,
+      thisPeriod: 35,
+      streak: 0
+    },
+    medications: [
+      { name: 'Aspirin', en: 'ASA', dose: '81mg', schedule: 'เช้า 7:00', total: 90, taken: 45, missed: 45, adherence: 50 },
+      { name: 'Clopidogrel', en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', total: 90, taken: 40, missed: 50, adherence: 45 },
+      { name: 'Atorvastatin', en: 'Atorvastatin', dose: '80mg', schedule: 'ก่อนนอน 21:00', total: 90, taken: 23, missed: 67, adherence: 25 },
+      { name: 'Losartan', en: 'Losartan', dose: '100mg', schedule: 'เช้า + เย็น', total: 180, taken: 63, missed: 117, adherence: 35 },
+      { name: 'Metformin', en: 'Metformin', dose: '1000mg', schedule: 'เช้า + เย็น', total: 180, taken: 54, missed: 126, adherence: 30 },
+      { name: 'Insulin Glargine', en: 'Insulin', dose: '20 units', schedule: 'ก่อนนอน 21:00', total: 90, taken: 36, missed: 54, adherence: 40 },
+      { name: 'Donepezil', en: 'Donepezil', dose: '10mg', schedule: 'ก่อนนอน 21:00', total: 90, taken: 34, missed: 56, adherence: 38 }
+    ],
+    concerns: [
+      { type: 'critical', icon: '🚨', title: 'Severe Non-Adherence — 38%', detail: 'Recurrent stroke patient · 3rd episode · ไม่กินยา = high risk for 4th stroke' },
+      { type: 'critical', icon: '🧠', title: 'Mild Cognitive Impairment Affecting Adherence', detail: 'Patient ลืมกินยาบ่อย · cognitive issues · need increased caregiver support' },
+      { type: 'critical', icon: '💉', title: 'Insulin Compliance 40%', detail: 'อันตราย hypoglycemia/hyperglycemia · need urgent intervention' },
+      { type: 'warn', icon: '👨‍👩‍👧', title: 'Caregiver Burden', detail: 'ลูกสาวเป็น primary caregiver · feels overwhelmed · 7 medications complex' }
+    ],
+    recommendations: [
+      'URGENT: Pill organizer setup — 7-day weekly box',
+      'Family conference — distribute caregiver responsibility',
+      'Consider simplification: combine BP medications?',
+      'Discuss long-acting insulin dosing alternatives',
+      'Refer to memory clinic — formal cognitive assessment',
+      'Home health nurse for medication administration assistance',
+      'Consider switching to once-daily formulations where possible'
+    ],
+    pharmNotes: [
+      { date: '8 พ.ค. 2569', author: 'ภสญ.NIT', text: 'CRITICAL: Patient adherence dropping. Daughter reports patient asking same questions repeatedly. Cognitive decline likely accelerating. URGENT family meeting requested.' },
+      { date: '25 เม.ย. 2569', author: 'ภสญ.NIT', text: 'Patient confused about medication schedule. Daughter and son sharing care duties. Demonstrated pill organizer use. Concerned about insulin self-administration.' }
+    ],
+    doctorNotes: [
+      { date: '10 เม.ย. 2569', author: 'นพ.ศักดิ์ชัย', text: 'Post-3rd stroke evaluation. Cognitive testing shows progression of MCI. Discussing care plan with family. Adherence is critical.' }
+    ],
+    pattern: 'critical'
+  },
+  {
+    id: 4,
+    name: 'นายมานพ ตั้งใจ',
+    age: 67,
+    gender: 'ชาย',
+    hn: 'NIT-2026-0049',
+    diagnosis: 'Ischemic Stroke + DM2 (CVA, 9 เดือน)',
+    tags: ['Stroke · 9 mo', 'DM2', 'HTN'],
+    lastVisit: '20 มี.ค. 2569',
+    nextVisit: '20 พ.ค. 2569 · 14:00',
+    metrics: {
+      overall: 81,
+      thisPeriod: 84,
+      streak: 9
+    },
+    medications: [
+      { name: 'Clopidogrel', en: 'Clopidogrel', dose: '75mg', schedule: 'เช้า 7:00', total: 90, taken: 83, missed: 7, adherence: 92 },
+      { name: 'Rosuvastatin', en: 'Rosuvastatin', dose: '20mg', schedule: 'ก่อนนอน 21:00', total: 90, taken: 61, missed: 29, adherence: 68 },
+      { name: 'Metformin', en: 'Metformin', dose: '500mg', schedule: 'เช้า + เย็น', total: 180, taken: 151, missed: 29, adherence: 84 },
+      { name: 'Empagliflozin', en: 'Empagliflozin', dose: '10mg', schedule: 'เช้า 7:00', total: 90, taken: 79, missed: 11, adherence: 88 },
+      { name: 'Lisinopril', en: 'Lisinopril', dose: '10mg', schedule: 'เช้า 7:00', total: 90, taken: 68, missed: 22, adherence: 76 }
+    ],
+    concerns: [
+      { type: 'warn', icon: '⚠️', title: 'Rosuvastatin Adherence 68%', detail: 'Statin compliance ต่ำกว่าตัวอื่น · Evening dose · พิจารณาเปลี่ยนเวลา' }
+    ],
+    recommendations: [
+      'Continue current regimen — overall adherence ดี (81%)',
+      'Move Rosuvastatin to morning to improve adherence',
+      'Encourage continued caregiver engagement',
+      'Consider stepping down Lisinopril if BP stable',
+      'Re-evaluate at next visit'
+    ],
+    pharmNotes: [
+      { date: '6 พ.ค. 2569', author: 'ภสญ.NIT', text: 'Patient improving with caregiver involvement. Wife very engaged. Discussed evening medication challenges.' },
+      { date: '20 เม.ย. 2569', author: 'ภสญ.NIT', text: 'Adherence stable. Patient engaged with app reminders.' }
+    ],
+    doctorNotes: [
+      { date: '20 มี.ค. 2569', author: 'นพ.ศักดิ์ชัย', text: 'Stable stroke recovery. DM2 well-controlled. Medication burden manageable.' }
+    ],
+    pattern: 'good-with-some-misses'
+  }
+];
+
+// Today's clinic patients (subset for quick access)
+const TODAY_CLINIC = [
+  { id: 1, name: 'นางสมศรี ใจดี', meta: '10:00 · 68 ปี · CVA 8 mo', tag: 'Routine' },
+  { id: 3, name: 'นางสุดา ขยันดี', meta: '11:00 · 75 ปี · Recurrent', tag: 'Critical' },
+  { id: 2, name: 'นายสมชาย เก่งมาก', meta: '13:30 · 72 ปี · Hemorrhagic', tag: 'At-Risk' },
+  { id: 4, name: 'นายมานพ ตั้งใจ', meta: '14:00 · 67 ปี · CVA 9 mo', tag: 'Routine' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+
+function renderTodayPatients() {
+  const c = document.getElementById('today-patients');
+  c.innerHTML = TODAY_CLINIC.map(p => {
+    const tagColor = p.tag === 'Critical' ? '#DC2626' : p.tag === 'At-Risk' ? '#EAB308' : '#2B7A7A';
+    return `
+      <div class="quick-card" onclick="showReport(${p.id})">
+        <div class="quick-name">${p.name}</div>
+        <div class="quick-meta">${p.meta}</div>
+        <div class="quick-tag" style="background: ${tagColor};">${p.tag}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function getAdherenceClass(v) {
+  if (v >= 80) return 'green';
+  if (v >= 70) return 'yellow';
+  return 'red';
+}
+
+function showReport(patientId) {
+  const p = PATIENTS.find(x => x.id === patientId);
+  if (!p) return;
+  
+  // Header
+  document.getElementById('patient-name').textContent = p.name;
+  document.getElementById('patient-tags').innerHTML = p.tags.map(t => 
+    `<span class="patient-tag" style="${t === 'AT-RISK' || t === 'Critical' ? 'background: rgba(220,38,38,0.3); color: #FCA5A5;' : ''}">${t}</span>`
+  ).join('');
+  document.getElementById('meta-hn').textContent = p.hn;
+  document.getElementById('meta-demo').textContent = `${p.age} · ${p.gender}`;
+  document.getElementById('meta-last').textContent = p.lastVisit;
+  document.getElementById('meta-next').textContent = p.nextVisit;
+  
+  // Key metrics
+  const overallClass = p.metrics.overall >= 80 ? 'green' : p.metrics.overall >= 70 ? 'yellow' : 'red';
+  document.getElementById('key-metrics').innerHTML = `
+    <div class="metric ${overallClass}">
+      <div class="metric-label">Overall Adherence</div>
+      <div class="metric-value">${p.metrics.overall}<span class="unit">%</span></div>
+      <div class="metric-extra">90 days · since pilot start</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">This Period</div>
+      <div class="metric-value">${p.metrics.thisPeriod}<span class="unit">%</span></div>
+      <div class="metric-extra">Last 30 days</div>
+    </div>
+    <div class="metric ${p.metrics.streak >= 7 ? 'green' : 'yellow'}">
+      <div class="metric-label">Current Streak</div>
+      <div class="metric-value">${p.metrics.streak}<span class="unit"> days</span></div>
+      <div class="metric-extra">${p.metrics.streak >= 7 ? '🔥 On fire!' : 'Need encouragement'}</div>
+    </div>
+  `;
+  
+  // Medications
+  document.getElementById('med-table-body').innerHTML = p.medications.map(m => `
+    <tr>
+      <td>
+        <div class="med-name-cell">
+          ${m.name}
+          <small>${m.en} · ${m.dose}</small>
+        </div>
+      </td>
+      <td style="font-size: 12px; color: var(--ink-light);">${m.schedule}</td>
+      <td style="font-family: 'Bai Jamjuree'; font-weight: 600;">${m.total}</td>
+      <td style="font-family: 'Bai Jamjuree'; font-weight: 600; color: var(--green);">${m.taken}</td>
+      <td style="font-family: 'Bai Jamjuree'; font-weight: 600; color: var(--red);">${m.missed}</td>
+      <td>
+        <div class="adherence-cell">
+          <div class="adherence-bar">
+            <div class="adherence-fill ${getAdherenceClass(m.adherence)}" style="width: ${m.adherence}%;"></div>
+          </div>
+          <span class="adherence-num">${m.adherence}%</span>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+  
+  // Calendar
+  renderCalendar(p.pattern, p.metrics.overall);
+  
+  // Concerns
+  document.getElementById('concerns-list').innerHTML = p.concerns.map(c => `
+    <div class="concern-item ${c.type === 'warn' ? 'warn' : ''}">
+      <div class="concern-icon">${c.icon}</div>
+      <div class="concern-content">
+        <div class="concern-title">${c.title}</div>
+        <div class="concern-detail">${c.detail}</div>
+      </div>
+    </div>
+  `).join('');
+  
+  // Trend chart
+  drawTrendChart(p.metrics.overall);
+  
+  // Recommendations
+  document.getElementById('rec-list').innerHTML = `
+    <h4>📋 Action Items</h4>
+    <ul>${p.recommendations.map(r => `<li>${r}</li>`).join('')}</ul>
+  `;
+  
+  // Pharmacist notes
+  document.getElementById('pharm-notes').innerHTML = p.pharmNotes.map(n => `
+    <div class="note-entry">
+      <div class="note-date">${n.date}<span class="note-author">${n.author}</span></div>
+      <div class="note-text">${n.text}</div>
+    </div>
+  `).join('');
+  
+  // Doctor notes
+  document.getElementById('doctor-notes').innerHTML = p.doctorNotes.map(n => `
+    <div class="note-entry">
+      <div class="note-date">${n.date}<span class="note-author">${n.author}</span></div>
+      <div class="note-text">${n.text}</div>
+    </div>
+  `).join('');
+  
+  // Show report
+  document.getElementById('landing-view').style.display = 'none';
+  document.getElementById('report-view').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showLanding() {
+  document.getElementById('landing-view').style.display = 'block';
+  document.getElementById('report-view').classList.remove('active');
+  window.scrollTo(0, 0);
+}
+
+function renderCalendar(pattern, baseAdherence) {
+  const container = document.getElementById('calendar-grid');
+  const days = [];
+  
+  // Determine pattern probabilities
+  let goodProb, partialProb;
+  if (pattern === 'mostly-good') { goodProb = 0.85; partialProb = 0.10; }
+  else if (pattern === 'good-with-some-misses') { goodProb = 0.70; partialProb = 0.20; }
+  else if (pattern === 'declining') { goodProb = 0.40; partialProb = 0.30; }
+  else { goodProb = 0.30; partialProb = 0.30; }
+  
+  // Generate 30 days
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(today.getDate() - i);
+    
+    // Apply pattern with some randomness
+    const r = Math.random();
+    let status;
+    if (r < goodProb) status = 'full';
+    else if (r < goodProb + partialProb) status = 'partial';
+    else status = 'missed';
+    
+    days.push({ status, day: d.getDate(), isToday: i === 0 });
+  }
+  
+  // Pad to start on correct day of week
+  const firstDay = new Date();
+  firstDay.setDate(today.getDate() - 29);
+  const padDays = firstDay.getDay();
+  for (let i = 0; i < padDays; i++) {
+    days.unshift({ status: 'empty', day: '' });
+  }
+  
+  // Pad to fill last week
+  while (days.length % 7 !== 0) {
+    days.push({ status: 'empty', day: '' });
+  }
+  
+  container.innerHTML = days.map(d => 
+    `<div class="day-cell ${d.status} ${d.isToday ? 'today' : ''}" title="${d.day}">${d.day || ''}</div>`
+  ).join('');
+}
+
+function drawTrendChart(baseAdherence) {
+  const svg = document.getElementById('trend-chart');
+  const w = 800, h = 240;
+  const pad = 50;
+  const chartW = w - pad * 2;
+  const chartH = h - pad * 2;
+  
+  // Generate 12 weeks of data
+  const data = [];
+  for (let i = 0; i < 12; i++) {
+    // Create realistic pattern based on base adherence
+    let v = baseAdherence + (Math.sin(i * 0.5) * 10) + (Math.random() - 0.5) * 8;
+    v = Math.max(20, Math.min(100, v));
+    data.push(Math.round(v));
+  }
+  
+  const max = 100, min = 20;
+  const points = data.map((v, i) => {
+    const x = pad + (i / (data.length - 1)) * chartW;
+    const y = pad + chartH - ((v - min) / (max - min)) * chartH;
+    return { x, y, v };
+  });
+  
+  const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaPath = `${linePath} L ${points[points.length-1].x} ${pad + chartH} L ${pad} ${pad + chartH} Z`;
+  
+  const gridLines = [25, 50, 75, 100].map(v => {
+    const y = pad + chartH - ((v - min) / (max - min)) * chartH;
+    return `<line x1="${pad}" y1="${y}" x2="${w-pad}" y2="${y}" stroke="#E5E7EB" stroke-dasharray="2,4"/>
+            <text x="${pad-8}" y="${y+4}" fill="#9CA3AF" font-size="11" text-anchor="end" font-family="Bai Jamjuree" font-weight="600">${v}%</text>`;
+  }).join('');
+  
+  // Target line at 75%
+  const targetY = pad + chartH - ((75 - min) / (max - min)) * chartH;
+  const targetLine = `<line x1="${pad}" y1="${targetY}" x2="${w-pad}" y2="${targetY}" stroke="#16A34A" stroke-dasharray="6,4" opacity="0.5"/>
+                      <text x="${w-pad-4}" y="${targetY-6}" fill="#16A34A" font-size="11" text-anchor="end" font-family="Bai Jamjuree" font-weight="700">Target 75%</text>`;
+  
+  const labels = ['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'];
+  const xLabels = points.map((p, i) => 
+    `<text x="${p.x}" y="${h - 6}" fill="#9CA3AF" font-size="11" text-anchor="middle" font-family="Bai Jamjuree" font-weight="600">${labels[i]}</text>`
+  ).join('');
+  
+  const dots = points.map(p => 
+    `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#C8392F" stroke="white" stroke-width="2"/>`
+  ).join('');
+  
+  const valueLabels = points.map(p => 
+    `<text x="${p.x}" y="${p.y - 12}" fill="#1A2840" font-size="11" text-anchor="middle" font-family="Bai Jamjuree" font-weight="700">${p.v}%</text>`
+  ).join('');
+  
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="trendgrad" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#C8392F" stop-opacity="0.2"/>
+        <stop offset="100%" stop-color="#C8392F" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${gridLines}
+    ${targetLine}
+    <path d="${areaPath}" fill="url(#trendgrad)"/>
+    <path d="${linePath}" fill="none" stroke="#C8392F" stroke-width="3"/>
+    ${dots}
+    ${valueLabels}
+    ${xLabels}
+  `;
+}
+
+// Search
+document.getElementById('search-box').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase();
+  if (!q) {
+    renderTodayPatients();
+    return;
+  }
+  const filtered = PATIENTS.filter(p => 
+    p.name.toLowerCase().includes(q) || p.hn.toLowerCase().includes(q)
+  );
+  document.getElementById('today-patients').innerHTML = filtered.map(p => `
+    <div class="quick-card" onclick="showReport(${p.id})">
+      <div class="quick-name">${p.name}</div>
+      <div class="quick-meta">${p.hn} · ${p.age} ปี</div>
+    </div>
+  `).join('') || '<div style="grid-column: 1/-1; text-align: center; padding: 24px; color: var(--ink-light);">ไม่พบผู้ป่วย</div>';
+});
+
+// Init
+renderTodayPatients();
+</script>
+
+</body>
+</html>
