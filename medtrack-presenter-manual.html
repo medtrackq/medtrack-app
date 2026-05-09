@@ -1,0 +1,1803 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — คู่มือผู้นำเสนอ (Demo Manual)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink-deep: #0F1A2E;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --paper: #FAFAF7;
+  --paper-warm: #F4EDE0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --accent: #C8392F;
+  --accent-soft: #E76F5A;
+  --teal: #2B7A7A;
+  --teal-deep: #15494A;
+  --gold: #B8893A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #D4CFC0;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink-deep);
+}
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+/* COVER */
+.cover {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 60px 50px;
+  position: relative;
+  overflow: hidden;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  opacity: 0.3;
+  filter: blur(40px);
+}
+.cover-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-soft);
+  border: 1px solid var(--accent-soft);
+  padding: 6px 14px;
+  border-radius: 100px;
+  margin-bottom: 24px;
+  position: relative;
+}
+.cover h1 {
+  font-size: 44px;
+  color: var(--paper);
+  margin-bottom: 12px;
+  position: relative;
+  letter-spacing: -0.01em;
+}
+.cover h1 .accent { color: var(--accent-soft); }
+.cover-subtitle {
+  font-size: 18px;
+  color: rgba(250,250,247,0.7);
+  margin-bottom: 32px;
+  position: relative;
+  font-family: 'Bai Jamjuree', sans-serif;
+}
+.cover-meta {
+  position: relative;
+  padding-top: 24px;
+  border-top: 1px solid rgba(250,250,247,0.15);
+  font-size: 13px;
+  color: rgba(250,250,247,0.6);
+}
+.cover-meta strong {
+  color: var(--paper);
+  font-weight: 600;
+}
+
+/* TOC */
+.toc {
+  background: var(--paper-warm);
+  padding: 32px 50px;
+}
+.toc-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 16px;
+  font-family: 'Bai Jamjuree';
+}
+.toc-list {
+  list-style: none;
+  counter-reset: toc;
+}
+.toc-list li {
+  counter-increment: toc;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  font-size: 15px;
+}
+.toc-list li:last-child { border-bottom: none; }
+.toc-list li::before {
+  content: counter(toc, decimal-leading-zero);
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  min-width: 30px;
+}
+.toc-list .sub {
+  margin-left: 46px;
+  font-size: 13px;
+  color: var(--ink-light);
+  padding: 4px 0;
+  border-bottom: none;
+}
+.toc-list .sub::before { display: none; }
+
+/* SECTION */
+.section {
+  padding: 50px;
+  border-bottom: 1px solid var(--line);
+  page-break-inside: avoid;
+}
+.section:last-child { border-bottom: none; }
+.section-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  font-family: 'Bai Jamjuree';
+}
+.section h2 {
+  font-size: 28px;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+.section-intro {
+  font-size: 15px;
+  color: var(--ink);
+  opacity: 0.8;
+  margin-bottom: 24px;
+  max-width: 700px;
+}
+
+/* CONTENT */
+.subsection {
+  margin-bottom: 32px;
+}
+.subsection h3 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.subsection h4 {
+  font-size: 16px;
+  margin: 16px 0 8px;
+  color: var(--accent);
+}
+
+p { margin-bottom: 12px; }
+
+/* INFO BOX */
+.info-box {
+  background: var(--bg);
+  border-left: 4px solid var(--teal);
+  padding: 16px 20px;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+.info-box.accent { border-left-color: var(--accent); }
+.info-box.gold { border-left-color: var(--gold); background: var(--paper-warm); }
+.info-box .label {
+  font-family: 'Bai Jamjuree';
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--teal);
+  margin-bottom: 6px;
+}
+.info-box.accent .label { color: var(--accent); }
+.info-box.gold .label { color: var(--gold); }
+
+/* HEADER EXPLANATION */
+.header-explain {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+.header-explain-top {
+  background: var(--ink-deep);
+  color: white;
+  padding: 12px 16px;
+  font-family: 'Bai Jamjuree';
+}
+.header-explain-name {
+  font-weight: 700;
+  font-size: 16px;
+}
+.header-explain-en {
+  font-size: 12px;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+.header-explain-body {
+  padding: 16px;
+}
+.header-explain-grid {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 8px 16px;
+  font-size: 14px;
+}
+.header-explain-grid dt {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-top: 2px;
+}
+.header-explain-grid dd { color: var(--ink); }
+
+/* CALCULATION BOX */
+.calc-box {
+  background: var(--paper-warm);
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+  font-family: 'Bai Jamjuree';
+}
+.calc-box .calc-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 12px;
+}
+.calc-box .formula {
+  font-size: 16px;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  margin: 8px 0;
+  font-weight: 600;
+  text-align: center;
+}
+.calc-box .formula .equals { color: var(--accent); }
+.calc-box .example {
+  margin-top: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--ink);
+  font-family: 'Sarabun';
+  font-weight: 400;
+  line-height: 1.7;
+}
+.calc-box .example strong {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* COLOR LEGEND */
+.legend {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 16px 0;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+.legend-color {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.legend-text {
+  font-size: 14px;
+}
+.legend-text strong {
+  font-family: 'Bai Jamjuree';
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.legend-text .note {
+  color: var(--ink-light);
+  font-size: 12px;
+}
+
+/* FAQ */
+.faq {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 3px solid var(--teal);
+}
+.faq-q {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--teal-deep);
+  margin-bottom: 6px;
+}
+.faq-q::before {
+  content: '❓ ';
+}
+.faq-a {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.faq-a::before {
+  content: '💬 ';
+}
+
+/* TIPS */
+.tips {
+  background: var(--green-soft);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 3px solid var(--green);
+}
+.tips-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.tips ul { padding-left: 20px; font-size: 14px; }
+
+/* WARNINGS */
+.warning {
+  background: var(--yellow-soft);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  border-left: 3px solid var(--yellow);
+}
+.warning-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.warning ul { padding-left: 20px; font-size: 14px; }
+
+/* CHEAT SHEET PAGE */
+.cheat-page {
+  background: white;
+  page-break-before: always;
+  padding: 0;
+}
+.cheat-cover {
+  background: var(--accent);
+  color: white;
+  padding: 24px 40px;
+  text-align: center;
+}
+.cheat-cover h2 {
+  color: white;
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+.cheat-cover p {
+  font-size: 13px;
+  margin: 0;
+  opacity: 0.9;
+}
+.cheat-content {
+  padding: 30px 40px;
+}
+.cheat-section {
+  margin-bottom: 24px;
+}
+.cheat-section h3 {
+  background: var(--ink-deep);
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  border-radius: 6px;
+}
+.cheat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  font-size: 13px;
+}
+.cheat-card {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+.cheat-card strong {
+  font-family: 'Bai Jamjuree';
+  display: block;
+  font-size: 13px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+.cheat-formula {
+  background: var(--paper-warm);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 6px;
+  color: var(--ink-deep);
+}
+
+/* TABLES */
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 14px;
+}
+.simple-table th {
+  background: var(--ink-deep);
+  color: white;
+  padding: 10px 12px;
+  text-align: left;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.simple-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.simple-table tr:nth-child(even) td {
+  background: var(--bg);
+}
+
+/* FOOTER */
+.footer {
+  background: var(--paper-warm);
+  padding: 24px 50px;
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.7;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* PRINT */
+@media print {
+  body { background: white; }
+  .page { box-shadow: none; max-width: 100%; }
+  .section { padding: 30px; page-break-inside: avoid; }
+  .cheat-page { page-break-before: always; }
+  .cover { padding: 40px; }
+}
+
+@media (max-width: 768px) {
+  .section, .cover, .toc, .cheat-content { padding: 30px 20px; }
+  .legend, .cheat-grid { grid-template-columns: 1fr; }
+  .header-explain-grid { grid-template-columns: 1fr; gap: 4px 0; }
+  .header-explain-grid dt { padding-top: 8px; }
+  .footer { flex-direction: column; gap: 8px; }
+  .cover h1 { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- COVER -->
+<section class="cover">
+  <span class="cover-badge">Presenter Manual</span>
+  <h1>คู่มือ<span class="accent">นำเสนอ</span><br/>MedTrack Demo</h1>
+  <div class="cover-subtitle">
+    คู่มือสำหรับผู้นำเสนอ Dashboard และ Doctor Report<br/>
+    สำหรับ NIT Pilot Project
+  </div>
+  <div class="cover-meta">
+    <strong>Prepared for:</strong> ผู้ช่วยนำเสนอ MedTrack<br/>
+    <strong>Date:</strong> 9 พฤษภาคม 2569<br/>
+    <strong>Coverage:</strong> Pharmacist Dashboard + Doctor Report
+  </div>
+</section>
+
+<!-- TOC -->
+<section class="toc">
+  <div class="toc-title">สารบัญ</div>
+  <ol class="toc-list">
+    <li>ภาพรวม MedTrack — รู้ก่อน present</li>
+    <li>Pharmacist Dashboard — สำหรับเภสัชกร NIT
+      <li class="sub">→ Overview Dashboard</li>
+      <li class="sub">→ All Patients</li>
+      <li class="sub">→ At-Risk Patients</li>
+      <li class="sub">→ Drug Analytics</li>
+      <li class="sub">→ Trends</li>
+      <li class="sub">→ Reports Hub</li>
+    </li>
+    <li>Doctor Report — สำหรับแพทย์ NIT</li>
+    <li>การคำนวณสำคัญ — เข้าใจตัวเลข</li>
+    <li>คำถามที่อาจเจอ + คำตอบ (FAQ)</li>
+    <li>Quick Reference Sheet (พิมพ์พกติดตัว)</li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 1: OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-tag">01 · Overview</div>
+  <h2>ภาพรวม MedTrack — สิ่งที่ผู้ช่วยต้องรู้</h2>
+  
+  <div class="section-intro">
+    ก่อน present ผู้ช่วยควรเข้าใจสิ่งสำคัญ 5 ประการนี้
+  </div>
+
+  <div class="subsection">
+    <h3>🎯 MedTrack คืออะไร?</h3>
+    <p>
+      MedTrack คือ <strong>ระบบติดตามการกินยาผู้ป่วย stroke (อัมพฤกษ์)</strong> 
+      ที่ช่วยให้ผู้ป่วยกินยาตามที่หมอสั่ง โดยใช้ <strong>LINE Application</strong> 
+      ที่คนไทยใช้กันอยู่แล้ว
+    </p>
+    <p>
+      ผู้ป่วย <strong>ถ่ายรูปซองยา</strong> → AI อ่านชื่อยา + เวลา → 
+      ระบบ<strong>เตือนทาง LINE</strong> → ผู้ป่วยกด "กินแล้ว" → 
+      ลูก/หมอ/เภสัชกร <strong>เห็นข้อมูลจริง</strong>
+    </p>
+  </div>
+
+  <div class="subsection">
+    <h3>👥 ระบบมี 3 ส่วน (3 หน้าจอ)</h3>
+    
+    <div class="info-box">
+      <div class="label">📱 Patient App</div>
+      <strong>สำหรับผู้ป่วย</strong> — ใช้ผ่าน LINE มือถือ · 
+      ดูยาวันนี้ · กดยืนยันการกิน · ตู้ยา · นัดหมอ
+    </div>
+
+    <div class="info-box accent">
+      <div class="label">🩺 Pharmacist Dashboard</div>
+      <strong>สำหรับเภสัชกร NIT</strong> — เห็น 15 patients · 
+      ติดตาม adherence · จัดการ alerts · สร้างรายงาน
+    </div>
+
+    <div class="info-box gold">
+      <div class="label">📄 Doctor Report</div>
+      <strong>สำหรับแพทย์ NIT</strong> — รายงาน adherence ต่อ patient · 
+      ใช้ใน clinic · พิมพ์ออกได้
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>📊 ตัวเลขสำคัญที่ใช้บ่อย</h3>
+    
+    <table class="simple-table">
+      <tr>
+        <th>คำศัพท์</th>
+        <th>ความหมาย</th>
+      </tr>
+      <tr>
+        <td><strong>Adherence</strong></td>
+        <td>การกินยาตามที่หมอสั่ง (เป็น %)</td>
+      </tr>
+      <tr>
+        <td><strong>Polypharmacy</strong></td>
+        <td>กินยาหลายตัว (5 ตัวขึ้นไป)</td>
+      </tr>
+      <tr>
+        <td><strong>Stroke / CVA</strong></td>
+        <td>อัมพฤกษ์ · เส้นเลือดสมองตีบ/แตก</td>
+      </tr>
+      <tr>
+        <td><strong>Recurrent Stroke</strong></td>
+        <td>Stroke เป็นซ้ำ (ครั้งที่ 2, 3, ...)</td>
+      </tr>
+      <tr>
+        <td><strong>At-Risk Patient</strong></td>
+        <td>ผู้ป่วยที่กินยาไม่ตรงเวลา → เสี่ยง stroke ซ้ำ</td>
+      </tr>
+      <tr>
+        <td><strong>Caregiver</strong></td>
+        <td>ผู้ดูแลผู้ป่วย (ลูก/สามี/คนช่วย)</td>
+      </tr>
+      <tr>
+        <td><strong>HN</strong></td>
+        <td>Hospital Number · เลขประจำตัวผู้ป่วยใน รพ.</td>
+      </tr>
+      <tr>
+        <td><strong>Refill</strong></td>
+        <td>การเติมยา · ขอยาใหม่</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>📌 ตัวเลขที่ควรจำให้แม่น</h3>
+    
+    <div class="info-box accent">
+      <div class="label">🎯 ตัวเลขจาก research</div>
+      <ul style="padding-left: 20px; margin-top: 8px; line-height: 2;">
+        <li><strong>33%</strong> — % ของผู้ป่วย stroke ที่กินยาตามนัด (ต่ำมาก!)</li>
+        <li><strong>81%</strong> — % ของผู้ป่วย stroke ที่กินยา 5 ตัวขึ้นไป</li>
+        <li><strong>53%</strong> — % ของผู้ป่วยที่ stroke ซ้ำใน 1 ปี (ถ้าไม่ adherent)</li>
+        <li><strong>26%</strong> — ลด stroke ซ้ำได้ ถ้ามี reminder ส่ง LINE</li>
+        <li><strong>95%</strong> — % คนไทยที่ใช้ LINE ทุกวัน</li>
+      </ul>
+    </div>
+
+    <div class="warning">
+      <div class="warning-title">⚠️ ตัวเลขที่เกี่ยวกับ Demo</div>
+      <ul>
+        <li><strong>15 patients</strong> — ใน demo (จำลอง)</li>
+        <li><strong>3 เดือน</strong> — ระยะเวลา data ใน demo</li>
+        <li><strong>50 patients</strong> — ที่จะใช้จริงใน NIT pilot</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 2: PHARMACIST DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section" style="background: var(--paper-warm);">
+  <div class="section-tag">02 · Pharmacist Dashboard</div>
+  <h2>คู่มือ Pharmacist Dashboard</h2>
+  
+  <div class="section-intro">
+    Dashboard นี้สำหรับ <strong>เภสัชกร NIT</strong> ใช้ติดตามผู้ป่วย pilot ทั้ง 15 คน · 
+    มี 6 views หลัก ที่ผู้ช่วยต้องเข้าใจทั้งหมด
+  </div>
+
+  <!-- VIEW 1: OVERVIEW -->
+  <div class="subsection">
+    <h3>📊 View 1: Overview Dashboard</h3>
+    <p>
+      หน้าแรกที่เภสัช login เข้ามา · เห็น "ภาพรวมของ pilot" 
+      ในระยะเวลา 30 วินาที
+    </p>
+
+    <h4>4 ตัวเลขด้านบน (Stats Cards)</h4>
+    
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Total Patients · จำนวนผู้ป่วยทั้งหมด</div>
+        <div class="header-explain-en">In demo: 15 คน</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>จำนวนผู้ป่วยทั้งหมดใน pilot</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับจากผู้ป่วย active ใน pilot</dd>
+          <dt>ความหมาย</dt>
+          <dd>ใน demo คือ 15 คน · ใน pilot จริงจะเป็น 50</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Avg Adherence · ค่าเฉลี่ยการกินยา</div>
+        <div class="header-explain-en">In demo: 73%</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>เฉลี่ย % ที่ผู้ป่วยทั้งหมดกินยาตรงเวลา</dd>
+          <dt>การคำนวณ</dt>
+          <dd>(รวม % ของทุกคน) ÷ จำนวนคนทั้งหมด</dd>
+          <dt>ความหมาย</dt>
+          <dd>ค่ายิ่งสูง = ผู้ป่วยกินยาดี · ค่าต่ำ = ต้องแก้ไข</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">At-Risk · ผู้ป่วยกลุ่มเสี่ยง</div>
+        <div class="header-explain-en">In demo: 4 คน</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>ผู้ป่วยที่กินยาไม่ตรงเวลา · เสี่ยง stroke ซ้ำ</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับคนที่ adherence ต่ำกว่า 70%</dd>
+          <dt>ความหมาย</dt>
+          <dd>ต้อง intervention โดยเภสัช เช่น โทรหา/แจ้งลูก</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">This Week Activity · กิจกรรมสัปดาห์นี้</div>
+        <div class="header-explain-en">In demo: 312 doses</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>จำนวน doses ที่ผู้ป่วยกินใน 7 วันที่ผ่านมา</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับ "กดยืนยันกินยา" ของทุกคน · ทุกตัว · ทุกมื้อ</dd>
+          <dt>ความหมาย</dt>
+          <dd>ดูว่า engagement ดีไหม · มีคนใช้ระบบจริงไหม</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h4>Critical Alerts (กล่องสีแดง/เหลือง)</h4>
+    <p>
+      <strong>คือ:</strong> รายชื่อผู้ป่วยที่ต้องการ intervention "ด่วน"<br/>
+      <strong>เกณฑ์ที่ขึ้น alert:</strong>
+    </p>
+    <ul style="padding-left: 24px; margin: 8px 0;">
+      <li>พลาดยา 5 ครั้งขึ้นไป ใน 7 วันที่ผ่านมา</li>
+      <li>ไม่ login ระบบมากกว่า 2 วัน</li>
+      <li>Refill ใกล้หมด (น้อยกว่า 7 วัน)</li>
+      <li>Adherence ลดลงเรื่อยๆ (declining trend)</li>
+    </ul>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "Critical Alerts ช่วยเภสัชโฟกัส — ใน 50 patients · 
+      ไม่ต้องดูทีละคน · ระบบ flag มาให้แล้ว"
+    </div>
+  </div>
+
+  <!-- VIEW 2: ALL PATIENTS -->
+  <div class="subsection">
+    <h3>👥 View 2: All Patients</h3>
+    <p>
+      ตารางรายชื่อ patients ทั้งหมด พร้อม filter + search
+    </p>
+
+    <h4>Columns ในตาราง</h4>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Column</th>
+        <th>คือ</th>
+      </tr>
+      <tr>
+        <td><strong>ผู้ป่วย</strong></td>
+        <td>ชื่อ-นามสกุล</td>
+      </tr>
+      <tr>
+        <td><strong>อายุ</strong></td>
+        <td>อายุปัจจุบัน</td>
+      </tr>
+      <tr>
+        <td><strong>HN</strong></td>
+        <td>Hospital Number (เลขประจำตัว NIT)</td>
+      </tr>
+      <tr>
+        <td><strong>ยา</strong></td>
+        <td>จำนวนยาที่กินประจำ</td>
+      </tr>
+      <tr>
+        <td><strong>Adherence</strong></td>
+        <td>% การกินยาตรงเวลา (90 วันรวม)</td>
+      </tr>
+      <tr>
+        <td><strong>Status</strong></td>
+        <td>Good / Watch / At-Risk (สีเขียว/เหลือง/แดง)</td>
+      </tr>
+      <tr>
+        <td><strong>Last Activity</strong></td>
+        <td>เมื่อไหร่ที่ใช้ระบบล่าสุด</td>
+      </tr>
+    </table>
+
+    <h4>Status Categories (3 สี)</h4>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #16A34A;"></div>
+        <div class="legend-text">
+          <strong>🟢 Good</strong>
+          <div class="note">Adherence ≥ 80% · ดี · ติดตามปกติ</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #EAB308;"></div>
+        <div class="legend-text">
+          <strong>🟡 Watch</strong>
+          <div class="note">Adherence 70-80% · เฝ้าระวัง</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #DC2626;"></div>
+        <div class="legend-text">
+          <strong>🔴 At-Risk</strong>
+          <div class="note">Adherence &lt; 70% · ต้อง intervene ทันที</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #5A6A7A;"></div>
+        <div class="legend-text">
+          <strong>Inactive</strong>
+          <div class="note">ไม่ login &gt; 7 วัน · ติดตาม</div>
+        </div>
+      </div>
+    </div>
+
+    <h4>Filter Buttons</h4>
+    <p>เภสัชเลือกดูเฉพาะกลุ่มได้:</p>
+    <ul style="padding-left: 24px;">
+      <li><strong>ทั้งหมด</strong> — เห็น 15 คน</li>
+      <li><strong>At-Risk</strong> — เห็น 4 คน</li>
+      <li><strong>Active</strong> — เห็น 15 คน (ที่ยังใช้ระบบ)</li>
+      <li><strong>Watch</strong> — เห็น 3 คน</li>
+    </ul>
+
+    <h4>Click ที่ Row → เปิด Patient Detail</h4>
+    <p>
+      เมื่อ click ที่ผู้ป่วยคนใด · จะเปิด <strong>modal ใหญ่</strong> ที่แสดง:
+    </p>
+    <ul style="padding-left: 24px;">
+      <li>Header: ชื่อ · อายุ · HN · diagnosis · caregivers</li>
+      <li>3 Metric Cards: Overall % · This Week % · Streak (วันติดต่อกัน)</li>
+      <li>Medication List: ยาทุกตัว + adherence แต่ละตัว</li>
+      <li>30-Day Calendar Heatmap: visual ของ 30 วัน</li>
+      <li>Pharmacist Notes: บันทึกการพูดคุย/intervention</li>
+      <li>Action Buttons: ส่ง LINE · Generate Report · Add Note</li>
+    </ul>
+
+    <div class="tips">
+      <div class="tips-title">💡 Demo Tip</div>
+      Click ที่ <strong>นางสุดา ขยันดี</strong> → เปิด detail → 
+      จะเห็น "ผู้ป่วย critical case" ที่มี 7 ยา · adherence 38%
+    </div>
+  </div>
+
+  <!-- VIEW 3: AT-RISK -->
+  <div class="subsection">
+    <h3>⚠️ View 3: At-Risk Patients</h3>
+    <p>
+      หน้าโฟกัส <strong>ผู้ป่วยที่ต้อง intervention ทันที</strong> · 
+      เรียงตาม urgency
+    </p>
+
+    <h4>Risk Categories</h4>
+    
+    <div class="info-box accent">
+      <div class="label">🔴 High Risk</div>
+      Adherence &lt; 50% หรือ พลาดยา &gt; 5 ครั้ง/สัปดาห์ หรือ ไม่ login &gt; 7 วัน
+    </div>
+
+    <div class="info-box gold">
+      <div class="label">🟡 Medium Risk</div>
+      Adherence 50-70% หรือ พลาดยา 3-5 ครั้ง/สัปดาห์ หรือ refill ใกล้หมด
+    </div>
+
+    <div class="info-box">
+      <div class="label">🟢 Watch</div>
+      Adherence 70-85% หรือ recent decline
+    </div>
+
+    <h4>Quick Actions ของแต่ละคน</h4>
+    <ul style="padding-left: 24px;">
+      <li><strong>View</strong> — ดูรายละเอียดผู้ป่วย</li>
+      <li><strong>📱 LINE</strong> — ส่งข้อความเตือนทาง LINE ได้ทันที</li>
+    </ul>
+  </div>
+
+  <!-- VIEW 4: DRUGS -->
+  <div class="subsection">
+    <h3>💊 View 4: Drug Analytics</h3>
+    <p>
+      วิเคราะห์ในระดับ <strong>"ยา"</strong> ไม่ใช่ "คน" · ดูว่ายาตัวไหนมีปัญหา
+    </p>
+
+    <h4>4 Sections ใน View นี้</h4>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Top Prescribed Drugs · ยาที่สั่งบ่อยที่สุด</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>10 ยาที่ patient จำนวนมากที่สุดต้องกิน</dd>
+          <dt>เช่น</dt>
+          <dd>Aspirin: 11 patients (จาก 15)</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>เภสัชเห็น pattern ของ pilot · จัดยาคลังให้พร้อม</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Most Missed Drugs · ยาที่ผู้ป่วยลืมบ่อย</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>ยาที่มี miss rate สูงที่สุด</dd>
+          <dt>เช่น</dt>
+          <dd>Atorvastatin (ก่อนนอน): 40% miss rate</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>เภสัชแนะนำ <strong>เปลี่ยนเวลา</strong> หรือ <strong>เปลี่ยนสูตร</strong> ให้กิน</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Time-of-Day Pattern · pattern ตามเวลา</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>Adherence แยกตามช่วงเวลาของวัน</dd>
+          <dt>การคำนวณ</dt>
+          <dd>% ของ doses ที่กินตรงเวลา ในแต่ละช่วง</dd>
+          <dt>เช่น</dt>
+          <dd>เช้า: 88% · เที่ยง: 78% · เย็น: 72% · ก่อนนอน: 65%</dd>
+          <dt>Insight</dt>
+          <dd>ยาที่กินก่อนนอนมีปัญหามากที่สุด → ต้องแก้</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "ตัวเลขนี้เป็น insight สำคัญ — เภสัชและหมอจะเห็นว่า 
+      <strong>'evening doses' มีปัญหา</strong> · 
+      อาจปรับให้ยาบางตัวกินเช้าแทน"
+    </div>
+  </div>
+
+  <!-- VIEW 5: TRENDS -->
+  <div class="subsection">
+    <h3>📈 View 5: Trends</h3>
+    <p>
+      ดู<strong>การเปลี่ยนแปลงของ adherence ตามเวลา</strong> · 12 สัปดาห์
+    </p>
+
+    <h4>กราฟ 12-Week Adherence Journey</h4>
+    <p>
+      <strong>แกน X:</strong> สัปดาห์ที่ 1-12<br/>
+      <strong>แกน Y:</strong> Adherence % (0-100)<br/>
+      <strong>เส้นเขียวประ:</strong> Target 75% (เป้าหมายของ pilot)
+    </p>
+
+    <h4>Period Comparison</h4>
+    <p>เปรียบเทียบช่วง <strong>"4 สัปดาห์ล่าสุด"</strong> vs <strong>"4 สัปดาห์ก่อน"</strong></p>
+    <ul style="padding-left: 24px;">
+      <li><strong>Adherence:</strong> 65% → 73% (+8%) ↗</li>
+      <li><strong>Active patients:</strong> 12 → 14 (+2) ↗</li>
+      <li><strong>Refill compliance:</strong> 78% → 92% (+14%) ↗</li>
+      <li><strong>Missed doses:</strong> 67 → 45 (-22) ↗ (น้อยลงดีกว่า)</li>
+    </ul>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "Trends แสดงว่า MedTrack ทำให้ adherence ดีขึ้นตามเวลา · 
+      ผู้ป่วยใช้นานขึ้น = ผลลัพธ์ดีขึ้น"
+    </div>
+  </div>
+
+  <!-- VIEW 6: REPORTS -->
+  <div class="subsection">
+    <h3>📄 View 6: Reports Hub</h3>
+    <p>
+      สำหรับ generate รายงาน
+    </p>
+
+    <h4>4 ประเภทรายงาน</h4>
+    <ul style="padding-left: 24px; line-height: 2;">
+      <li><strong>📊 Weekly Summary</strong> — สรุปสัปดาห์ที่ผ่านมา · 4 หน้า PDF</li>
+      <li><strong>📋 Monthly Report</strong> — รายงานเดือน · 12 หน้า PDF · ครบทุกอย่าง</li>
+      <li><strong>🩺 Pre-Clinic Reports</strong> — รายงานสำหรับ clinic วันนี้</li>
+      <li><strong>📤 Hospital Audit Export</strong> — Export CSV/PDF สำหรับ admin</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 3: DOCTOR REPORT -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-tag">03 · Doctor Report</div>
+  <h2>คู่มือ Doctor Report</h2>
+  
+  <div class="section-intro">
+    Doctor Report สำหรับ <strong>แพทย์ NIT</strong> · ใช้ใน clinic · 
+    เปิดดู patient คนเดียวต่อครั้ง · 2-3 นาทีต่อ patient
+  </div>
+
+  <div class="subsection">
+    <h3>📋 Patient Header (ส่วนบนสุด)</h3>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Field</th>
+        <th>ความหมาย</th>
+      </tr>
+      <tr>
+        <td><strong>HN</strong></td>
+        <td>Hospital Number ใน NIT</td>
+      </tr>
+      <tr>
+        <td><strong>Age · Gender</strong></td>
+        <td>อายุ · เพศ</td>
+      </tr>
+      <tr>
+        <td><strong>Last Visit</strong></td>
+        <td>วันที่นัดพบหมอครั้งล่าสุด</td>
+      </tr>
+      <tr>
+        <td><strong>Next Visit</strong></td>
+        <td>วันที่นัดครั้งถัดไป + เวลา</td>
+      </tr>
+      <tr>
+        <td><strong>Tags</strong></td>
+        <td>Diagnosis tags เช่น "Stroke" · "DM2" · "AT-RISK"</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>📊 Key Metrics (3 ตัวเลขใหญ่)</h3>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Overall Adherence · % รวม 90 วัน</div>
+        <div class="header-explain-en">Big number, color-coded</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>% การกินยาตรงเวลา · ตั้งแต่เริ่ม pilot</dd>
+          <dt>การคำนวณ</dt>
+          <dd>(จำนวน doses ที่กิน ÷ จำนวน doses ที่ควรกิน) × 100</dd>
+          <dt>สีตัวเลข</dt>
+          <dd>เขียว (≥80%) · เหลือง (70-80%) · แดง (&lt;70%)</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">This Period · 30 วันล่าสุด</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>% adherence เฉพาะ 30 วันที่ผ่านมา</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>หมอเห็น "ตอนนี้" ดีไหม · ดีขึ้นหรือแย่ลง vs Overall</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Current Streak · กินยาติดต่อกันกี่วัน</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>จำนวนวันที่กินยาครบทุกตัว ติดต่อกัน · จนถึงวันนี้</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับวันที่กินยาครบ 100% ติดกัน · reset เมื่อพลาดมื้อใดมื้อหนึ่ง</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>Motivation · ผู้ป่วยภูมิใจ · หมอเห็น recent behavior</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>💊 Medication Adherence Table</h3>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Column</th>
+        <th>คือ</th>
+        <th>ตัวอย่าง</th>
+      </tr>
+      <tr>
+        <td><strong>Medication</strong></td>
+        <td>ชื่อยา (Thai + English INN + dose)</td>
+        <td>Aspirin (ASA) 81mg</td>
+      </tr>
+      <tr>
+        <td><strong>Schedule</strong></td>
+        <td>เวลาที่ต้องกิน</td>
+        <td>เช้า 7:00</td>
+      </tr>
+      <tr>
+        <td><strong>Total</strong></td>
+        <td>จำนวน doses ทั้งหมดที่ควรกิน (90 วัน)</td>
+        <td>90 (1 มื้อ × 90 วัน)</td>
+      </tr>
+      <tr>
+        <td><strong>Taken</strong></td>
+        <td>จำนวน doses ที่กินจริง (สีเขียว)</td>
+        <td>88</td>
+      </tr>
+      <tr>
+        <td><strong>Missed</strong></td>
+        <td>จำนวน doses ที่พลาด (สีแดง)</td>
+        <td>2</td>
+      </tr>
+      <tr>
+        <td><strong>Adherence %</strong></td>
+        <td>% adherence ของยาตัวนี้</td>
+        <td>98%</td>
+      </tr>
+    </table>
+
+    <div class="info-box gold">
+      <div class="label">⚠️ ระวัง: Total ของยาคนละแบบ</div>
+      ยากินวันละ 1 มื้อ → 90 วัน = 90 doses<br/>
+      ยากินวันละ 2 มื้อ → 90 วัน = 180 doses<br/>
+      <strong>ดู Schedule ก่อนเข้าใจ Total</strong>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>📅 30-Day Calendar Heatmap</h3>
+    <p>
+      ตารางปฏิทิน <strong>30 วันล่าสุด</strong> · 
+      แต่ละช่องคือ 1 วัน · สีบอกการกินยา
+    </p>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #16A34A;"></div>
+        <div class="legend-text">
+          <strong>🟩 Full · กินครบ</strong>
+          <div class="note">ตอบครบทุกมื้อในวันนี้</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #EAB308;"></div>
+        <div class="legend-text">
+          <strong>🟨 Partial · กินบางส่วน</strong>
+          <div class="note">พลาดบางมื้อ · ไม่ครบทั้งวัน</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #DC2626;"></div>
+        <div class="legend-text">
+          <strong>🟥 Missed · พลาดทั้งหมด</strong>
+          <div class="note">ไม่กินยาเลยวันนั้น</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #F5F6FA; border: 1px dashed #D4CFC0;"></div>
+        <div class="legend-text">
+          <strong>⬜ Empty · ไม่มีข้อมูล</strong>
+          <div class="note">ก่อนเริ่ม pilot · หรือยังไม่ถึงวัน</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "หมอเห็น <strong>visual pattern</strong> ใน 5 วินาที · 
+      ถ้าเห็นแดงบ่อยวันเสาร์-อาทิตย์ = ผู้ป่วยลืมตอน weekend"
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>⚠️ Clinical Concerns</h3>
+    <p>
+      ระบบ flag สิ่งที่หมอควรรู้ · จัดเรียงตามความสำคัญ
+    </p>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Type</th>
+        <th>หมายถึง</th>
+      </tr>
+      <tr>
+        <td>🚨 <strong>Critical</strong> (สีแดง)</td>
+        <td>ปัญหาใหญ่ · ต้องคุยกับผู้ป่วยทันที</td>
+      </tr>
+      <tr>
+        <td>⚠️ <strong>Warn</strong> (สีเหลือง)</td>
+        <td>ปัญหาควรระวัง · ติดตาม</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="subsection">
+    <h3>📈 Adherence Trend (12 weeks)</h3>
+    <p>
+      กราฟเส้น แสดง<strong>การเปลี่ยนแปลงของ adherence</strong> ของผู้ป่วยคนนี้
+      ใน 12 สัปดาห์
+    </p>
+    
+    <ul style="padding-left: 24px;">
+      <li><strong>เส้นแดง:</strong> Adherence จริงของผู้ป่วย</li>
+      <li><strong>เส้นเขียวประ:</strong> Target 75% (เป้าหมาย)</li>
+      <li><strong>จุดแดง:</strong> ค่าจริงของแต่ละสัปดาห์</li>
+    </ul>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "ถ้าเส้นแดง<strong>อยู่เหนือเส้นเขียว</strong> = ดี<br/>
+      ถ้าเส้นแดง<strong>ดิ่งลง</strong> = ผู้ป่วยกำลังมีปัญหา"
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>💡 Pharmacist Recommendations</h3>
+    <p>
+      <strong>คำแนะนำจากเภสัชกร</strong> ที่เห็นข้อมูลผู้ป่วย · 
+      Action items ที่หมอควรพิจารณา
+    </p>
+    <p>เช่น:</p>
+    <ul style="padding-left: 24px;">
+      <li>"พิจารณาเปลี่ยนเวลา Atorvastatin จากกลางคืนเป็นเช้า"</li>
+      <li>"แนะนำ caregiver ช่วยเตือนตอนเย็น"</li>
+      <li>"Refill จะหมดใน 5 วัน · ต้องเขียนใหม่"</li>
+    </ul>
+  </div>
+
+  <div class="subsection">
+    <h3>📝 Pharmacist Notes & 🩺 Doctor Notes</h3>
+    <p>
+      ประวัติบันทึกจากเภสัช + แพทย์ · เรียงตามวันที่
+    </p>
+    <ul style="padding-left: 24px;">
+      <li><strong>Pharmacist Notes:</strong> สิ่งที่เภสัชสังเกต/พูดคุยกับผู้ป่วย</li>
+      <li><strong>Doctor Notes:</strong> สิ่งที่หมอบันทึกในการนัดที่ผ่านมา</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 4: CALCULATIONS -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section" style="background: var(--paper-warm);">
+  <div class="section-tag">04 · Calculations</div>
+  <h2>การคำนวณสำคัญ</h2>
+  
+  <div class="section-intro">
+    ผู้ช่วยควรเข้าใจการคำนวณเหล่านี้ · จะตอบ NIT ได้ถ้าถาม
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">📊 Adherence % (ตัวเลขสำคัญสุด!)</div>
+    <div class="formula">
+      Adherence % <span class="equals">=</span> (Doses Taken ÷ Doses Scheduled) × 100
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> ยา Aspirin ใน 90 วัน · ควรกิน 90 ครั้ง · 
+      ผู้ป่วยกินจริง 88 ครั้ง<br/>
+      → 88 ÷ 90 × 100 = <strong>97.7% (ปัดเป็น 98%)</strong>
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง 2:</strong> ยา Metformin (กินวันละ 2 ครั้ง) ใน 90 วัน · 
+      ควรกิน 180 ครั้ง · กินจริง 166 ครั้ง<br/>
+      → 166 ÷ 180 × 100 = <strong>92%</strong>
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">🔥 Streak (จำนวนวันติดต่อกัน)</div>
+    <div class="formula">
+      Streak <span class="equals">=</span> จำนวนวันที่กินยาครบ 100% ติดกัน · จนถึงวันนี้
+    </div>
+    <div class="example">
+      <strong>กฎ:</strong>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>นับเฉพาะวันที่กินยาครบทุกมื้อ ทุกตัว</li>
+        <li>พลาดมื้อใดมื้อหนึ่ง → reset เป็น 0</li>
+        <li>เริ่มนับใหม่จาก 1 ในวันถัดไป</li>
+      </ul>
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> ผู้ป่วยกินยาครบทุกตัว 14 วันติด → Streak = 14<br/>
+      วันที่ 15 พลาดยา 1 มื้อ → Streak = 0<br/>
+      วันที่ 16 กินครบ → Streak = 1
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">⚠️ Risk Categorization (เกณฑ์)</div>
+    <div class="formula" style="text-align: left; padding-left: 20px;">
+      🔴 At-Risk:  Adherence &lt; 70%<br/>
+      🟡 Watch:    70% ≤ Adherence &lt; 80%<br/>
+      🟢 Good:     Adherence ≥ 80%
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>นางสมศรี · 95% → 🟢 Good</li>
+        <li>นางอุไร · 72% → 🟡 Watch</li>
+        <li>นายสมชาย · 45% → 🔴 At-Risk</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">⏰ Time Pattern (Adherence แต่ละช่วงเวลา)</div>
+    <div class="formula">
+      Pattern % <span class="equals">=</span> (Doses กินตรงเวลา ÷ Doses ทั้งหมดในช่วงนั้น) × 100
+    </div>
+    <div class="example">
+      <strong>ช่วงเวลา:</strong>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>เช้า: 06:00-09:00</li>
+        <li>เที่ยง: 11:00-13:00</li>
+        <li>เย็น: 17:00-19:00</li>
+        <li>ก่อนนอน: 20:00-22:00</li>
+      </ul>
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> รวมทุกผู้ป่วย · ในช่วง "ก่อนนอน" 
+      มี doses 200 ครั้ง · กินตรงเวลา 130 ครั้ง<br/>
+      → 130 ÷ 200 × 100 = <strong>65% (ก่อนนอน adherence ต่ำ!)</strong>
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">📦 Refill Days Remaining</div>
+    <div class="formula">
+      Days Remaining <span class="equals">=</span> ยาที่เหลือ ÷ จำนวนเม็ดต่อวัน
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> Aspirin เหลือ 14 เม็ด · กินวันละ 1 เม็ด<br/>
+      → 14 ÷ 1 = <strong>14 วัน</strong> (refill ได้)<br/><br/>
+      <strong>ตัวอย่าง 2:</strong> Metformin เหลือ 20 เม็ด · กินวันละ 2 เม็ด<br/>
+      → 20 ÷ 2 = <strong>10 วัน</strong> (ใกล้หมด · alert!)
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">📈 Trend Direction</div>
+    <div class="formula" style="text-align: left; padding-left: 20px;">
+      เปรียบเทียบ 2 สัปดาห์ล่าสุด vs 2 สัปดาห์ก่อน<br/><br/>
+      ↗ Improving:  +3% หรือมากกว่า<br/>
+      ↔ Stable:     -2% ถึง +2%<br/>
+      ↘ Declining:  -3% หรือน้อยกว่า
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> 2 สัปดาห์ล่าสุด: 78% · 2 สัปดาห์ก่อน: 72%<br/>
+      → 78 - 72 = +6% → <strong>↗ Improving</strong>
+    </div>
+  </div>
+
+  <div class="calc-box">
+    <div class="calc-title">🎯 Average Adherence (ค่าเฉลี่ยของ Pilot)</div>
+    <div class="formula">
+      Avg <span class="equals">=</span> (รวม Adherence ของทุกคน) ÷ จำนวนคนทั้งหมด
+    </div>
+    <div class="example">
+      <strong>ตัวอย่าง:</strong> ใน demo มี 15 คน<br/>
+      Adherence: 95+45+88+92+38+78+72+81+90+85+52+76+87+65+91 = 1,135<br/>
+      → 1,135 ÷ 15 = <strong>75.67% (ปัดเป็น 73-75%)</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: FAQ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-tag">05 · FAQ</div>
+  <h2>คำถามที่อาจเจอ + คำตอบ</h2>
+  
+  <div class="section-intro">
+    คำถามที่หมอ NIT หรือเภสัช NIT อาจถามผู้ช่วย · 
+    ตอบให้มั่นใจ · ถ้าไม่รู้ ให้บอกตรงๆว่าจะกลับมาตอบ
+  </div>
+
+  <div class="subsection">
+    <h3>🩺 คำถามทาง Clinical</h3>
+
+    <div class="faq">
+      <div class="faq-q">% Adherence คำนวณยังไง?</div>
+      <div class="faq-a">
+        คำนวณจาก <strong>(Doses ที่กินจริง ÷ Doses ที่ควรกิน) × 100</strong> · 
+        เช่น Aspirin ใน 90 วัน ควรกิน 90 ครั้ง · ผู้ป่วยกิน 88 ครั้ง = 98%
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ระบบนับ "กินยา" จากอะไร?</div>
+      <div class="faq-a">
+        จากการที่ผู้ป่วย <strong>กดปุ่ม "กินแล้ว"</strong> ใน LINE หลังได้รับ reminder · 
+        ภายใน 30 นาที = ตรงเวลา · เกิน 30 นาที = late · เกิน 2 ชั่วโมง = missed
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ถ้าผู้ป่วยกดปุ่มผิด (เช่น กดยังไม่กินจริง) ทำไง?</div>
+      <div class="faq-a">
+        ระบบไม่สามารถ verify physical ได้ · เป็น <strong>self-report</strong> · 
+        แต่ใน NIT pilot · เภสัชจะมีการ verify ผ่าน periodic check-in กับ caregiver · 
+        ถ้าพบ pattern ผิดปกติ (ลืมกดบ่อย vs กินจริง) สามารถ adjust ได้
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ระบบเตือน drug-drug interaction ไหม?</div>
+      <div class="faq-a">
+        <strong>ตอนนี้ MVP ยังไม่มี · เป็นสิ่งที่อยากพัฒนาต่อ</strong> · 
+        ระบบเน้น reminder + tracking ก่อน · 
+        Drug interaction = roadmap Phase 2-3 · 
+        ขอ feedback จาก NIT ว่าระดับไหนสำคัญสุด
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>📊 คำถามเรื่อง Data</h3>
+
+    <div class="faq">
+      <div class="faq-q">ข้อมูลใน demo เป็นจริงไหม?</div>
+      <div class="faq-a">
+        <strong>เป็นข้อมูลจำลอง (mock data)</strong> · สร้างจากการ research patterns 
+        ของผู้ป่วย stroke จริง · ใน pilot จริงจะใช้ข้อมูล 50 patients ของ NIT
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">PDPA · ข้อมูลผู้ป่วยปลอดภัยแค่ไหน?</div>
+      <div class="faq-a">
+        ระบบมี Privacy Policy + Terms of Use · ข้อมูล encrypt · 
+        Server อยู่ Railway (US-East) ตอนนี้ · พร้อม move ไป Thailand server 
+        ถ้า NIT ต้องการ data residency · 
+        <strong>สำหรับ pilot จะ sign NDA + co-design privacy protocol</strong>
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">รายงานเอาไป EMR ของ รพ. ได้ไหม?</div>
+      <div class="faq-a">
+        <strong>HIS Integration เป็น roadmap Phase 2 · 6-12 เดือน</strong> · 
+        ตอนนี้ export PDF · CSV ได้ · 
+        Long-term ต้องการ API integration กับ HIS NIT · 
+        ขอ pilot ก่อน + prove value ก่อน scope integration
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">เก็บข้อมูลถาวรหรือกี่วัน?</div>
+      <div class="faq-a">
+        ข้อมูลผู้ป่วยเก็บ <strong>ตลอดระยะเวลาที่ผู้ป่วยอยู่ใน pilot</strong> · 
+        ผู้ป่วยสามารถลบบัญชีได้ตามใจ · Audit log = 7 ปี (มาตรฐาน medical)
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>💼 คำถามเรื่อง Business</h3>
+
+    <div class="faq">
+      <div class="faq-q">ค่าใช้จ่ายของ NIT?</div>
+      <div class="faq-a">
+        <strong>ฟรี ตลอด pilot 3 เดือน</strong> · 
+        ผู้ป่วยใช้แค่ LINE · NIT ไม่ต้องลง infrastructure · 
+        ไม่มี hidden costs
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">Apidej อยากได้อะไรจาก NIT?</div>
+      <div class="faq-a">
+        3 อย่าง: <strong>(1) Pilot 3 เดือน 50 patients · 
+        (2) Healthcare mentor · (3) Honest feedback</strong>
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">หาก MedTrack ปิดตัว ผู้ป่วยทำอย่างไร?</div>
+      <div class="faq-a">
+        Apidej commit: ผู้ป่วย <strong>export ข้อมูลได้ · 
+        notice 6 เดือนก่อนปิด · open-source code</strong>  · 
+        ไม่ stranded ผู้ป่วย
+      </div>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>💪 ตัวช่วยตอบเมื่อ "ไม่รู้"</h3>
+
+    <div class="info-box accent">
+      <div class="label">🛟 Magic Phrases เมื่อตอบไม่ได้</div>
+      <p style="margin-top: 8px;">"ขอบคุณคำถามครับ · 
+      ผมขออนุญาต <strong>กลับไปหาคำตอบที่แม่นยำ</strong> 
+      จะส่ง follow-up ให้คุณหมอภายใน [วันที่]"</p>
+      <p>"ตรงนี้ <strong>คุณ Apidej (เภสัชกร) จะตอบได้ดีกว่า</strong> · 
+      ผมจะ note คำถามไว้เพื่อ follow-up"</p>
+      <p>"<strong>ผมเป็นผู้ช่วย</strong> · 
+      Apidej เป็น founder · จะให้ Apidej ตอบในรายละเอียดได้ครับ"</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CHEAT SHEET (separate page) -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="cheat-page">
+  
+  <div class="cheat-cover">
+    <h2>📄 Quick Reference Sheet</h2>
+    <p>พกพาตอน demo · ไว้ดูเร็วๆ · 1-2 หน้า</p>
+  </div>
+
+  <div class="cheat-content">
+
+    <!-- Numbers Section -->
+    <div class="cheat-section">
+      <h3>🔢 ตัวเลขสำคัญที่ต้องจำ</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card">
+          <strong>33%</strong>
+          ผู้ป่วย stroke ที่กินยาตรงเวลา (ตัวเลขปัญหา)
+        </div>
+        <div class="cheat-card">
+          <strong>81%</strong>
+          ผู้ป่วย stroke มี polypharmacy (≥5 ยา)
+        </div>
+        <div class="cheat-card">
+          <strong>53%</strong>
+          stroke ซ้ำใน 1 ปี ถ้าไม่ adherent
+        </div>
+        <div class="cheat-card">
+          <strong>26%</strong>
+          ลด recurrent stroke ด้วย reminder
+        </div>
+        <div class="cheat-card">
+          <strong>95%</strong>
+          คนไทยใช้ LINE ทุกวัน
+        </div>
+        <div class="cheat-card">
+          <strong>15 / 50</strong>
+          patients (demo / pilot จริง)
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Colors -->
+    <div class="cheat-section">
+      <h3>🎨 สีและความหมาย</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card" style="border-left-color: #16A34A;">
+          <strong style="color: #16A34A;">🟢 Good</strong>
+          Adherence ≥ 80% · ติดตามปกติ
+        </div>
+        <div class="cheat-card" style="border-left-color: #EAB308;">
+          <strong style="color: #EAB308;">🟡 Watch</strong>
+          70-80% · เฝ้าระวัง
+        </div>
+        <div class="cheat-card" style="border-left-color: #DC2626;">
+          <strong style="color: #DC2626;">🔴 At-Risk</strong>
+          &lt; 70% · intervene ทันที
+        </div>
+        <div class="cheat-card" style="border-left-color: #5A6A7A;">
+          <strong style="color: #5A6A7A;">⬛ Inactive</strong>
+          ไม่ login &gt; 7 วัน
+        </div>
+      </div>
+    </div>
+
+    <!-- Calculations -->
+    <div class="cheat-section">
+      <h3>🧮 การคำนวณสำคัญ</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card">
+          <strong>Adherence %</strong>
+          (กินจริง ÷ ควรกิน) × 100
+          <div class="cheat-formula">เช่น 88÷90×100 = 98%</div>
+        </div>
+        <div class="cheat-card">
+          <strong>Streak</strong>
+          วันที่กินยาครบ 100% ติดกัน
+          <div class="cheat-formula">พลาด 1 มื้อ = reset 0</div>
+        </div>
+        <div class="cheat-card">
+          <strong>Avg Adherence</strong>
+          (รวมของทุกคน) ÷ จำนวนคน
+          <div class="cheat-formula">15 คน · 73% (demo)</div>
+        </div>
+        <div class="cheat-card">
+          <strong>Refill Days</strong>
+          ยาเหลือ ÷ เม็ดต่อวัน
+          <div class="cheat-formula">14 เม็ด ÷ 1 = 14 วัน</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pharmacist Dashboard Views -->
+    <div class="cheat-section">
+      <h3>🩺 6 Views ใน Pharmacist Dashboard</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card">
+          <strong>📊 Overview</strong>
+          4 stats · alerts · trend chart · activity feed
+        </div>
+        <div class="cheat-card">
+          <strong>👥 All Patients</strong>
+          ตาราง 15 คน · filter · search · click → detail
+        </div>
+        <div class="cheat-card">
+          <strong>⚠️ At-Risk</strong>
+          4 patients · sorted by urgency · quick actions
+        </div>
+        <div class="cheat-card">
+          <strong>💊 Drugs</strong>
+          Top drugs · Most missed · Time pattern
+        </div>
+        <div class="cheat-card">
+          <strong>📈 Trends</strong>
+          12-week chart · period comparison · insights
+        </div>
+        <div class="cheat-card">
+          <strong>📄 Reports</strong>
+          Weekly · Monthly · Pre-Clinic · Audit
+        </div>
+      </div>
+    </div>
+
+    <!-- Doctor Report Sections -->
+    <div class="cheat-section">
+      <h3>📄 7 Sections ใน Doctor Report</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card">
+          <strong>📋 Header</strong>
+          Demographics · HN · Visit dates · Tags
+        </div>
+        <div class="cheat-card">
+          <strong>📊 3 Key Metrics</strong>
+          Overall % · This Period % · Streak
+        </div>
+        <div class="cheat-card">
+          <strong>💊 Med Table</strong>
+          Drug · Schedule · Total · Taken · Missed · %
+        </div>
+        <div class="cheat-card">
+          <strong>📅 Calendar</strong>
+          30 days heatmap · 🟩🟨🟥
+        </div>
+        <div class="cheat-card">
+          <strong>⚠️ Concerns</strong>
+          Critical (red) · Warn (yellow)
+        </div>
+        <div class="cheat-card">
+          <strong>📈 Trend</strong>
+          12-week line chart · Target 75%
+        </div>
+        <div class="cheat-card">
+          <strong>💡 Recommendations</strong>
+          Pharmacist's action items
+        </div>
+        <div class="cheat-card">
+          <strong>📝 Notes</strong>
+          Pharmacist + Doctor history
+        </div>
+      </div>
+    </div>
+
+    <!-- Magic Phrases -->
+    <div class="cheat-section">
+      <h3>🎤 ประโยคที่ใช้บ่อย (Magic Phrases)</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card" style="background: var(--green-soft); border-left-color: var(--green);">
+          <strong style="color: var(--green-deep);">✅ ใช้:</strong>
+          "ตอบตรงๆ ครับ..."<br/>
+          "ขอเรียนรู้จากคุณหมอ..."<br/>
+          "ขอเป็น partner ครับ"
+        </div>
+        <div class="cheat-card" style="background: var(--red-soft); border-left-color: var(--red);">
+          <strong style="color: var(--red);">❌ หลีกเลี่ยง:</strong>
+          "ดีกว่า [competitor]"<br/>
+          "100% accurate"<br/>
+          "ไม่มีปัญหาเลย"
+        </div>
+      </div>
+    </div>
+
+    <!-- When Stuck -->
+    <div class="cheat-section">
+      <h3>🛟 ตอบไม่ได้ ทำอย่างไร?</h3>
+      <div style="background: var(--paper-warm); padding: 16px; border-radius: 8px;">
+        <p style="margin: 0;"><strong>3 วิธีตอบเมื่อไม่รู้:</strong></p>
+        <ol style="padding-left: 20px; margin-top: 8px;">
+          <li>"ขออนุญาตกลับไปหาคำตอบ · จะส่ง follow-up"</li>
+          <li>"ตรงนี้ Apidej (founder/เภสัชกร) จะตอบได้ดีกว่า"</li>
+          <li>"ผมเป็นผู้ช่วย · จะ note คำถามไว้"</li>
+        </ol>
+        <p style="margin-top: 12px; font-size: 12px; color: var(--ink-light);">
+          🎯 Honest > Pretending · NIT จะ respect ความ honest มากกว่า fake answer
+        </p>
+      </div>
+    </div>
+
+    <!-- Demo Flow -->
+    <div class="cheat-section">
+      <h3>🎬 ลำดับ Demo (15-20 นาที)</h3>
+      <div style="background: var(--ink-deep); color: white; padding: 16px; border-radius: 8px;">
+        <ol style="padding-left: 20px; line-height: 2; margin: 0;">
+          <li><strong>Patient App</strong> (3 min) → "นี่คือสิ่งที่ผู้ป่วยเห็น"</li>
+          <li><strong>Pharmacist Dashboard</strong> (5 min) → "นี่คือสิ่งที่เภสัชใช้"</li>
+          <li><strong>Doctor Report</strong> (4 min) → "นี่คือสิ่งที่หมอใช้ใน clinic"</li>
+          <li><strong>Q&A</strong> (5-8 min) → ฟัง · ตอบ · note</li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer">
+  <div>
+    <strong>คู่มือผู้นำเสนอ MedTrack</strong> · v1.0 · 9 พฤษภาคม 2569
+  </div>
+  <div>
+    © 2026 Apidej Pratoomsiri · Confidential
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
