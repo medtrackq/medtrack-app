@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — Patient App (Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #00B900;
+  --primary-dark: #008A00;
+  --accent: #C8392F;
+  --warm: #F4A261;
+  --teal: #2B7A7A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --bg: #F5F6FA;
+  --line: #E5E7EB;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: #E5E5E5;
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+h1, h2, h3 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+}
+
+/* DEMO LAYOUT */
+.demo-wrapper {
+  display: flex;
+  gap: 32px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.demo-info {
+  max-width: 320px;
+}
+.demo-info h2 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+.demo-info p {
+  font-size: 14px;
+  color: var(--ink-light);
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+.demo-features {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.demo-features h3 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+.demo-features ul {
+  list-style: none;
+  font-size: 13px;
+}
+.demo-features li {
+  padding: 6px 0;
+  padding-left: 20px;
+  position: relative;
+  color: var(--ink);
+}
+.demo-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* PHONE FRAME */
+.phone {
+  width: 380px;
+  height: 780px;
+  background: #1F2937;
+  border-radius: 40px;
+  padding: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  position: relative;
+}
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 28px;
+  background: #1F2937;
+  border-radius: 0 0 18px 18px;
+  z-index: 100;
+}
+
+.screen {
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  border-radius: 28px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* STATUS BAR */
+.status-bar {
+  background: var(--bg);
+  height: 36px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 24px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree', sans-serif;
+  flex-shrink: 0;
+}
+
+/* HEADER (LINE OA style) */
+.header {
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.header-back {
+  font-size: 20px;
+  cursor: pointer;
+}
+.oa-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.oa-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+}
+.oa-status {
+  font-size: 11px;
+  opacity: 0.8;
+}
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  font-size: 18px;
+}
+
+/* APP CONTENT */
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+  padding-bottom: 70px;
+}
+
+/* GREETING */
+.greeting {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.greeting::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.greeting-time {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+.greeting-text {
+  font-family: 'Bai Jamjuree';
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  position: relative;
+}
+.greeting-mascot {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+/* STREAK CARD */
+.streak-card {
+  background: white;
+  margin: -24px 16px 16px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+.streak-icon {
+  font-size: 32px;
+}
+.streak-info { flex: 1; }
+.streak-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  font-weight: 600;
+  margin-bottom: 2px;
+  font-family: 'Bai Jamjuree';
+}
+.streak-value {
+  font-family: 'Bai Jamjuree';
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.streak-points {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* TODAY'S MEDS */
+.section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.section-header h2 {
+  font-size: 16px;
+  font-family: 'Bai Jamjuree';
+}
+.section-header .more {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.meal-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+.meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+.meal-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.meal-icon {
+  font-size: 22px;
+}
+.meal-label {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+}
+.meal-clock {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+.meal-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+.meal-status.confirmed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.meal-status.pending {
+  background: var(--yellow-soft);
+  color: #92400E;
+}
+.meal-status.upcoming {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+.meal-status.missed {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.med-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.med-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.med-info {
+  flex: 1;
+}
+.med-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 2px;
+}
+.med-detail {
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.med-action {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.med-action.confirmed {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+}
+.med-action.confirmed::after { content: '✓'; }
+
+.confirm-all-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+/* STATS GRID (Quick stats) */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.qstat-card {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.qstat-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+.qstat-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-family: 'Bai Jamjuree';
+}
+.qstat-value {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+}
+.qstat-extra {
+  font-size: 10px;
+  color: var(--green);
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+/* QUICK ACTIONS */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.qa-btn {
+  background: white;
+  padding: 12px 6px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  border: none;
+  transition: transform 0.1s;
+}
+.qa-btn:active { transform: scale(0.95); }
+.qa-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+.qa-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+/* APPOINTMENT */
+.appt-card {
+  background: linear-gradient(135deg, #FFF7E5, #FFE5CC);
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid var(--warm);
+  margin-bottom: 12px;
+}
+.appt-label {
+  font-size: 11px;
+  color: var(--warm);
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.appt-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.appt-detail {
+  font-size: 13px;
+  color: var(--ink);
+}
+.appt-detail strong { color: var(--accent); }
+
+/* CAREGIVER */
+.caregiver-card {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cg-avatars {
+  display: flex;
+  margin-right: 4px;
+}
+.cg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Bai Jamjuree';
+  border: 2px solid white;
+  margin-left: -8px;
+}
+.cg-avatar:first-child { margin-left: 0; }
+.cg-info { flex: 1; }
+.cg-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+.cg-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--ink-light);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+.nav-item.active { color: var(--primary); }
+.nav-icon { font-size: 22px; }
+.nav-fab {
+  position: relative;
+  margin-top: -28px;
+}
+.nav-fab .nav-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* TOAST */
+.toast {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  display: none;
+  white-space: nowrap;
+  animation: slideDown 0.3s;
+}
+.toast.show { display: block; }
+.toast.success { background: var(--green); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 768px) {
+  body { padding: 0; align-items: flex-start; }
+  .demo-wrapper { gap: 0; }
+  .demo-info { display: none; }
+  .phone {
+    width: 100%;
+    height: 100vh;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+  .phone::before { display: none; }
+  .screen { border-radius: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="demo-wrapper">
+
+  <!-- INFO PANEL (desktop only) -->
+  <div class="demo-info">
+    <h2>📱 Patient App Demo</h2>
+    <p>
+      สิ่งที่ <strong>ผู้ป่วย stroke</strong> เห็นในมือถือ — 
+      เปิดผ่าน LINE OA <strong>@medtrack</strong>
+    </p>
+    <p style="font-size: 13px; color: var(--accent); font-weight: 600;">
+      ⚠️ Demo Mode · ข้อมูลจำลอง · นางสมศรี ใจดี (95% adherence)
+    </p>
+    
+    <div class="demo-features">
+      <h3>🎯 Key Features</h3>
+      <ul>
+        <li>Big buttons (elderly-friendly)</li>
+        <li>Big text (readable)</li>
+        <li>Mascot "หมอน้อย" greeting</li>
+        <li>Today's meds by meal time</li>
+        <li>One-tap confirm</li>
+        <li>Streak + Reward points</li>
+        <li>Caregiver visibility</li>
+        <li>Doctor appointment reminder</li>
+      </ul>
+    </div>
+
+    <div style="background: white; padding: 16px; border-radius: 12px; margin-top: 16px; box-shadow: var(--shadow);">
+      <h3 style="font-size: 13px; margin-bottom: 8px; color: var(--accent);">💡 Try it:</h3>
+      <ul style="list-style: none; font-size: 12px; line-height: 2;">
+        <li>👆 Click ปุ่ม "✓" บนยา</li>
+        <li>👆 Click "กินยาเช้าเสร็จ"</li>
+        <li>👆 Click ปุ่ม Quick Actions</li>
+        <li>👆 Scroll ดู caregivers + appointment</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PHONE -->
+  <div class="phone">
+    <div class="screen">
+      
+      <!-- STATUS BAR -->
+      <div class="status-bar">
+        <span>9:42</span>
+        <span>📶 🔋 100%</span>
+      </div>
+
+      <!-- HEADER -->
+      <div class="header">
+        <div class="oa-avatar">👨‍⚕️</div>
+        <div>
+          <div class="oa-name">หมอน้อย · MedTrack</div>
+          <div class="oa-status">● Active now</div>
+        </div>
+        <div class="header-actions">
+          <span>🔍</span>
+          <span>⋮</span>
+        </div>
+      </div>
+
+      <!-- TOAST -->
+      <div class="toast" id="toast"></div>
+
+      <!-- APP CONTENT -->
+      <div class="app-content">
+
+        <!-- GREETING -->
+        <div class="greeting">
+          <div class="greeting-time">เช้าวันที่ 9 พฤษภาคม 2569 · 09:42</div>
+          <div class="greeting-text">
+            สวัสดีครับ คุณสมศรี<br/>
+            <span style="font-size: 14px; opacity: 0.9; font-weight: 400;">วันนี้กินยาเช้า + เที่ยงแล้ว 👏</span>
+          </div>
+          <div class="greeting-mascot">👨‍⚕️</div>
+        </div>
+
+        <!-- STREAK CARD -->
+        <div class="streak-card">
+          <div class="streak-icon">🔥</div>
+          <div class="streak-info">
+            <div class="streak-label">Streak</div>
+            <div class="streak-value">14 วันติดต่อกัน</div>
+          </div>
+          <div class="streak-points">⭐ 280 คะแนน</div>
+        </div>
+
+        <!-- QUICK STATS -->
+        <div class="section" style="margin-top: 4px;">
+          <div class="quick-stats">
+            <div class="qstat-card">
+              <div class="qstat-icon">📊</div>
+              <div class="qstat-label">เดือนนี้</div>
+              <div class="qstat-value">95<span style="font-size: 14px; color: var(--ink-light);">%</span></div>
+              <div class="qstat-extra">↗ ดีกว่าเดือนก่อน +3%</div>
+            </div>
+            <div class="qstat-card">
+              <div class="qstat-icon">💊</div>
+              <div class="qstat-label">ยาวันนี้</div>
+              <div class="qstat-value">8<span style="font-size: 14px; color: var(--ink-light);">/12</span></div>
+              <div class="qstat-extra" style="color: var(--warm);">⏳ เหลือ 4 ตัว</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- QUICK ACTIONS -->
+        <div class="section">
+          <div class="quick-actions">
+            <button class="qa-btn" onclick="showToast('📷 เปิดกล้อง...')">
+              <div class="qa-icon">📷</div>
+              <div class="qa-label">สแกนยา</div>
+            </button>
+            <button class="qa-btn" onclick="showToast('💊 ดูตู้ยา...')">
+              <div class="qa-icon">💊</div>
+              <div class="qa-label">ตู้ยา</div>
+            </button>
+            <button class="qa-btn" onclick="showToast('📅 ดูนัดหมอ...')">
+              <div class="qa-icon">📅</div>
+              <div class="qa-label">นัดหมอ</div>
+            </button>
+            <button class="qa-btn" onclick="showToast('👨‍👩‍👧 ลูกได้รับ alert...')">
+              <div class="qa-icon">👨‍👩‍👧</div>
+              <div class="qa-label">คนดูแล</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- TODAY'S MEDS -->
+        <div class="section">
+          <div class="section-header">
+            <h2>💊 ยาวันนี้</h2>
+            <span class="more">ดูทั้งหมด →</span>
+          </div>
+
+          <!-- Morning -->
+          <div class="meal-card">
+            <div class="meal-header">
+              <div class="meal-time">
+                <span class="meal-icon">☀️</span>
+                <div>
+                  <div class="meal-label">มื้อเช้า</div>
+                  <div class="meal-clock">07:00 น.</div>
+                </div>
+              </div>
+              <span class="meal-status confirmed">✓ กินครบ</span>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">⚪</div>
+              <div class="med-info">
+                <div class="med-name">Aspirin</div>
+                <div class="med-detail">81mg · 1 เม็ด · กันเลือดหนา</div>
+              </div>
+              <div class="med-action confirmed"></div>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">🟢</div>
+              <div class="med-info">
+                <div class="med-name">Amlodipine</div>
+                <div class="med-detail">5mg · 1 เม็ด · ความดัน</div>
+              </div>
+              <div class="med-action confirmed"></div>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">⚪</div>
+              <div class="med-info">
+                <div class="med-name">Metformin</div>
+                <div class="med-detail">500mg · 1 เม็ด · เบาหวาน</div>
+              </div>
+              <div class="med-action confirmed"></div>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">🟡</div>
+              <div class="med-info">
+                <div class="med-name">Sertraline</div>
+                <div class="med-detail">50mg · 1 เม็ด · ซึมเศร้า</div>
+              </div>
+              <div class="med-action confirmed"></div>
+            </div>
+          </div>
+
+          <!-- Lunch -->
+          <div class="meal-card">
+            <div class="meal-header">
+              <div class="meal-time">
+                <span class="meal-icon">🌞</span>
+                <div>
+                  <div class="meal-label">มื้อเที่ยง</div>
+                  <div class="meal-clock">12:00 น.</div>
+                </div>
+              </div>
+              <span class="meal-status confirmed">✓ กินแล้ว</span>
+            </div>
+            <div style="padding: 8px 0; text-align: center; color: var(--ink-light); font-size: 13px;">
+              ไม่มียาในมื้อนี้
+            </div>
+          </div>
+
+          <!-- Dinner -->
+          <div class="meal-card">
+            <div class="meal-header">
+              <div class="meal-time">
+                <span class="meal-icon">🌆</span>
+                <div>
+                  <div class="meal-label">มื้อเย็น</div>
+                  <div class="meal-clock">18:00 น.</div>
+                </div>
+              </div>
+              <span class="meal-status upcoming">⏰ อีก 8 ชั่วโมง</span>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">⚪</div>
+              <div class="med-info">
+                <div class="med-name">Metformin</div>
+                <div class="med-detail">500mg · 1 เม็ด · เบาหวาน</div>
+              </div>
+              <button class="med-action" onclick="confirmMed(this)"></button>
+            </div>
+          </div>
+
+          <!-- Bedtime -->
+          <div class="meal-card">
+            <div class="meal-header">
+              <div class="meal-time">
+                <span class="meal-icon">🌙</span>
+                <div>
+                  <div class="meal-label">ก่อนนอน</div>
+                  <div class="meal-clock">21:00 น.</div>
+                </div>
+              </div>
+              <span class="meal-status pending">⏳ รอ</span>
+            </div>
+            <div class="med-item">
+              <div class="med-pill">🟠</div>
+              <div class="med-info">
+                <div class="med-name">Atorvastatin</div>
+                <div class="med-detail">40mg · 1 เม็ด · ลดคอเลสเตอรอล</div>
+              </div>
+              <button class="med-action" onclick="confirmMed(this)"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPOINTMENT -->
+        <div class="section">
+          <div class="section-header">
+            <h2>📅 นัดหมอครั้งหน้า</h2>
+            <span class="more">ดูทั้งหมด →</span>
+          </div>
+          <div class="appt-card">
+            <div class="appt-label">⏰ อีก 6 วัน</div>
+            <div class="appt-title">นพ. ศักดิ์ชัย ศรีสุข</div>
+            <div class="appt-detail">
+              <strong>15 พฤษภาคม 2569 · 10:00</strong><br/>
+              สถาบันประสาทวิทยา · ห้อง OPD 3<br/>
+              <span style="color: var(--ink-light); font-size: 12px;">ติดตามอาการ stroke + ยาประจำ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAREGIVERS -->
+        <div class="section">
+          <div class="section-header">
+            <h2>👨‍👩‍👧 คนดูแลของคุณ</h2>
+            <span class="more">จัดการ →</span>
+          </div>
+          <div class="caregiver-card">
+            <div class="cg-avatars">
+              <div class="cg-avatar" style="background: var(--accent);">ลส</div>
+              <div class="cg-avatar" style="background: var(--teal);">สม</div>
+            </div>
+            <div class="cg-info">
+              <div class="cg-label">ดูแลโดย</div>
+              <div class="cg-text">ลูกสาว, สามี (2 คน)</div>
+            </div>
+            <span style="font-size: 18px;">›</span>
+          </div>
+        </div>
+
+        <!-- ACHIEVEMENT -->
+        <div class="section">
+          <div style="background: linear-gradient(135deg, #FFD700, #FFA500); padding: 16px; border-radius: 12px; color: white; box-shadow: var(--shadow);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div style="font-size: 36px;">🏆</div>
+              <div>
+                <div style="font-family: 'Bai Jamjuree'; font-weight: 700; font-size: 16px;">รางวัลใหม่!</div>
+                <div style="font-size: 13px; opacity: 0.95;">"นักกินยาตัวยง" — 14 วันติดต่อกัน</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HEALTH TIP -->
+        <div class="section">
+          <div style="background: white; padding: 16px; border-radius: 12px; box-shadow: var(--shadow); border-left: 4px solid var(--teal);">
+            <div style="font-family: 'Bai Jamjuree'; font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;">
+              💡 เคล็ดลับวันนี้
+            </div>
+            <div style="font-size: 14px; line-height: 1.6;">
+              ผู้ป่วย stroke ที่กินยาตรงเวลา จะลด<strong> ความเสี่ยง stroke ซ้ำได้ 26%</strong><br/>
+              <span style="font-size: 12px; color: var(--ink-light); margin-top: 4px; display: block;">— Aga Khan University Study, 2024</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="height: 16px;"></div>
+      </div>
+
+      <!-- BOTTOM NAV -->
+      <div class="bottom-nav">
+        <div class="nav-item active">
+          <div class="nav-icon">🏠</div>
+          <div>หน้าแรก</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">💊</div>
+          <div>ตู้ยา</div>
+        </div>
+        <div class="nav-item nav-fab">
+          <div class="nav-icon">📷</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">📊</div>
+          <div>ของฉัน</div>
+        </div>
+        <div class="nav-item">
+          <div class="nav-icon">⚙️</div>
+          <div>ตั้งค่า</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function confirmMed(btn) {
+  btn.classList.add('confirmed');
+  showToast('✅ บันทึกแล้ว · ได้ 10 คะแนน', 'success');
+  
+  // Update points
+  const pointsEl = document.querySelector('.streak-points');
+  const current = parseInt(pointsEl.textContent.match(/\d+/)[0]);
+  pointsEl.innerHTML = `⭐ ${current + 10} คะแนน`;
+  
+  // Update count
+  const countEl = document.querySelector('.qstat-card:nth-child(2) .qstat-value');
+  countEl.innerHTML = `9<span style="font-size: 14px; color: var(--ink-light);">/12</span>`;
+}
+
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show ' + type;
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+</script>
+
+</body>
+</html>
