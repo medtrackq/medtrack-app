@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — Caregiver Dashboard (Demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink-deep: #0F1A2E;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --paper: #FAFAF7;
+  --paper-warm: #F4EDE0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --accent: #C8392F;
+  --accent-soft: #E76F5A;
+  --teal: #2B7A7A;
+  --gold: #B8893A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #E5E7EB;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+}
+
+/* TOPBAR */
+.topbar {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.brand h1 {
+  font-size: 20px;
+  color: var(--paper);
+}
+.brand h1 .accent { color: var(--accent-soft); }
+.brand .label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.role-switcher {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.1);
+  padding: 4px;
+  border-radius: 100px;
+}
+.role-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  border-radius: 100px;
+  transition: all 0.15s;
+}
+.role-btn.active {
+  background: white;
+  color: var(--ink-deep);
+}
+
+/* CONTAINER */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+/* DEMO BANNER */
+.demo-banner {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFE8B0 100%);
+  border-left: 4px solid var(--gold);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.demo-banner strong { color: var(--gold); font-family: 'Bai Jamjuree', sans-serif; }
+
+/* GREETING CARD */
+.greeting-card {
+  background: linear-gradient(135deg, #2B7A7A 0%, #15494A 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.greeting-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.greeting-emoji {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  font-size: 48px;
+  opacity: 0.3;
+}
+.greeting-text {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  position: relative;
+}
+.greeting-name {
+  font-family: 'Bai Jamjuree';
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  position: relative;
+}
+.greeting-care {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.greeting-care strong {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* HERO MESSAGE */
+.hero-msg {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.hero-msg-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+}
+.hero-msg-title {
+  font-family: 'Bai Jamjuree';
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+.hero-msg-title.warn { color: var(--yellow); }
+.hero-msg-title.bad { color: var(--red); }
+.hero-msg-detail {
+  color: var(--ink-light);
+  font-size: 14px;
+}
+
+/* QUICK STATS */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.qstat {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.qstat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+.qstat-value {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink-deep);
+  margin-bottom: 4px;
+}
+.qstat-value .unit { font-size: 16px; color: var(--ink-light); }
+.qstat-value.green { color: var(--green); }
+.qstat-value.yellow { color: var(--yellow); }
+.qstat-extra {
+  font-size: 11px;
+  color: var(--ink-light);
+}
+
+/* SECTION */
+.section {
+  margin-bottom: 24px;
+}
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.section-title h2 {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .meta {
+  font-size: 12px;
+  color: var(--ink-light);
+}
+
+/* TODAY MEALS */
+.meal-list {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.meal-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.meal-row:last-child { border-bottom: none; }
+.meal-icon-big {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.meal-info { flex: 1; }
+.meal-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.meal-time {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-bottom: 4px;
+}
+.meal-meds {
+  font-size: 13px;
+  color: var(--ink);
+}
+.meal-status {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.meal-status.confirmed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.meal-status.pending {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+.meal-status.missed {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+/* WEEK CARDS */
+.week-cards {
+  display: grid;
+  gap: 12px;
+}
+.week-card {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--green);
+}
+.week-card.current { border-left-color: var(--accent); }
+.week-card.warn { border-left-color: var(--yellow); }
+.week-card.bad { border-left-color: var(--red); }
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.week-label {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-deep);
+}
+.week-label .badge {
+  background: var(--accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 10px;
+  margin-left: 8px;
+  letter-spacing: 0.05em;
+}
+.week-percent {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--green);
+}
+.week-percent.warn { color: var(--yellow); }
+.week-percent.bad { color: var(--red); }
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.day-pill {
+  aspect-ratio: 1;
+  background: var(--line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+  position: relative;
+}
+.day-pill.full { background: var(--green); }
+.day-pill.partial { background: var(--yellow); color: var(--ink-deep); }
+.day-pill.missed { background: var(--red); }
+.day-pill.today {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.day-pill.future {
+  background: var(--bg);
+  color: var(--ink-light);
+  border: 1px dashed var(--line);
+}
+
+.week-summary {
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.week-summary strong { color: var(--ink); }
+
+/* INSIGHTS */
+.insight-card {
+  background: var(--paper-warm);
+  border-left: 4px solid var(--gold);
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.insight-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.insight-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--gold);
+}
+.insight-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* TREND */
+.trend-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 100px;
+  margin: 16px 0 12px;
+}
+.trend-bar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--teal) 0%, var(--green) 100%);
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  min-height: 12px;
+}
+.trend-bar.current {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-soft) 100%);
+}
+.trend-bar-value {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--ink-deep);
+}
+.trend-labels {
+  display: flex;
+  gap: 8px;
+}
+.trend-label {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+
+/* QUICK ACTIONS */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.action-btn {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  font-family: 'Sarabun';
+  transition: transform 0.1s;
+}
+.action-btn:active { transform: scale(0.97); }
+.action-btn:hover { box-shadow: var(--shadow-lg); }
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.action-text {
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-deep);
+}
+
+/* APPOINTMENT */
+.appt-card {
+  background: linear-gradient(135deg, #FFF7E5, #FFE5CC);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border-left: 4px solid var(--gold);
+  margin-bottom: 12px;
+}
+.appt-tag {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.appt-doctor {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.appt-detail { font-size: 13px; }
+.appt-detail strong { color: var(--accent); }
+
+/* SECONDARY VIEW */
+.simple-view { display: none; }
+.simple-view.active { display: block; }
+.detailed-view.hidden { display: none; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .greeting-name { font-size: 20px; }
+  .quick-stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .qstat { padding: 12px 8px; }
+  .qstat-value { font-size: 22px; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .meal-row { padding: 12px 16px; gap: 12px; }
+  .meal-icon-big { font-size: 28px; }
+  .day-pill { font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>MedTrack<span class="accent">.</span></h1>
+    <div class="label">Caregiver Portal</div>
+  </div>
+  <div class="role-switcher">
+    <button class="role-btn active" onclick="setRole('primary')">👑 ลูกสาว</button>
+    <button class="role-btn" onclick="setRole('secondary')">👨 หลาน</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- DEMO BANNER -->
+  <div class="demo-banner">
+    <span style="font-size: 18px;">🎭</span>
+    <div>
+      <strong>DEMO MODE</strong> — ลองสลับ "ลูกสาว (Primary)" 
+      vs "หลาน (Secondary)" ดูความต่างของ permissions
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- PRIMARY CAREGIVER VIEW (Detailed) -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="detailed-view" id="primaryView">
+
+    <!-- GREETING -->
+    <div class="greeting-card">
+      <div class="greeting-emoji">💚</div>
+      <div class="greeting-text">9 พฤษภาคม 2569 · 09:42</div>
+      <div class="greeting-name">สวัสดี คุณสมหญิง</div>
+      <div class="greeting-care">
+        <span>ดูแล:</span>
+        <strong>แม่ สมศรี ใจดี (อายุ 68)</strong>
+      </div>
+    </div>
+
+    <!-- HERO MESSAGE -->
+    <div class="hero-msg">
+      <div class="hero-msg-icon">🎉</div>
+      <div class="hero-msg-title">แม่กินยาเก่งมาก!</div>
+      <div class="hero-msg-detail">
+        14 วันติดต่อกัน · เดือนนี้ดีขึ้นกว่าเดือนก่อน +5%
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="quick-stats">
+      <div class="qstat">
+        <div class="qstat-label">วันนี้</div>
+        <div class="qstat-value green">4<span class="unit">/8</span></div>
+        <div class="qstat-extra">กินแล้ว · เหลือ 4 ตัว</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">สัปดาห์นี้</div>
+        <div class="qstat-value green">92<span class="unit">%</span></div>
+        <div class="qstat-extra">ดีมาก! 🌟</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">Streak</div>
+        <div class="qstat-value">🔥 14<span class="unit"> วัน</span></div>
+        <div class="qstat-extra">กินครบต่อเนื่อง</div>
+      </div>
+    </div>
+
+    <!-- TODAY -->
+    <div class="section">
+      <div class="section-title">
+        <h2>📅 วันนี้</h2>
+        <span class="meta">9 พ.ค. 2569</span>
+      </div>
+      <div class="meal-list">
+
+        <div class="meal-row">
+          <div class="meal-icon-big">🌅</div>
+          <div class="meal-info">
+            <div class="meal-name">มื้อเช้า</div>
+            <div class="meal-time">7:00 น.</div>
+            <div class="meal-meds">Aspirin, Amlodipine, Metformin, Sertraline</div>
+          </div>
+          <div class="meal-status confirmed">✓ ครบ 4 ตัว</div>
+        </div>
+
+        <div class="meal-row">
+          <div class="meal-icon-big">🌞</div>
+          <div class="meal-info">
+            <div class="meal-name">มื้อเที่ยง</div>
+            <div class="meal-time">12:00 น.</div>
+            <div class="meal-meds" style="color: var(--ink-light); font-style: italic;">ไม่มียาในมื้อนี้</div>
+          </div>
+          <div class="meal-status confirmed">✓ เช็คแล้ว</div>
+        </div>
+
+        <div class="meal-row">
+          <div class="meal-icon-big">🌆</div>
+          <div class="meal-info">
+            <div class="meal-name">มื้อเย็น</div>
+            <div class="meal-time">18:00 น.</div>
+            <div class="meal-meds">Metformin (1 เม็ด)</div>
+          </div>
+          <div class="meal-status pending">⏰ อีก 6 ชม.</div>
+        </div>
+
+        <div class="meal-row">
+          <div class="meal-icon-big">🌙</div>
+          <div class="meal-info">
+            <div class="meal-name">ก่อนนอน</div>
+            <div class="meal-time">21:00 น.</div>
+            <div class="meal-meds">Atorvastatin (1 เม็ด)</div>
+          </div>
+          <div class="meal-status pending">⏰ อีก 9 ชม.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- WEEK CARDS -->
+    <div class="section">
+      <div class="section-title">
+        <h2>📊 4 สัปดาห์ล่าสุด</h2>
+        <span class="meta">เริ่ม 19 เม.ย.</span>
+      </div>
+
+      <div class="week-cards">
+
+        <!-- Current Week -->
+        <div class="week-card current">
+          <div class="week-header">
+            <div class="week-label">
+              สัปดาห์นี้ <span class="badge">ปัจจุบัน</span>
+            </div>
+            <div class="week-percent">92%</div>
+          </div>
+          <div class="week-days">
+            <div class="day-pill full">จ</div>
+            <div class="day-pill full">อ</div>
+            <div class="day-pill full">พ</div>
+            <div class="day-pill full">พฤ</div>
+            <div class="day-pill full">ศ</div>
+            <div class="day-pill partial">ส</div>
+            <div class="day-pill today" style="background: white; color: var(--ink); border: 2px solid var(--accent);">อา</div>
+          </div>
+          <div class="week-summary">
+            ✓ <strong>6 วันครบ</strong> · ⚠️ พลาดวันเสาร์ 1 มื้อ (Atorvastatin ก่อนนอน)
+          </div>
+        </div>
+
+        <!-- Last Week -->
+        <div class="week-card">
+          <div class="week-header">
+            <div class="week-label">สัปดาห์ก่อน</div>
+            <div class="week-percent">100%</div>
+          </div>
+          <div class="week-days">
+            <div class="day-pill full">จ</div>
+            <div class="day-pill full">อ</div>
+            <div class="day-pill full">พ</div>
+            <div class="day-pill full">พฤ</div>
+            <div class="day-pill full">ศ</div>
+            <div class="day-pill full">ส</div>
+            <div class="day-pill full">อา</div>
+          </div>
+          <div class="week-summary">
+            🏆 <strong>Perfect Week!</strong> · 7 วันครบทุกมื้อ
+          </div>
+        </div>
+
+        <!-- 2 weeks ago -->
+        <div class="week-card warn">
+          <div class="week-header">
+            <div class="week-label">2 สัปดาห์ก่อน</div>
+            <div class="week-percent warn">85%</div>
+          </div>
+          <div class="week-days">
+            <div class="day-pill full">จ</div>
+            <div class="day-pill partial">อ</div>
+            <div class="day-pill full">พ</div>
+            <div class="day-pill full">พฤ</div>
+            <div class="day-pill partial">ศ</div>
+            <div class="day-pill full">ส</div>
+            <div class="day-pill full">อา</div>
+          </div>
+          <div class="week-summary">
+            ✓ <strong>5 วันครบ</strong> · ⚠️ พลาด 2 วัน (อังคาร, ศุกร์)
+          </div>
+        </div>
+
+        <!-- 3 weeks ago -->
+        <div class="week-card">
+          <div class="week-header">
+            <div class="week-label">3 สัปดาห์ก่อน</div>
+            <div class="week-percent">88%</div>
+          </div>
+          <div class="week-days">
+            <div class="day-pill full">จ</div>
+            <div class="day-pill full">อ</div>
+            <div class="day-pill partial">พ</div>
+            <div class="day-pill full">พฤ</div>
+            <div class="day-pill full">ศ</div>
+            <div class="day-pill full">ส</div>
+            <div class="day-pill full">อา</div>
+          </div>
+          <div class="week-summary">
+            ✓ <strong>6 วันครบ</strong> · ⚠️ พลาดวันพุธ 1 มื้อ
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TREND -->
+    <div class="section">
+      <div class="section-title">
+        <h2>📈 แนวโน้ม 4 สัปดาห์</h2>
+        <span class="meta">ดีขึ้นเรื่อยๆ ↗</span>
+      </div>
+      <div class="trend-card">
+        <div class="trend-chart">
+          <div class="trend-bar" style="height: 88%;">
+            <div class="trend-bar-value">88%</div>
+          </div>
+          <div class="trend-bar" style="height: 85%;">
+            <div class="trend-bar-value">85%</div>
+          </div>
+          <div class="trend-bar" style="height: 100%;">
+            <div class="trend-bar-value">100%</div>
+          </div>
+          <div class="trend-bar current" style="height: 92%;">
+            <div class="trend-bar-value">92%</div>
+          </div>
+        </div>
+        <div class="trend-labels">
+          <div class="trend-label">3 wk<br/>ก่อน</div>
+          <div class="trend-label">2 wk<br/>ก่อน</div>
+          <div class="trend-label">สัปดาห์<br/>ก่อน</div>
+          <div class="trend-label" style="color: var(--accent);">สัปดาห์<br/>นี้</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHTS -->
+    <div class="section">
+      <div class="section-title">
+        <h2>💡 สิ่งที่ควรรู้</h2>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-icon">⏰</div>
+        <div class="insight-title">ยาที่แม่ลืมบ่อย</div>
+        <div class="insight-body">
+          <strong>Atorvastatin ก่อนนอน (21:00)</strong> — 
+          พลาด 4 ครั้งใน 4 สัปดาห์<br/>
+          อาจเป็นเพราะเหนื่อยหรือนอนเร็ว · 
+          ลองคุยกับแม่ดูครับ
+        </div>
+      </div>
+
+      <div class="insight-card">
+        <div class="insight-icon">📈</div>
+        <div class="insight-title">แม่กำลังดีขึ้น</div>
+        <div class="insight-body">
+          เริ่มจาก 88% เพิ่มเป็น 92% ในเดือนเดียว · 
+          การที่แม่ใช้ MedTrack สม่ำเสมอช่วยได้มาก
+        </div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENT -->
+    <div class="section">
+      <div class="section-title">
+        <h2>🩺 นัดหมอครั้งหน้า</h2>
+      </div>
+      <div class="appt-card">
+        <div class="appt-tag">⏰ อีก 6 วัน</div>
+        <div class="appt-doctor">นพ. ศักดิ์ชัย ศรีสุข</div>
+        <div class="appt-detail">
+          <strong>15 พฤษภาคม 2569 · 10:00</strong><br/>
+          สถาบันประสาทวิทยา · ห้อง OPD 3<br/>
+          <span style="color: var(--ink-light); font-size: 12px;">ติดตามอาการ stroke + ยาประจำ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="section">
+      <div class="section-title">
+        <h2>⚡ การกระทำ</h2>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn" onclick="alert('โทรหาแม่ · 081-xxx-xxxx')">
+          <div class="action-icon">📞</div>
+          <div class="action-text">โทรหาแม่</div>
+        </button>
+        <button class="action-btn" onclick="alert('เปิด LINE chat กับแม่')">
+          <div class="action-icon">💬</div>
+          <div class="action-text">ส่ง LINE</div>
+        </button>
+        <button class="action-btn" onclick="alert('ดูประวัติย้อนหลัง')">
+          <div class="action-icon">📊</div>
+          <div class="action-text">ดูประวัติเต็ม</div>
+        </button>
+        <button class="action-btn" onclick="alert('Calendar นัดหมอ')">
+          <div class="action-icon">📅</div>
+          <div class="action-text">นัดหมอทั้งหมด</div>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
+  <!-- SECONDARY CAREGIVER VIEW (Simple) -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="simple-view" id="secondaryView">
+
+    <!-- GREETING -->
+    <div class="greeting-card">
+      <div class="greeting-emoji">💚</div>
+      <div class="greeting-text">9 พฤษภาคม 2569 · 09:42</div>
+      <div class="greeting-name">สวัสดี คุณบอย (หลาน)</div>
+      <div class="greeting-care">
+        <span>ดูแล:</span>
+        <strong>คุณยาย สมศรี ใจดี</strong>
+      </div>
+    </div>
+
+    <!-- HERO MESSAGE -->
+    <div class="hero-msg">
+      <div class="hero-msg-icon">😊</div>
+      <div class="hero-msg-title">คุณยายสบายดี!</div>
+      <div class="hero-msg-detail">
+        กินยาสม่ำเสมอ · ไม่ต้องเป็นห่วง
+      </div>
+    </div>
+
+    <!-- SIMPLE STATS -->
+    <div class="quick-stats">
+      <div class="qstat">
+        <div class="qstat-label">วันนี้</div>
+        <div class="qstat-value green">✓</div>
+        <div class="qstat-extra">กินแล้ว</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">สัปดาห์นี้</div>
+        <div class="qstat-value green">92<span class="unit">%</span></div>
+        <div class="qstat-extra">ดีมาก</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">รวม</div>
+        <div class="qstat-value green">🌟</div>
+        <div class="qstat-extra">ดีต่อเนื่อง</div>
+      </div>
+    </div>
+
+    <!-- WEEK VIEW (simplified) -->
+    <div class="section">
+      <div class="section-title">
+        <h2>📅 สัปดาห์นี้</h2>
+      </div>
+      <div class="week-card">
+        <div class="week-header">
+          <div class="week-label">9 พ.ค. - 15 พ.ค.</div>
+          <div class="week-percent">92%</div>
+        </div>
+        <div class="week-days">
+          <div class="day-pill full">จ</div>
+          <div class="day-pill full">อ</div>
+          <div class="day-pill full">พ</div>
+          <div class="day-pill full">พฤ</div>
+          <div class="day-pill full">ศ</div>
+          <div class="day-pill partial">ส</div>
+          <div class="day-pill today" style="background: white; color: var(--ink); border: 2px solid var(--accent);">อา</div>
+        </div>
+        <div class="week-summary">
+          ✓ <strong>คุณยายกินยาสม่ำเสมอ</strong> · ดูแลตัวเองได้ดี
+        </div>
+      </div>
+    </div>
+
+    <!-- LAST WEEK SIMPLE -->
+    <div class="section">
+      <div class="section-title">
+        <h2>📊 สัปดาห์ก่อน</h2>
+      </div>
+      <div class="week-card">
+        <div class="week-header">
+          <div class="week-label">2 พ.ค. - 8 พ.ค.</div>
+          <div class="week-percent">100%</div>
+        </div>
+        <div class="week-days">
+          <div class="day-pill full">จ</div>
+          <div class="day-pill full">อ</div>
+          <div class="day-pill full">พ</div>
+          <div class="day-pill full">พฤ</div>
+          <div class="day-pill full">ศ</div>
+          <div class="day-pill full">ส</div>
+          <div class="day-pill full">อา</div>
+        </div>
+        <div class="week-summary">
+          🏆 <strong>Perfect Week!</strong> · กินครบทุกวัน
+        </div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENT (basic) -->
+    <div class="section">
+      <div class="section-title">
+        <h2>🩺 นัดหมอครั้งหน้า</h2>
+      </div>
+      <div class="appt-card">
+        <div class="appt-tag">⏰ อีก 6 วัน</div>
+        <div class="appt-doctor">15 พฤษภาคม 2569</div>
+        <div class="appt-detail">
+          คุณยายมีนัดหมอที่ สถาบันประสาทวิทยา
+        </div>
+      </div>
+    </div>
+
+    <!-- LIMITED ACTIONS -->
+    <div class="section">
+      <div class="section-title">
+        <h2>⚡ การกระทำ</h2>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn" onclick="alert('โทรหาคุณยาย')">
+          <div class="action-icon">📞</div>
+          <div class="action-text">โทรหาคุณยาย</div>
+        </button>
+        <button class="action-btn" onclick="alert('ส่ง LINE')">
+          <div class="action-icon">💬</div>
+          <div class="action-text">ส่ง LINE</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- INFO BOX -->
+    <div class="section">
+      <div style="background: var(--bg); padding: 16px 20px; border-radius: 12px; border-left: 4px solid var(--teal); font-size: 13px; line-height: 1.7;">
+        <strong style="font-family: 'Bai Jamjuree';">ℹ️ คุณเป็น Secondary Caregiver</strong><br/>
+        คุณเห็นภาพรวมของคุณยาย · 
+        Primary Caregiver (ลูกสาว) จะเห็นรายละเอียดมากกว่า · 
+        หากต้องการ access เพิ่ม ติดต่อ Primary
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function setRole(role) {
+  document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  if (role === 'primary') {
+    document.getElementById('primaryView').classList.remove('hidden');
+    document.getElementById('secondaryView').classList.remove('active');
+  } else {
+    document.getElementById('primaryView').classList.add('hidden');
+    document.getElementById('secondaryView').classList.add('active');
+  }
+  
+  window.scrollTo(0, 0);
+}
+</script>
+
+</body>
+</html>
