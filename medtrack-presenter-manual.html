@@ -553,8 +553,8 @@ p { margin-bottom: 12px; }
   </div>
   <div class="cover-meta">
     <strong>Prepared for:</strong> ผู้ช่วยนำเสนอ MedTrack<br/>
-    <strong>Date:</strong> 9 พฤษภาคม 2569<br/>
-    <strong>Coverage:</strong> Pharmacist Dashboard + Doctor Report
+    <strong>Date:</strong> 12 พฤษภาคม 2569 · v2.0<br/>
+    <strong>Coverage:</strong> Pharmacist Dashboard + Doctor Report + <strong>Caregiver Dashboard</strong>
   </div>
 </section>
 
@@ -572,6 +572,10 @@ p { margin-bottom: 12px; }
       <li class="sub">→ Reports Hub</li>
     </li>
     <li>Doctor Report — สำหรับแพทย์ NIT</li>
+    <li>Caregiver Dashboard — สำหรับลูก/สามี
+      <li class="sub">→ Primary vs Secondary</li>
+      <li class="sub">→ Permission tiers</li>
+    </li>
     <li>การคำนวณสำคัญ — เข้าใจตัวเลข</li>
     <li>คำถามที่อาจเจอ + คำตอบ (FAQ)</li>
     <li>Quick Reference Sheet (พิมพ์พกติดตัว)</li>
@@ -1311,10 +1315,386 @@ p { margin-bottom: 12px; }
 </section>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- SECTION 4: CALCULATIONS -->
+<!-- SECTION 4: CAREGIVER DASHBOARD -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="section-tag">04 · Caregiver Dashboard</div>
+  <h2>คู่มือ Caregiver Dashboard</h2>
+  
+  <div class="section-intro">
+    Caregiver Dashboard สำหรับ <strong>ลูก/สามี/ผู้ดูแล</strong> · 
+    ใช้ web-based · ไม่ส่ง notification (ลูกเปิดเอง) · 
+    ออกแบบให้คนที่ไม่ใช่หมอเข้าใจ
+  </div>
+
+  <div class="subsection">
+    <h3>🌟 คอนเซ็ปต์สำคัญ — Pull-based, ไม่ Push</h3>
+    <p>
+      Caregiver Dashboard <strong>"ไม่ส่ง alert"</strong> ไปหาลูก · 
+      ลูกเข้ามาดูเอง เมื่ออยากรู้
+    </p>
+    
+    <div class="info-box">
+      <div class="label">💡 ทำไมไม่ส่ง alert</div>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>ลูกไม่ต้องกังวล "ทุกครั้งที่พลาดยา"</li>
+        <li>แม่ไม่รู้สึก "ถูกจับตามอง"</li>
+        <li>ลด notification fatigue</li>
+        <li>Privacy-respectful</li>
+      </ul>
+    </div>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "เราเลือก <strong>pull-based</strong> เพราะถ้า push ทุกครั้ง · 
+      ลูกจะ over-react · แม่จะรู้สึกกดดัน · เลือก approach ที่เคารพทั้งสองฝ่าย"
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>👑 Permission Tiers — 2 ระดับ</h3>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Feature</th>
+        <th>Primary 👑</th>
+        <th>Secondary 👨</th>
+      </tr>
+      <tr>
+        <td>👋 Overall %</td>
+        <td>✅</td>
+        <td>✅</td>
+      </tr>
+      <tr>
+        <td>📊 Quick Stats (3 cards)</td>
+        <td>✅</td>
+        <td>✅ (simplified)</td>
+      </tr>
+      <tr>
+        <td>📅 Week summary</td>
+        <td>✅ (4 weeks)</td>
+        <td>✅ (2 weeks)</td>
+      </tr>
+      <tr>
+        <td>🌅 Daily meal detail</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>💊 Drug names</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>📈 Trend chart</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>💡 Insights</td>
+        <td>✅</td>
+        <td>❌</td>
+      </tr>
+      <tr>
+        <td>🩺 Doctor name</td>
+        <td>✅</td>
+        <td>❌ (แค่วันนัด)</td>
+      </tr>
+      <tr>
+        <td>📞 Quick Actions</td>
+        <td>4 actions</td>
+        <td>2 actions</td>
+      </tr>
+    </table>
+
+    <div class="info-box accent">
+      <div class="label">👑 Primary Caregiver</div>
+      <strong>มีได้แค่ 1 คน · เลือกโดยผู้ป่วย</strong><br/>
+      ปกติคือ ลูกที่ดูแลใกล้ชิด · เห็นข้อมูลครบ
+    </div>
+
+    <div class="info-box">
+      <div class="label">👨 Secondary Caregivers</div>
+      <strong>มีได้สูงสุด 4 คน</strong><br/>
+      ลูกคนอื่น · หลาน · พี่น้อง · เห็นแค่ภาพรวม
+    </div>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "แม่ลูก 5 คน · ดูแลด้วยกัน 5 คน · แต่<strong>คนหนึ่ง</strong>
+       เป็น primary ที่รู้รายละเอียด · คนอื่นเห็นภาพรวม · 
+       <strong>เคารพ Thai hierarchy</strong> ใน family care"
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>📊 Primary Caregiver View (ลูกสาว)</h3>
+    <p>
+      สิ่งที่ลูกสาวเห็น · ครบทุกอย่าง · plain-Thai language
+    </p>
+
+    <h4>1. Greeting Card (ด้านบนสุด)</h4>
+    
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Greeting · ทักทาย</div>
+        <div class="header-explain-en">เช่น "สวัสดี คุณสมหญิง · ดูแล: แม่ สมศรี ใจดี"</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>แสดงชื่อลูก + ชื่อแม่ที่ดูแล + วันที่</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>Confirm ว่า login ถูก · ดูแลคนถูกคน</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h4>2. Hero Message (กล่องสีเขียวกลาง)</h4>
+    
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Hero Message · ข้อความสรุปใหญ่</div>
+        <div class="header-explain-en">เช่น "แม่กินยาเก่งมาก! 🎉"</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>1 ประโยคบอกผลลัพธ์โดยรวม</dd>
+          <dt>การคำนวณ</dt>
+          <dd>
+            ≥85% → "กินยาเก่งมาก!" (เขียว)<br/>
+            70-85% → "กินยาดี · มีพลาดบ้าง" (เหลือง)<br/>
+            &lt;70% → "ต้องช่วยดูแลมากขึ้น" (แดง)
+          </dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>ลูกรู้ว่า "ต้องห่วงไหม" ใน 3 วินาที</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h4>3. Quick Stats (3 cards)</h4>
+    
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">วันนี้ · Today Count</div>
+        <div class="header-explain-en">เช่น "4/8"</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>ยาที่กินแล้ววันนี้ / ทั้งหมดที่ต้องกิน</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับ confirmed doses ÷ total doses ของวันนี้</dd>
+          <dt>เช่น</dt>
+          <dd>4 ตัวกินแล้ว · เหลือ 4 ตัว (มื้อเย็น + ก่อนนอน)</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">สัปดาห์นี้ · This Week %</div>
+        <div class="header-explain-en">เช่น "92%"</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>% adherence ของ 7 วันล่าสุด</dd>
+          <dt>การคำนวณ</dt>
+          <dd>(Doses ครบ ÷ Doses ทั้งหมด) × 100 · เฉพาะ 7 วัน</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="header-explain">
+      <div class="header-explain-top">
+        <div class="header-explain-name">Streak · 🔥 วันติดต่อกัน</div>
+        <div class="header-explain-en">เช่น "14 วัน"</div>
+      </div>
+      <div class="header-explain-body">
+        <dl class="header-explain-grid">
+          <dt>คือ</dt>
+          <dd>จำนวนวันที่กินยาครบทุกตัว ติดต่อกัน</dd>
+          <dt>การคำนวณ</dt>
+          <dd>นับวันที่ครบ 100% ติดกัน · พลาด 1 มื้อ = reset</dd>
+          <dt>ใช้ทำไม</dt>
+          <dd>Motivation · gamification · ลูกภูมิใจในแม่</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h4>4. Today Section (4 มื้อ)</h4>
+    <p>แสดงทุกมื้อของวันนี้ · 4 แถว · พร้อมสถานะ</p>
+    
+    <table class="simple-table">
+      <tr>
+        <th>Status</th>
+        <th>ความหมาย</th>
+      </tr>
+      <tr>
+        <td><strong style="color: var(--green);">✓ ครบ</strong></td>
+        <td>กินยาในมื้อนี้ครบทุกตัว</td>
+      </tr>
+      <tr>
+        <td><strong style="color: #1D4ED8;">⏰ อีก X ชม.</strong></td>
+        <td>ยังไม่ถึงเวลา · countdown</td>
+      </tr>
+      <tr>
+        <td><strong style="color: var(--red);">✗ พลาด</strong></td>
+        <td>เลยเวลามาเกิน 2 ชม. · ไม่กิน</td>
+      </tr>
+    </table>
+
+    <h4>5. 4 Week Summaries</h4>
+    <p>
+      <strong>4 สัปดาห์ล่าสุด</strong> · แสดงเป็น cards แยกกัน · 
+      เห็น pattern ของแม่ในแต่ละสัปดาห์
+    </p>
+
+    <p>แต่ละ card มี:</p>
+    <ul style="padding-left: 24px;">
+      <li><strong>ป้ายชื่อ:</strong> "สัปดาห์นี้" / "สัปดาห์ก่อน" / "2 สัปดาห์ก่อน"</li>
+      <li><strong>% Adherence:</strong> ของสัปดาห์นั้น</li>
+      <li><strong>Day Pills:</strong> 7 ปุ่ม · จ-อา · สีเขียว/เหลือง/แดง</li>
+      <li><strong>Summary:</strong> "6/7 วันครบ · พลาด 1 มื้อ"</li>
+    </ul>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: var(--green);"></div>
+        <div class="legend-text">
+          <strong>🟩 Full · กินครบ</strong>
+          <div class="note">ทุกมื้อในวันนี้</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: var(--yellow);"></div>
+        <div class="legend-text">
+          <strong>🟨 Partial</strong>
+          <div class="note">พลาดบางมื้อ</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: var(--red);"></div>
+        <div class="legend-text">
+          <strong>🟥 Missed</strong>
+          <div class="note">พลาดทั้งหมด</div>
+        </div>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: white; border: 2px solid var(--accent);"></div>
+        <div class="legend-text">
+          <strong>📍 Today</strong>
+          <div class="note">วันนี้ · highlighted</div>
+        </div>
+      </div>
+    </div>
+
+    <h4>6. Trend Chart (Bar Chart)</h4>
+    <p>
+      <strong>4 bars แสดง 4 สัปดาห์</strong> · ความสูง = % adherence · 
+      Bar ล่าสุด (สัปดาห์นี้) = สีส้ม · highlight
+    </p>
+    <p>
+      ลูกเห็น <strong>trajectory</strong> ของแม่ว่าดีขึ้นหรือแย่ลง
+    </p>
+
+    <h4>7. Insights (กล่องสีทอง)</h4>
+    <p>
+      ระบบ <strong>auto-generate insights</strong> · 2-3 ข้อ
+    </p>
+    <ul style="padding-left: 24px;">
+      <li><strong>ยาที่ลืมบ่อย:</strong> "Atorvastatin ก่อนนอน · ลืม 4 ครั้ง"</li>
+      <li><strong>Trend:</strong> "แม่ดีขึ้น 88% → 92%"</li>
+      <li><strong>Pattern:</strong> "พลาดบ่อยตอนวันเสาร์-อาทิตย์"</li>
+    </ul>
+
+    <div class="tips">
+      <div class="tips-title">💡 Talking Point</div>
+      "Insights นี่คือ <strong>'ลูกที่ทำงาน data scientist ไม่ต้องเอง'</strong> · 
+      ระบบหา pattern ให้แล้ว · ลูกแค่อ่านและ act"
+    </div>
+
+    <h4>8. Appointment Card</h4>
+    <p>
+      แสดงนัดหมอครั้งถัดไป · พร้อม countdown
+    </p>
+
+    <h4>9. Quick Actions (4 ปุ่ม)</h4>
+    <ul style="padding-left: 24px;">
+      <li><strong>📞 โทรหาแม่</strong> — เปิด dialer</li>
+      <li><strong>💬 ส่ง LINE</strong> — เปิด LINE chat</li>
+      <li><strong>📊 ดูประวัติเต็ม</strong> — link ไป patient profile</li>
+      <li><strong>📅 นัดหมอทั้งหมด</strong> — calendar view</li>
+    </ul>
+  </div>
+
+  <div class="subsection">
+    <h3>👨 Secondary Caregiver View (หลาน)</h3>
+    <p>
+      สิ่งที่ secondary caregivers เห็น · <strong>เห็นน้อยกว่า primary</strong> · 
+      เน้น "ภาพรวม"
+    </p>
+
+    <h4>สิ่งที่เห็น</h4>
+    <ul style="padding-left: 24px;">
+      <li><strong>Hero Message:</strong> "คุณยายสบายดี!" (simplified)</li>
+      <li><strong>3 Quick Stats:</strong> แต่ใช้ icon (✓, 🌟) มากกว่าตัวเลข</li>
+      <li><strong>2 Weeks summary:</strong> สัปดาห์นี้ + สัปดาห์ก่อน</li>
+      <li><strong>Appointment:</strong> แค่วันที่ + สถานที่ (ไม่มีชื่อหมอ)</li>
+      <li><strong>2 Quick Actions:</strong> โทร + LINE เท่านั้น</li>
+    </ul>
+
+    <h4>สิ่งที่ไม่เห็น</h4>
+    <ul style="padding-left: 24px;">
+      <li>❌ ชื่อยาเฉพาะ</li>
+      <li>❌ Daily meal detail</li>
+      <li>❌ 4-week history</li>
+      <li>❌ Insights</li>
+      <li>❌ Trend chart</li>
+      <li>❌ Pharmacist notes</li>
+      <li>❌ Doctor notes</li>
+    </ul>
+
+    <div class="info-box gold">
+      <div class="label">💬 ที่ Secondary เห็น Bottom</div>
+      "คุณเป็น Secondary Caregiver · 
+      Primary จะเห็นรายละเอียดมากกว่า · 
+      หากต้องการ access เพิ่ม ติดต่อ Primary"
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>🔐 Privacy & Consent</h3>
+    
+    <div class="info-box">
+      <div class="label">📜 ผู้ป่วยควบคุม access</div>
+      <ul style="padding-left: 20px; margin-top: 8px;">
+        <li>แม่ <strong>เลือก</strong> ใครเป็น primary · secondary</li>
+        <li>แม่ <strong>revoke</strong> access ได้ตลอด</li>
+        <li>แม่เห็น "ใครเข้ามาดูเมื่อไหร่" (audit log)</li>
+        <li>Sensitive drugs (เช่น antidepressants) · 
+            <strong>มี toggle</strong> ให้แม่เลือกซ่อนได้</li>
+      </ul>
+    </div>
+
+    <div class="warning">
+      <div class="warning-title">⚠️ ที่ต้องระวัง</div>
+      <ul>
+        <li>ไม่ assume ลูกเห็นทุกอย่าง · บางคนแม่ไม่อยากให้เห็น</li>
+        <li>เริ่มต้น default = secondary · ต้อง upgrade เป็น primary ทีหลัง</li>
+        <li>Multi-family scenario: ลูกแต่งงานแล้ว · ลูกเขย/สะใภ้ดูได้ไหม?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SECTION 5: CALCULATIONS (renumbered) -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="section" style="background: var(--paper-warm);">
-  <div class="section-tag">04 · Calculations</div>
+  <div class="section-tag">05 · Calculations</div>
   <h2>การคำนวณสำคัญ</h2>
   
   <div class="section-intro">
@@ -1440,7 +1820,7 @@ p { margin-bottom: 12px; }
 <!-- SECTION 5: FAQ -->
 <!-- ═══════════════════════════════════════════════════════ -->
 <section class="section">
-  <div class="section-tag">05 · FAQ</div>
+  <div class="section-tag">06 · FAQ</div>
   <h2>คำถามที่อาจเจอ + คำตอบ</h2>
   
   <div class="section-intro">
@@ -1569,6 +1949,76 @@ p { margin-bottom: 12px; }
       ผมจะ note คำถามไว้เพื่อ follow-up"</p>
       <p>"<strong>ผมเป็นผู้ช่วย</strong> · 
       Apidej เป็น founder · จะให้ Apidej ตอบในรายละเอียดได้ครับ"</p>
+    </div>
+  </div>
+
+  <div class="subsection">
+    <h3>💚 คำถามเรื่อง Caregiver Dashboard</h3>
+
+    <div class="faq">
+      <div class="faq-q">ลูกหลายคนเห็นข้อมูลเหมือนกันไหม?</div>
+      <div class="faq-a">
+        <strong>ไม่เหมือนกัน</strong> · มี 2 ระดับ: <br/>
+        <strong>Primary (1 คน)</strong> เห็นรายละเอียด · ปกติคือคนที่ดูแลใกล้ชิด<br/>
+        <strong>Secondary (สูงสุด 4 คน)</strong> เห็นแค่ภาพรวม
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ใครเลือกว่าใครเป็น Primary?</div>
+      <div class="faq-a">
+        <strong>ผู้ป่วย (แม่)</strong> เป็นผู้เลือก · ไม่ใช่ระบบ · 
+        เพราะแม่รู้ดีที่สุดว่าใครดูแลใกล้ชิด · 
+        และสามารถเปลี่ยนได้ตลอด
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ทำไมไม่ส่ง notification ลูกเมื่อแม่พลาดยา?</div>
+      <div class="faq-a">
+        <strong>เพื่อ Privacy + ลด stress</strong> · 
+        ถ้า push ทุกครั้ง ลูกจะ over-react · แม่จะรู้สึกถูกจับตามอง · 
+        <strong>เลือก pull-based</strong> · ลูกเปิดดูเองเมื่ออยากรู้ · 
+        เคารพทั้งสองฝ่าย
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">แม่สามารถปิด access ลูกได้ไหม?</div>
+      <div class="faq-a">
+        <strong>ได้ทุกเมื่อ</strong> · ผู้ป่วยควบคุม access ทั้งหมด · 
+        เลือกได้ว่าจะ revoke ใครเมื่อไหร่ · 
+        มี audit log แสดงใครเข้ามาดูเมื่อไหร่
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ถ้าแม่ไม่อยากให้ลูกเห็นยา depression ทำไง?</div>
+      <div class="faq-a">
+        <strong>มี toggle ให้ซ่อนยาเฉพาะ</strong> · 
+        แม่เลือกได้ว่ายาตัวไหนจะเห็น/ไม่ให้เห็น · 
+        Sensitive drugs (เช่น antidepressants) สามารถซ่อนจาก caregiver ได้ · 
+        ระบบจะแสดงเป็น "มียาเพิ่ม 1 ตัว" แทน
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">ลูก confirm กินยาแทนแม่ได้ไหม?</div>
+      <div class="faq-a">
+        <strong>ตอนนี้ MVP ยังไม่มี · เป็น read-only</strong> · 
+        Proxy confirmation = roadmap Phase 2 · 
+        เพราะต้อง verify ว่าลูกเห็นจริงๆ ว่าแม่กิน · 
+        ไม่ใช่กดให้ผ่านๆ
+      </div>
+    </div>
+
+    <div class="faq">
+      <div class="faq-q">Caregiver Dashboard ใช้ผ่านไหน?</div>
+      <div class="faq-a">
+        <strong>Web browser</strong> · เปิดผ่าน URL · ไม่ต้องโหลด app · 
+        Mobile + Desktop friendly · 
+        Login ผ่าน LINE (ลูกใช้ LINE อยู่แล้ว)
+      </div>
     </div>
   </div>
 </section>
@@ -1736,6 +2186,37 @@ p { margin-bottom: 12px; }
       </div>
     </div>
 
+    <!-- Caregiver Dashboard -->
+    <div class="cheat-section">
+      <h3>💚 Caregiver Dashboard</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card" style="border-left-color: var(--teal);">
+          <strong style="color: var(--teal);">👑 Primary (1 คน)</strong>
+          เห็นรายละเอียด · ชื่อยา · daily detail · trends · insights · 4 weeks
+        </div>
+        <div class="cheat-card" style="border-left-color: var(--gold);">
+          <strong style="color: var(--gold);">👨 Secondary (สูงสุด 4)</strong>
+          เห็นภาพรวม · % adherence · 2 weeks · ไม่เห็นชื่อยา
+        </div>
+        <div class="cheat-card">
+          <strong>🔔 No Push Notification</strong>
+          ลูกเปิดดูเอง · ลด stress · privacy-respectful
+        </div>
+        <div class="cheat-card">
+          <strong>📊 4 Week View</strong>
+          สัปดาห์นี้ · ก่อน · 2 weeks ก่อน · 3 weeks ก่อน
+        </div>
+        <div class="cheat-card">
+          <strong>🔐 Privacy</strong>
+          แม่ควบคุม access · revoke ได้ · audit log
+        </div>
+        <div class="cheat-card">
+          <strong>🎯 Layman-friendly</strong>
+          "แม่กินยาเก่งมาก!" not "Adherence 92%"
+        </div>
+      </div>
+    </div>
+
     <!-- Magic Phrases -->
     <div class="cheat-section">
       <h3>🎤 ประโยคที่ใช้บ่อย (Magic Phrases)</h3>
@@ -1773,14 +2254,19 @@ p { margin-bottom: 12px; }
 
     <!-- Demo Flow -->
     <div class="cheat-section">
-      <h3>🎬 ลำดับ Demo (15-20 นาที)</h3>
+      <h3>🎬 ลำดับ Demo (20-25 นาที)</h3>
       <div style="background: var(--ink-deep); color: white; padding: 16px; border-radius: 8px;">
         <ol style="padding-left: 20px; line-height: 2; margin: 0;">
           <li><strong>Patient App</strong> (3 min) → "นี่คือสิ่งที่ผู้ป่วยเห็น"</li>
+          <li><strong>Caregiver Dashboard</strong> (3 min) → "นี่คือสิ่งที่ลูกเห็น"</li>
           <li><strong>Pharmacist Dashboard</strong> (5 min) → "นี่คือสิ่งที่เภสัชใช้"</li>
           <li><strong>Doctor Report</strong> (4 min) → "นี่คือสิ่งที่หมอใช้ใน clinic"</li>
-          <li><strong>Q&A</strong> (5-8 min) → ฟัง · ตอบ · note</li>
+          <li><strong>Q&A</strong> (5-10 min) → ฟัง · ตอบ · note</li>
         </ol>
+      </div>
+      <div style="margin-top: 12px; padding: 12px; background: var(--paper-warm); border-radius: 6px; font-size: 12px; color: var(--ink);">
+        💡 <strong>Strategic Order:</strong> เริ่มจาก patient (เข้าใจง่ายที่สุด) · 
+        ไปลูก (ใจดี) · ไปเภสัช (data depth) · จบที่หมอ (clinical authority)
       </div>
     </div>
 
@@ -1790,7 +2276,7 @@ p { margin-bottom: 12px; }
 <!-- FOOTER -->
 <div class="footer">
   <div>
-    <strong>คู่มือผู้นำเสนอ MedTrack</strong> · v1.0 · 9 พฤษภาคม 2569
+    <strong>คู่มือผู้นำเสนอ MedTrack</strong> · v2.0 · 12 พฤษภาคม 2569 · + Caregiver
   </div>
   <div>
     © 2026 Apidej Pratoomsiri · Confidential
