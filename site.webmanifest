@@ -1,80 +1,14 @@
 {
-  "name": "MedTrack — หมอน้อย",
+  "name": "MedTrack Q",
   "short_name": "MedTrack",
-  "description": "ระบบเตือนกินยาสำหรับผู้สูงอายุไทย ผ่าน LINE",
-  "lang": "th",
-  "dir": "ltr",
-  "start_url": "/medtrack-app/medtrack-home.html",
-  "scope": "/medtrack-app/",
+  "description": "AI-powered medication management for everyone",
+  "start_url": "./medtrack-home.html",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0a1f1c",
-  "theme_color": "#0d9488",
-  "categories": ["health", "medical", "lifestyle"],
+  "background_color": "#DCEEFF",
+  "theme_color": "#1E3A8A",
   "icons": [
-    {
-      "src": "favicon-16x16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "favicon-32x32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "apple-touch-icon.png",
-      "sizes": "180x180",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "สแกนซองยา",
-      "short_name": "สแกนยา",
-      "description": "สแกนซองยาเพื่อเพิ่มยาใหม่",
-      "url": "/medtrack-app/medtrack-scan.html",
-      "icons": [
-        {
-          "src": "apple-touch-icon.png",
-          "sizes": "180x180"
-        }
-      ]
-    },
-    {
-      "name": "บันทึกกินยา",
-      "short_name": "ยืนยันยา",
-      "description": "บันทึกการกินยา",
-      "url": "/medtrack-app/medtrack-home.html?action=confirm",
-      "icons": [
-        {
-          "src": "apple-touch-icon.png",
-          "sizes": "180x180"
-        }
-      ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "screenshots/home-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "หน้าหลัก MedTrack"
-    }
-  ],
-  "prefer_related_applications": false
+    {"src": "android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
 }
