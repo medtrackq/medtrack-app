@@ -1,0 +1,1170 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>MedTrack · OCR Data Collector</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#f5f4ef;
+  --bg-elev:#ffffff;
+  --bg-soft:#ebe9e2;
+  --ink:#0f172a;
+  --ink-mute:#475569;
+  --ink-soft:#64748b;
+  --border:#d6d3c7;
+  --border-strong:#94a3b8;
+  --brand:#1e3a8a;
+  --brand-soft:#dbe2f0;
+  --ok:#15803d;
+  --ok-soft:#dcfce7;
+  --warn:#b45309;
+  --warn-soft:#fef3c7;
+  --bad:#b91c1c;
+  --bad-soft:#fee2e2;
+  --accent:#0a9c7a;
+  --accent-soft:#d1fae5;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.06);
+  --shadow:0 6px 24px -8px rgba(15,23,42,0.12);
+  --r:14px;
+  --r-sm:8px;
+  --font-display:"IBM Plex Sans Thai","IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --font-body:"IBM Plex Sans Thai","IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5;}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand);text-decoration:none}
+
+.app{max-width:780px;margin:0 auto;padding:16px 16px 80px}
+
+.hdr{display:flex;flex-direction:column;gap:14px;padding:18px 0 14px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:36px;height:36px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-family:var(--font-mono);font-size:14px;letter-spacing:-0.5px}
+.brand-meta{display:flex;flex-direction:column;line-height:1.15}
+.brand-title{font-weight:700;font-size:15px;letter-spacing:-0.2px}
+.brand-sub{font-size:11px;color:var(--ink-soft);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em}
+
+.device-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-soft);border:1px solid var(--border);border-radius:99px;font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);max-width:100%}
+.device-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px}
+.mode-toggle button{padding:9px 12px;border-radius:8px;font-weight:600;font-size:13px;color:var(--ink-mute);transition:all .15s}
+.mode-toggle button.active{background:var(--bg-elev);color:var(--ink);box-shadow:var(--shadow-sm)}
+.mode-toggle button:not(.active):hover{color:var(--ink)}
+
+.card{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.card-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;gap:10px}
+.card-title{font-weight:700;font-size:15px;letter-spacing:-0.2px}
+.card-step{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.1em;background:var(--bg-soft);padding:3px 7px;border-radius:5px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 16px;border-radius:10px;font-weight:600;font-size:14px;transition:all .15s;border:1px solid transparent;text-align:center;min-height:44px}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary:disabled{background:var(--ink-soft);cursor:not-allowed;opacity:0.6}
+.btn-secondary{background:var(--bg-elev);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg-soft)}
+.btn-block{width:100%}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.capture-zone{border:2px dashed var(--border-strong);border-radius:var(--r);padding:24px 14px;text-align:center;background:var(--bg-soft);transition:all .15s}
+.capture-zone.has-image{padding:0;border-style:solid;background:#000;overflow:hidden;position:relative}
+.capture-zone img{width:100%;max-height:420px;object-fit:contain;display:block}
+.capture-overlay{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+.cap-btn{padding:6px 10px;background:rgba(15,23,42,0.7);color:#fff;border-radius:7px;font-size:12px;font-weight:500;backdrop-filter:blur(8px)}
+
+.hint{font-size:12px;color:var(--ink-soft);text-align:center;margin-top:10px;font-family:var(--font-mono)}
+.file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+.ai-status{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-soft);border-radius:10px;margin-bottom:14px;font-size:13px}
+.spinner{width:14px;height:14px;border:2px solid var(--border-strong);border-top-color:var(--brand);border-radius:50%;animation:spin 0.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.kv{display:grid;grid-template-columns:130px 1fr;gap:8px 12px;font-size:14px}
+.kv dt{color:var(--ink-soft);font-size:12px;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--font-mono);padding-top:2px}
+.kv dd{margin:0;font-weight:500;word-break:break-word}
+.kv dd.empty{color:var(--ink-soft);font-style:italic;font-weight:400}
+
+.confidence-bar{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)}
+.conf-track{flex:1;height:6px;background:var(--bg-soft);border-radius:99px;overflow:hidden}
+.conf-fill{height:100%;background:var(--brand);transition:width .4s}
+.conf-fill.low{background:var(--bad)}
+.conf-fill.med{background:var(--warn)}
+.conf-fill.high{background:var(--ok)}
+.conf-label{font-family:var(--font-mono);font-size:12px;font-weight:600;min-width:50px;text-align:right}
+
+.form-grid{display:grid;gap:12px}
+.form-row{display:grid;gap:6px}
+.form-row label{font-size:12px;color:var(--ink-mute);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--font-mono)}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:10px 12px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;font-size:14px;transition:border-color .15s}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.form-row textarea{resize:vertical;min-height:60px;font-family:var(--font-body)}
+.form-row .helper{font-size:11px;color:var(--ink-soft);margin-top:2px}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.fill-from-ai{font-size:11px;color:var(--brand);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.fill-from-ai:hover{color:#1e40af}
+
+.match-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:6px}
+.match-row.ok{background:var(--ok-soft);color:var(--ok)}
+.match-row.warn{background:var(--warn-soft);color:var(--warn)}
+.match-row.bad{background:var(--bad-soft);color:var(--bad)}
+.match-row.empty{background:var(--bg-soft);color:var(--ink-soft)}
+.match-field{font-weight:600;font-size:13px}
+.match-icon{font-family:var(--font-mono);font-weight:700;font-size:14px;min-width:18px;text-align:center}
+.match-detail{font-family:var(--font-mono);font-size:11px;opacity:0.7}
+
+.match-summary{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--brand);color:#fff;border-radius:10px;margin-bottom:14px}
+.match-summary-label{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.06em;opacity:0.8}
+.match-summary-value{font-size:28px;font-weight:700;font-family:var(--font-mono);letter-spacing:-1px}
+
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat{padding:14px 12px;background:var(--bg-soft);border-radius:10px;text-align:center}
+.stat-value{font-size:22px;font-weight:700;font-family:var(--font-mono);letter-spacing:-0.5px;line-height:1}
+.stat-label{font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--font-mono);margin-top:6px}
+
+.field-accuracy{display:grid;gap:8px}
+.fa-row{display:grid;grid-template-columns:140px 1fr 50px;gap:10px;align-items:center;font-size:13px}
+.fa-field{color:var(--ink-mute);font-weight:500}
+.fa-track{height:6px;background:var(--bg-soft);border-radius:99px;overflow:hidden}
+.fa-fill{height:100%;background:var(--ok);transition:width .4s}
+.fa-fill.low{background:var(--bad)}
+.fa-fill.med{background:var(--warn)}
+.fa-value{font-family:var(--font-mono);font-weight:600;font-size:13px;text-align:right}
+
+.entries-list{display:grid;gap:10px}
+.entry-card{display:grid;grid-template-columns:80px 1fr auto;gap:12px;padding:12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;align-items:center;cursor:pointer;transition:all .15s}
+.entry-card:hover{border-color:var(--brand);box-shadow:var(--shadow-sm)}
+.entry-thumb{width:80px;height:80px;object-fit:cover;border-radius:7px;background:var(--border);display:block}
+.entry-meta{min-width:0}
+.entry-title{font-weight:600;font-size:14px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry-sub{font-size:12px;color:var(--ink-soft);font-family:var(--font-mono)}
+.entry-status{font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em}
+.es-ok{background:var(--ok-soft);color:var(--ok)}
+.es-warn{background:var(--warn-soft);color:var(--warn)}
+.es-bad{background:var(--bad-soft);color:var(--bad)}
+.es-pending{background:var(--bg-elev);color:var(--ink-soft);border:1px solid var(--border)}
+
+.decision-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.decision-btn{padding:14px 8px;border-radius:10px;border:2px solid var(--border);text-align:center;font-weight:600;font-size:13px;transition:all .15s;display:flex;flex-direction:column;gap:4px;align-items:center}
+.decision-btn .em{font-size:22px;line-height:1}
+.decision-btn.ok-btn:hover,.decision-btn.ok-btn.active{background:var(--ok-soft);color:var(--ok);border-color:var(--ok)}
+.decision-btn.warn-btn:hover,.decision-btn.warn-btn.active{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
+.decision-btn.bad-btn:hover,.decision-btn.bad-btn.active{background:var(--bad-soft);color:var(--bad);border-color:var(--bad)}
+
+.empty-state{text-align:center;padding:36px 20px;color:var(--ink-soft)}
+.empty-state .em{font-size:42px;margin-bottom:10px;opacity:0.4}
+.empty-state h3{margin:0 0 4px;font-size:15px;color:var(--ink-mute)}
+.empty-state p{margin:0;font-size:13px}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:100;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.section-divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px}
+.section-divider::before,.section-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.section-divider span{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-soft);font-weight:600}
+
+.hidden{display:none !important}
+
+@media (min-width:680px){
+  .app{padding:24px 20px 80px}
+  .form-2col{grid-template-columns:1fr 1fr}
+}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-mute);font-weight:500;padding:6px 10px;border-radius:7px;margin-bottom:12px}
+.back-btn:hover{color:var(--ink);background:var(--bg-soft)}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.compare-col{padding:10px;border-radius:8px;background:var(--bg-soft)}
+.compare-head{font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);font-weight:700;margin-bottom:8px}
+.compare-val{font-size:13px;word-break:break-word}
+.compare-val.empty{color:var(--ink-soft);font-style:italic}
+@media (max-width:480px){.compare-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hdr">
+    <div class="hdr-top">
+      <div class="brand">
+        <div class="brand-mark">Q</div>
+        <div class="brand-meta">
+          <div class="brand-title">OCR Data Collector</div>
+          <div class="brand-sub">MedTrack · v1.0</div>
+        </div>
+      </div>
+      <div class="device-chip" id="deviceChip">
+        <span id="deviceLabel">detecting…</span>
+      </div>
+    </div>
+    <div class="mode-toggle">
+      <button id="modeSelfBtn" class="active" data-mode="self">📸 Self · เก็บข้อมูล</button>
+      <button id="modeVerifyBtn" data-mode="verify">🩺 Verify · ตรวจสอบ</button>
+    </div>
+  </header>
+
+  <main id="selfMode">
+
+    <section class="card">
+      <div class="card-hdr">
+        <div class="card-title">📷 ถ่ายภาพซองยา</div>
+        <span class="card-step">Step 1</span>
+      </div>
+
+      <div class="capture-zone" id="captureZone">
+        <div id="captureEmpty">
+          <div style="font-size:32px;opacity:0.4;margin-bottom:8px">📦</div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:4px">ยังไม่มีภาพ</div>
+          <div style="font-size:12px;color:var(--ink-soft)">ถ่ายเลย หรือเลือกจากเครื่อง</div>
+        </div>
+        <img id="capturePreview" class="hidden" alt="" />
+        <div class="capture-overlay hidden" id="captureOverlay">
+          <button class="cap-btn" id="retakeBtn">🔄 ใหม่</button>
+        </div>
+      </div>
+
+      <input type="file" id="cameraInput" class="file-input" accept="image/*" capture="environment" />
+      <input type="file" id="fileInput" class="file-input" accept="image/*" />
+
+      <div class="btn-grid" style="margin-top:14px">
+        <button class="btn btn-primary" id="cameraBtn">📸 ถ่ายเลย</button>
+        <button class="btn btn-secondary" id="uploadBtn">🖼️ เลือกจากเครื่อง</button>
+      </div>
+      <p class="hint">📱 Mobile = ถ่ายเลย ใช้กล้องหลัง · 🖥️ PC = เลือกจากเครื่อง</p>
+    </section>
+
+    <section class="card hidden" id="aiResultCard">
+      <div class="card-hdr">
+        <div class="card-title">🤖 AI OCR Result</div>
+        <span class="card-step">Step 2</span>
+      </div>
+
+      <div class="ai-status" id="aiStatus">
+        <div class="spinner"></div>
+        <div>กำลังวิเคราะห์ภาพ…</div>
+      </div>
+
+      <dl class="kv hidden" id="aiResult">
+        <dt>Drug (TH)</dt><dd id="ai-drug_name" class="empty">—</dd>
+        <dt>Drug (EN)</dt><dd id="ai-drug_name_en" class="empty">—</dd>
+        <dt>Dose</dt><dd id="ai-dose" class="empty">—</dd>
+        <dt>Frequency</dt><dd id="ai-frequency_per_day" class="empty">—</dd>
+        <dt>Timing</dt><dd id="ai-timing" class="empty">—</dd>
+        <dt>Meal</dt><dd id="ai-meal" class="empty">—</dd>
+        <dt>Total</dt><dd id="ai-total_quantity" class="empty">—</dd>
+        <dt>Hospital</dt><dd id="ai-hospital_name" class="empty">—</dd>
+      </dl>
+
+      <div class="confidence-bar hidden" id="confBar">
+        <div style="font-size:11px;color:var(--ink-soft);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em">Confidence</div>
+        <div class="conf-track"><div class="conf-fill" id="confFill" style="width:0%"></div></div>
+        <div class="conf-label" id="confLabel">—</div>
+        <div style="font-size:11px;color:var(--ink-soft);font-family:var(--font-mono)" id="responseTime"></div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="gtCard">
+      <div class="card-hdr">
+        <div>
+          <div class="card-title">✍️ Ground Truth · Apidej กรอก</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:3px">กรอกตามที่อ่านได้จริงจากซองยา (ไม่ใช่ตามที่ AI ทาย)</div>
+        </div>
+        <span class="card-step">Step 3</span>
+      </div>
+
+      <div style="margin-bottom:10px;text-align:right">
+        <a class="fill-from-ai" id="fillFromAi">⚡ กรอกจาก AI ก่อน · แล้วค่อยแก้</a>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-row">
+          <label>ชื่อยา (ไทย/ที่เห็นบนซอง) *</label>
+          <input type="text" id="gt-drug_name" placeholder="เช่น ลอราซีแปม" />
+        </div>
+        <div class="form-row">
+          <label>ชื่อยา · INN (English)</label>
+          <input type="text" id="gt-drug_name_en" placeholder="เช่น Lorazepam" />
+        </div>
+        <div class="form-2col">
+          <div class="form-row">
+            <label>Dose</label>
+            <input type="number" step="0.01" id="gt-dose_mg" placeholder="500" />
+          </div>
+          <div class="form-row">
+            <label>Unit</label>
+            <select id="gt-dose_unit">
+              <option value="mg">mg</option>
+              <option value="g">g</option>
+              <option value="mcg">mcg</option>
+              <option value="ml">ml</option>
+              <option value="iu">IU</option>
+              <option value="">—</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-2col">
+          <div class="form-row">
+            <label>วันละกี่ครั้ง</label>
+            <input type="number" id="gt-frequency_per_day" placeholder="3" />
+            <span class="helper">qd=1 · bid=2 · tid=3 · qid=4</span>
+          </div>
+          <div class="form-row">
+            <label>เม็ด/มื้อ</label>
+            <input type="number" id="gt-tablets_per_dose" placeholder="1" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>Timing Type</label>
+          <select id="gt-timing_type">
+            <option value="meal">meal — ตามมื้ออาหาร</option>
+            <option value="interval">interval — ทุก N ชม.</option>
+            <option value="prn">prn — เมื่อมีอาการ</option>
+            <option value="bedtime">bedtime — ก่อนนอน</option>
+            <option value="stat">stat — ทันที</option>
+            <option value="qod">qod — วันเว้นวัน</option>
+          </select>
+        </div>
+        <div class="form-2col">
+          <div class="form-row">
+            <label>Meal Anchor</label>
+            <select id="gt-meal_anchor">
+              <option value="">—</option>
+              <option value="breakfast">breakfast — เช้า</option>
+              <option value="lunch">lunch — กลางวัน</option>
+              <option value="dinner">dinner — เย็น</option>
+              <option value="bedtime">bedtime — ก่อนนอน</option>
+              <option value="all">all — ทุกมื้อ</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>Meal Relation</label>
+            <select id="gt-meal_relation">
+              <option value="">—</option>
+              <option value="before">before — ก่อน</option>
+              <option value="after">after — หลัง</option>
+              <option value="with">with — พร้อม</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-2col">
+          <div class="form-row">
+            <label>Interval Hours <span class="helper">(สำหรับ q4h/q6h/q8h)</span></label>
+            <input type="number" id="gt-interval_hours" placeholder="8" />
+          </div>
+          <div class="form-row">
+            <label>รวมทั้งหมด (เม็ด)</label>
+            <input type="number" id="gt-total_quantity" placeholder="30" />
+          </div>
+        </div>
+        <div class="form-row">
+          <label>โรงพยาบาล</label>
+          <input type="text" id="gt-hospital_name" placeholder="เช่น สถาบันประสาทวิทยา" />
+        </div>
+        <div class="form-row">
+          <label>หมายเหตุ / Edge cases</label>
+          <textarea id="gt-notes" placeholder="เช่น คำสั่งแปลก, ภาพไม่ชัด, ฉลากซ้อนทับ"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="card hidden" id="compareCard">
+      <div class="card-hdr">
+        <div class="card-title">📊 Match Score · AI vs Ground Truth</div>
+        <span class="card-step">Step 4</span>
+      </div>
+
+      <div class="match-summary">
+        <div>
+          <div class="match-summary-label">Overall Match</div>
+          <div style="font-size:13px;opacity:0.9;margin-top:2px" id="matchSummaryDetail">— / — fields correct</div>
+        </div>
+        <div class="match-summary-value" id="matchSummaryValue">—%</div>
+      </div>
+
+      <div id="matchList"></div>
+
+      <div style="margin-top:14px">
+        <button class="btn btn-primary btn-block" id="saveBtn">💾 บันทึก Entry นี้</button>
+      </div>
+    </section>
+
+    <section class="card" id="dashCard">
+      <div class="card-hdr">
+        <div class="card-title">📈 Session Stats</div>
+        <span class="card-step">Live</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Entries</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statOverall">—</div>
+          <div class="stat-label">Avg Accuracy</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statAvgTime">—</div>
+          <div class="stat-label">Avg Time</div>
+        </div>
+      </div>
+
+      <div class="section-divider"><span>Field Accuracy</span></div>
+      <div class="field-accuracy" id="fieldAccuracy">
+        <div class="empty-state" style="padding:20px">
+          <p>ยังไม่มีข้อมูล · เริ่มถ่ายภาพแรกได้เลย</p>
+        </div>
+      </div>
+
+      <div class="btn-grid" style="margin-top:18px">
+        <button class="btn btn-secondary" id="exportBtn">📥 Export ZIP</button>
+        <button class="btn btn-secondary" id="clearBtn" style="color:var(--bad)">🗑️ ล้างทั้งหมด</button>
+      </div>
+    </section>
+  </main>
+
+  <main id="verifyMode" class="hidden">
+
+    <section class="card">
+      <div class="card-hdr">
+        <div>
+          <div class="card-title">🩺 Verify Mode · เภสัชตรวจสอบ</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:3px">โหลดไฟล์ ZIP ที่ Apidej เก็บมา · แล้วตรวจรายการ</div>
+        </div>
+      </div>
+
+      <input type="file" id="loadZipInput" class="file-input" accept=".zip,.json" />
+      <button class="btn btn-primary btn-block" id="loadZipBtn">📂 โหลด ZIP / JSON</button>
+
+      <div style="margin-top:8px;text-align:center;font-size:12px;color:var(--ink-soft)" id="loadHint">
+        หรือดูข้อมูลจาก browser นี้ (ที่ Apidej เพิ่งเก็บ)
+      </div>
+    </section>
+
+    <section class="card" id="verifyList">
+      <div class="card-hdr">
+        <div class="card-title">📋 รายการที่ต้องตรวจ</div>
+        <span class="card-step" id="verifyCount">0 entries</span>
+      </div>
+      <div id="entriesList"></div>
+    </section>
+
+    <section class="card hidden" id="verifyDetail">
+      <button class="back-btn" id="backToList">← กลับไปรายการ</button>
+
+      <div id="vdImage" style="margin-bottom:14px;background:#000;border-radius:10px;overflow:hidden">
+        <img id="vdPreview" style="width:100%;display:block;max-height:380px;object-fit:contain" />
+      </div>
+
+      <div class="section-divider"><span>Apidej กรอก vs AI</span></div>
+
+      <div id="vdCompare"></div>
+
+      <div class="section-divider"><span>เภสัชตัดสิน</span></div>
+
+      <div class="decision-grid">
+        <button class="decision-btn ok-btn" data-decision="correct">
+          <span class="em">✓</span>
+          <span>ถูกต้อง</span>
+        </button>
+        <button class="decision-btn warn-btn" data-decision="unclear">
+          <span class="em">?</span>
+          <span>ไม่ชัดเจน</span>
+        </button>
+        <button class="decision-btn bad-btn" data-decision="wrong">
+          <span class="em">✗</span>
+          <span>ผิด</span>
+        </button>
+      </div>
+
+      <div class="form-row" style="margin-top:14px">
+        <label>หมายเหตุเภสัช</label>
+        <textarea id="vdNotes" placeholder="แก้ที่ฟิลด์ไหน · หรือคำแนะนำ"></textarea>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="vdSaveBtn" style="margin-top:14px">💾 บันทึก & ไปต่อ</button>
+    </section>
+
+    <section class="card">
+      <button class="btn btn-secondary btn-block" id="exportVerifiedBtn">📥 Export ผลการตรวจ (CSV + JSON)</button>
+    </section>
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_BASE = 'https://api.medtrackq.com';
+const SCAN_ENDPOINT = '/api/scan-medicine';
+
+const FIELDS_TO_COMPARE = [
+  { key: 'drug_name',         label: 'ชื่อยา (TH)',    type: 'string' },
+  { key: 'drug_name_en',      label: 'ชื่อยา (EN)',    type: 'string-case-insensitive' },
+  { key: 'dose_mg',           label: 'Dose',          type: 'number' },
+  { key: 'dose_unit',         label: 'Unit',          type: 'string-case-insensitive' },
+  { key: 'frequency_per_day', label: 'วัน/ครั้ง',     type: 'number' },
+  { key: 'tablets_per_dose',  label: 'เม็ด/มื้อ',     type: 'number' },
+  { key: 'timing_type',       label: 'Timing Type',   type: 'string-case-insensitive' },
+  { key: 'meal_anchor',       label: 'Meal Anchor',   type: 'string-case-insensitive' },
+  { key: 'meal_relation',     label: 'Meal Relation', type: 'string-case-insensitive' },
+  { key: 'interval_hours',    label: 'Interval (h)',  type: 'number' },
+  { key: 'total_quantity',    label: 'Total',         type: 'number' },
+  { key: 'hospital_name',     label: 'โรงพยาบาล',    type: 'string-fuzzy' },
+];
+
+let state = {
+  mode: 'self',
+  capturedDataUrl: null,
+  capturedBase64: null,
+  capturedMediaType: null,
+  aiResult: null,
+  aiConfidence: null,
+  aiResponseMs: null,
+  entries: [],
+  verifyEntries: [],
+  currentVerifyIdx: -1,
+  deviceInfo: null,
+};
+
+function detectDevice(){
+  const ua = navigator.userAgent;
+  const w = window.screen.width;
+  const h = window.screen.height;
+  const dpr = window.devicePixelRatio || 1;
+
+  let platform = 'Unknown', model = '';
+  if (/iPad/.test(ua)) {
+    platform = 'iPad';
+    const m = ua.match(/OS (\d+_\d+)/); model = m ? `iOS ${m[1].replace('_','.')}` : '';
+  } else if (/iPhone/.test(ua)) {
+    platform = 'iPhone';
+    const m = ua.match(/OS (\d+_\d+)/); model = m ? `iOS ${m[1].replace('_','.')}` : '';
+  } else if (/Android/.test(ua)) {
+    platform = 'Android';
+    const m = ua.match(/Android (\d+\.?\d*)/);
+    const dm = ua.match(/;\s*([^;)]+)\sBuild/) || ua.match(/Android[^;]+;\s*([^;)]+)\)/);
+    model = (dm ? dm[1].trim() : '') + (m ? ` · ${m[1]}` : '');
+  } else if (/Windows/.test(ua)) { platform = 'Windows PC'; }
+  else if (/Mac/.test(ua)) { platform = 'Mac'; }
+  else if (/Linux/.test(ua)) { platform = 'Linux'; }
+
+  let browser = '';
+  if (/Edg/.test(ua)) browser = 'Edge';
+  else if (/Chrome/.test(ua)) browser = 'Chrome';
+  else if (/Firefox/.test(ua)) browser = 'Firefox';
+  else if (/Safari/.test(ua)) browser = 'Safari';
+
+  return { platform, model, browser, userAgent: ua, screen: `${w}×${h}@${dpr}x`, timestamp: Date.now() };
+}
+
+function renderDeviceChip(){
+  const d = state.deviceInfo;
+  const label = d.model ? `${d.platform} · ${d.model}` : d.platform;
+  document.getElementById('deviceLabel').textContent = label + (d.browser ? ` · ${d.browser}` : '');
+}
+
+const DB_NAME = 'medtrack_collector';
+const DB_VER = 1;
+const STORE = 'entries';
+let db = null;
+
+function openDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) d.createObjectStore(STORE, { keyPath: 'id', autoIncrement: true });
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+function dbAddEntry(entry){
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).add(entry);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbGetAllEntries(){
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbClearAll(){
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).clear();
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function handleImageFile(file){
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('ไฟล์ไม่ใช่รูปภาพ'); return; }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    state.capturedDataUrl = dataUrl;
+    state.capturedMediaType = file.type;
+    state.capturedBase64 = dataUrl.split(',')[1];
+
+    const img = document.getElementById('capturePreview');
+    img.src = dataUrl;
+    img.classList.remove('hidden');
+    document.getElementById('captureEmpty').classList.add('hidden');
+    document.getElementById('captureZone').classList.add('has-image');
+    document.getElementById('captureOverlay').classList.remove('hidden');
+
+    state.aiResult = null;
+    state.aiConfidence = null;
+    state.aiResponseMs = null;
+    document.getElementById('compareCard').classList.add('hidden');
+    document.getElementById('gtCard').classList.add('hidden');
+    clearGroundTruthForm();
+
+    document.getElementById('aiResultCard').classList.remove('hidden');
+    document.getElementById('aiResult').classList.add('hidden');
+    document.getElementById('confBar').classList.add('hidden');
+    document.getElementById('aiStatus').classList.remove('hidden');
+    document.getElementById('aiStatus').innerHTML = '<div class="spinner"></div><div>กำลังวิเคราะห์ภาพ…</div>';
+
+    await runOCR();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runOCR(){
+  const start = performance.now();
+  try {
+    const resp = await fetch(API_BASE + SCAN_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: state.capturedBase64, media_type: state.capturedMediaType }),
+    });
+    const elapsed = Math.round(performance.now() - start);
+    state.aiResponseMs = elapsed;
+    if (!resp.ok) { const err = await resp.text(); throw new Error(`HTTP ${resp.status}: ${err.slice(0,200)}`); }
+    const json = await resp.json();
+    if (!json.ok || !json.data) throw new Error('Invalid response');
+    state.aiResult = json.data;
+    state.aiConfidence = json.data.confidence || null;
+    renderAIResult();
+    document.getElementById('gtCard').classList.remove('hidden');
+  } catch (e) {
+    document.getElementById('aiStatus').innerHTML = `<div style="color:var(--bad)">❌ ${e.message}</div>`;
+    toast('AI error: ' + e.message);
+  }
+}
+
+function renderAIResult(){
+  const r = state.aiResult;
+  document.getElementById('aiStatus').classList.add('hidden');
+  document.getElementById('aiResult').classList.remove('hidden');
+  document.getElementById('confBar').classList.remove('hidden');
+
+  setKV('ai-drug_name', r.drug_name);
+  setKV('ai-drug_name_en', r.drug_name_en);
+  const dose = (r.dose_mg ? r.dose_mg : '') + (r.dose_unit ? ` ${r.dose_unit}` : '');
+  setKV('ai-dose', dose.trim());
+  setKV('ai-frequency_per_day', r.frequency_per_day ? `${r.frequency_per_day}×/day` : '');
+  const timing = [r.timing_type, r.meal_anchor, r.meal_relation].filter(Boolean).join(' · ');
+  setKV('ai-timing', timing);
+  const meal = [r.meal_anchor, r.meal_relation].filter(Boolean).join(' / ');
+  setKV('ai-meal', meal);
+  setKV('ai-total_quantity', r.total_quantity);
+  setKV('ai-hospital_name', r.hospital_name);
+
+  const conf = state.aiConfidence;
+  const pct = conf ? Math.round(conf * 100) : 0;
+  const fill = document.getElementById('confFill');
+  fill.style.width = pct + '%';
+  fill.className = 'conf-fill ' + (pct >= 85 ? 'high' : pct >= 70 ? 'med' : 'low');
+  document.getElementById('confLabel').textContent = conf ? `${pct}%` : '—';
+  document.getElementById('responseTime').textContent = state.aiResponseMs ? `· ${state.aiResponseMs}ms` : '';
+}
+
+function setKV(id, val){
+  const el = document.getElementById(id);
+  if (val === null || val === undefined || val === '' || val === 'null') {
+    el.textContent = '—'; el.classList.add('empty');
+  } else { el.textContent = String(val); el.classList.remove('empty'); }
+}
+
+function clearGroundTruthForm(){
+  ['gt-drug_name','gt-drug_name_en','gt-dose_mg','gt-frequency_per_day','gt-tablets_per_dose','gt-interval_hours','gt-total_quantity','gt-hospital_name','gt-notes'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('gt-dose_unit').value = 'mg';
+  document.getElementById('gt-timing_type').value = 'meal';
+  document.getElementById('gt-meal_anchor').value = '';
+  document.getElementById('gt-meal_relation').value = '';
+}
+
+function fillFromAI(){
+  if (!state.aiResult) return;
+  const r = state.aiResult;
+  const setIf = (id, val) => {
+    if (val !== null && val !== undefined && val !== '' && val !== 'null') document.getElementById(id).value = val;
+  };
+  setIf('gt-drug_name', r.drug_name);
+  setIf('gt-drug_name_en', r.drug_name_en);
+  setIf('gt-dose_mg', r.dose_mg);
+  setIf('gt-dose_unit', r.dose_unit || 'mg');
+  setIf('gt-frequency_per_day', r.frequency_per_day);
+  setIf('gt-tablets_per_dose', r.tablets_per_dose || r.quantity_per_dose);
+  setIf('gt-timing_type', r.timing_type);
+  setIf('gt-meal_anchor', r.meal_anchor);
+  setIf('gt-meal_relation', r.meal_relation);
+  setIf('gt-interval_hours', r.interval_hours);
+  setIf('gt-total_quantity', r.total_quantity);
+  setIf('gt-hospital_name', r.hospital_name);
+  toast('กรอกจาก AI แล้ว · ตรวจสอบและแก้ตามจริง');
+  updateCompare();
+}
+
+function readGT(){
+  return {
+    drug_name: document.getElementById('gt-drug_name').value.trim(),
+    drug_name_en: document.getElementById('gt-drug_name_en').value.trim(),
+    dose_mg: parseFloat(document.getElementById('gt-dose_mg').value) || null,
+    dose_unit: document.getElementById('gt-dose_unit').value,
+    frequency_per_day: parseInt(document.getElementById('gt-frequency_per_day').value) || null,
+    tablets_per_dose: parseInt(document.getElementById('gt-tablets_per_dose').value) || null,
+    timing_type: document.getElementById('gt-timing_type').value,
+    meal_anchor: document.getElementById('gt-meal_anchor').value,
+    meal_relation: document.getElementById('gt-meal_relation').value,
+    interval_hours: parseInt(document.getElementById('gt-interval_hours').value) || null,
+    total_quantity: parseInt(document.getElementById('gt-total_quantity').value) || null,
+    hospital_name: document.getElementById('gt-hospital_name').value.trim(),
+    notes: document.getElementById('gt-notes').value.trim(),
+  };
+}
+
+function compareValues(aiVal, gtVal, type){
+  const aiEmpty = aiVal === null || aiVal === undefined || aiVal === '' || aiVal === 'null';
+  const gtEmpty = gtVal === null || gtVal === undefined || gtVal === '';
+  if (aiEmpty && gtEmpty) return { status: 'empty', score: null };
+  if (aiEmpty || gtEmpty) return { status: 'bad', score: 0 };
+  if (type === 'number') {
+    const a = parseFloat(aiVal), g = parseFloat(gtVal);
+    if (isNaN(a) || isNaN(g)) return { status: 'bad', score: 0 };
+    if (a === g) return { status: 'ok', score: 1 };
+    const diff = Math.abs(a - g);
+    if (diff / Math.max(g, 1) < 0.05) return { status: 'warn', score: 0.7 };
+    return { status: 'bad', score: 0 };
+  }
+  if (type === 'string') return aiVal === gtVal ? { status: 'ok', score: 1 } : { status: 'bad', score: 0 };
+  if (type === 'string-case-insensitive') return String(aiVal).toLowerCase().trim() === String(gtVal).toLowerCase().trim() ? { status: 'ok', score: 1 } : { status: 'bad', score: 0 };
+  if (type === 'string-fuzzy') {
+    const a = String(aiVal).toLowerCase().trim();
+    const g = String(gtVal).toLowerCase().trim();
+    if (a === g) return { status: 'ok', score: 1 };
+    if (a.includes(g) || g.includes(a)) return { status: 'warn', score: 0.6 };
+    return { status: 'bad', score: 0 };
+  }
+  return { status: 'bad', score: 0 };
+}
+
+function updateCompare(){
+  if (!state.aiResult) return;
+  const gt = readGT();
+  if (!gt.drug_name) { document.getElementById('compareCard').classList.add('hidden'); return; }
+  document.getElementById('compareCard').classList.remove('hidden');
+
+  const matchList = document.getElementById('matchList');
+  matchList.innerHTML = '';
+  let scoreSum = 0, scoreCount = 0;
+
+  FIELDS_TO_COMPARE.forEach(f => {
+    const cmp = compareValues(state.aiResult[f.key], gt[f.key], f.type);
+    const aiV = state.aiResult[f.key] ?? '—';
+    const gtV = gt[f.key] ?? '—';
+    if (cmp.score !== null) { scoreSum += cmp.score; scoreCount++; }
+    const row = document.createElement('div');
+    row.className = `match-row ${cmp.status}`;
+    const icon = cmp.status === 'ok' ? '✓' : cmp.status === 'warn' ? '~' : cmp.status === 'bad' ? '✗' : '·';
+    row.innerHTML = `<div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1"><span class="match-icon">${icon}</span><span class="match-field">${f.label}</span></div><div class="match-detail">AI: ${escapeHtml(aiV)} · GT: ${escapeHtml(gtV)}</div>`;
+    matchList.appendChild(row);
+  });
+
+  const pct = scoreCount > 0 ? Math.round((scoreSum / scoreCount) * 100) : 0;
+  document.getElementById('matchSummaryValue').textContent = pct + '%';
+  document.getElementById('matchSummaryDetail').textContent = `${scoreSum.toFixed(1)} / ${scoreCount} fields correct`;
+}
+
+function escapeHtml(s){
+  if (s === null || s === undefined) return '—';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+async function saveEntry(){
+  const gt = readGT();
+  if (!gt.drug_name) { toast('กรอกชื่อยา (ไทย) ก่อน'); return; }
+  if (!state.aiResult) { toast('ยังไม่มีผล AI'); return; }
+  if (!state.capturedDataUrl) { toast('ยังไม่มีภาพ'); return; }
+
+  const entry = {
+    timestamp: Date.now(),
+    device: state.deviceInfo,
+    image: state.capturedDataUrl,
+    ai_result: state.aiResult,
+    ai_confidence: state.aiConfidence,
+    ai_response_ms: state.aiResponseMs,
+    ground_truth: gt,
+    field_scores: FIELDS_TO_COMPARE.map(f => ({ field: f.key, ...compareValues(state.aiResult[f.key], gt[f.key], f.type) })),
+  };
+
+  const validScores = entry.field_scores.filter(s => s.score !== null);
+  entry.overall_accuracy = validScores.length > 0 ? validScores.reduce((sum, s) => sum + s.score, 0) / validScores.length : 0;
+
+  await dbAddEntry(entry);
+  await loadEntries();
+  toast(`✅ บันทึก #${state.entries.length} แล้ว`);
+  resetCapture();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function resetCapture(){
+  state.capturedDataUrl = null;
+  state.capturedBase64 = null;
+  state.aiResult = null;
+  state.aiConfidence = null;
+  state.aiResponseMs = null;
+  document.getElementById('capturePreview').classList.add('hidden');
+  document.getElementById('captureEmpty').classList.remove('hidden');
+  document.getElementById('captureZone').classList.remove('has-image');
+  document.getElementById('captureOverlay').classList.add('hidden');
+  document.getElementById('aiResultCard').classList.add('hidden');
+  document.getElementById('gtCard').classList.add('hidden');
+  document.getElementById('compareCard').classList.add('hidden');
+  clearGroundTruthForm();
+  document.getElementById('cameraInput').value = '';
+  document.getElementById('fileInput').value = '';
+}
+
+async function loadEntries(){
+  state.entries = await dbGetAllEntries();
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const entries = state.entries;
+  document.getElementById('statTotal').textContent = entries.length;
+  if (entries.length === 0) {
+    document.getElementById('statOverall').textContent = '—';
+    document.getElementById('statAvgTime').textContent = '—';
+    document.getElementById('fieldAccuracy').innerHTML = '<div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล · เริ่มถ่ายภาพแรกได้เลย</p></div>';
+    return;
+  }
+  const avgAcc = entries.reduce((s, e) => s + (e.overall_accuracy || 0), 0) / entries.length;
+  document.getElementById('statOverall').textContent = Math.round(avgAcc * 100) + '%';
+  const avgTime = entries.reduce((s, e) => s + (e.ai_response_ms || 0), 0) / entries.length;
+  document.getElementById('statAvgTime').textContent = (avgTime / 1000).toFixed(1) + 's';
+
+  const fieldStats = {};
+  FIELDS_TO_COMPARE.forEach(f => fieldStats[f.key] = { count: 0, sum: 0, label: f.label });
+  entries.forEach(e => {
+    (e.field_scores || []).forEach(s => {
+      if (s.score !== null && fieldStats[s.field]) { fieldStats[s.field].count++; fieldStats[s.field].sum += s.score; }
+    });
+  });
+
+  const fa = document.getElementById('fieldAccuracy');
+  fa.innerHTML = '';
+  Object.entries(fieldStats).forEach(([key, st]) => {
+    if (st.count === 0) return;
+    const pct = Math.round((st.sum / st.count) * 100);
+    const cls = pct >= 85 ? '' : pct >= 65 ? 'med' : 'low';
+    const row = document.createElement('div');
+    row.className = 'fa-row';
+    row.innerHTML = `<div class="fa-field">${st.label}</div><div class="fa-track"><div class="fa-fill ${cls}" style="width:${pct}%"></div></div><div class="fa-value">${pct}%</div>`;
+    fa.appendChild(row);
+  });
+}
+
+async function exportZIP(){
+  if (state.entries.length === 0) { toast('ยังไม่มี entry'); return; }
+  const zip = new JSZip();
+  const session = {
+    exported_at: new Date().toISOString(),
+    device: state.deviceInfo,
+    entries_count: state.entries.length,
+    avg_accuracy: state.entries.reduce((s, e) => s + (e.overall_accuracy || 0), 0) / state.entries.length,
+  };
+  zip.file('session.json', JSON.stringify(session, null, 2));
+
+  const lite = state.entries.map(e => ({
+    id: e.id, timestamp: e.timestamp, device: e.device,
+    ai_result: e.ai_result, ai_confidence: e.ai_confidence, ai_response_ms: e.ai_response_ms,
+    ground_truth: e.ground_truth, field_scores: e.field_scores, overall_accuracy: e.overall_accuracy,
+    image_file: `images/entry_${String(e.id).padStart(4,'0')}.jpg`,
+  }));
+  zip.file('entries.json', JSON.stringify(lite, null, 2));
+
+  let csv = '\ufeffid,timestamp,drug_name_gt,drug_name_ai,drug_name_match,dose_gt,dose_ai,dose_match,timing_gt,timing_ai,overall_accuracy,ai_confidence,ai_response_ms,device_platform,device_model,device_browser\n';
+  state.entries.forEach(e => {
+    const drugMatch = e.field_scores.find(s => s.field === 'drug_name')?.status || '';
+    const doseMatch = e.field_scores.find(s => s.field === 'dose_mg')?.status || '';
+    csv += [
+      e.id, new Date(e.timestamp).toISOString(),
+      csvQ(e.ground_truth.drug_name), csvQ(e.ai_result.drug_name), drugMatch,
+      e.ground_truth.dose_mg, e.ai_result.dose_mg, doseMatch,
+      csvQ(`${e.ground_truth.timing_type}/${e.ground_truth.meal_anchor}`),
+      csvQ(`${e.ai_result.timing_type}/${e.ai_result.meal_anchor}`),
+      (e.overall_accuracy * 100).toFixed(1) + '%',
+      e.ai_confidence, e.ai_response_ms,
+      csvQ(e.device.platform), csvQ(e.device.model), csvQ(e.device.browser),
+    ].join(',') + '\n';
+  });
+  zip.file('summary.csv', csv);
+
+  const imgFolder = zip.folder('images');
+  for (const e of state.entries) {
+    if (e.image && e.image.startsWith('data:')) {
+      const base64 = e.image.split(',')[1];
+      imgFolder.file(`entry_${String(e.id).padStart(4,'0')}.jpg`, base64, { base64: true });
+    }
+  }
+
+  toast('กำลังสร้าง ZIP…');
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const tstamp = new Date().toISOString().replace(/[:.]/g,'-').slice(0,16);
+  const devSlug = (state.deviceInfo.platform + '_' + state.deviceInfo.model).replace(/[^a-zA-Z0-9]/g, '_');
+  a.download = `medtrack_ocr_${devSlug}_${tstamp}.zip`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('✅ Export เสร็จแล้ว');
+}
+
+function csvQ(s){
+  if (s === null || s === undefined) return '';
+  const str = String(s);
+  return /[,"\n]/.test(str) ? `"${str.replace(/"/g,'""')}"` : str;
+}
+
+async function switchMode(mode){
+  state.mode = mode;
+  document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  if (mode === 'self') {
+    document.getElementById('selfMode').classList.remove('hidden');
+    document.getElementById('verifyMode').classList.add('hidden');
+  } else {
+    document.getElementById('selfMode').classList.add('hidden');
+    document.getElementById('verifyMode').classList.remove('hidden');
+    await loadVerifyFromCurrent();
+  }
+}
+
+async function loadVerifyFromCurrent(){
+  state.verifyEntries = state.entries.map(e => ({ ...e, verify_decision: e.verify_decision || null, verify_notes: e.verify_notes || '' }));
+  renderVerifyList();
+}
+
+function renderVerifyList(){
+  const list = document.getElementById('entriesList');
+  list.innerHTML = '';
+  document.getElementById('verifyCount').textContent = `${state.verifyEntries.length} entries`;
+  if (state.verifyEntries.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="em">📦</div><h3>ยังไม่มี entry</h3><p>เริ่มเก็บที่ Self Mode ก่อน หรือโหลด ZIP</p></div>';
+    return;
+  }
+  state.verifyEntries.forEach((e, idx) => {
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    card.onclick = () => openVerifyDetail(idx);
+    const status = e.verify_decision || 'pending';
+    const statusCls = status === 'correct' ? 'es-ok' : status === 'unclear' ? 'es-warn' : status === 'wrong' ? 'es-bad' : 'es-pending';
+    const statusText = status === 'correct' ? '✓ Correct' : status === 'unclear' ? '? Unclear' : status === 'wrong' ? '✗ Wrong' : 'Pending';
+    card.innerHTML = `<img class="entry-thumb" src="${e.image || ''}" alt="" /><div class="entry-meta"><div class="entry-title">${escapeHtml(e.ground_truth?.drug_name || 'Unknown')}</div><div class="entry-sub">${e.device?.platform || ''} · ${new Date(e.timestamp).toLocaleString('th-TH')}</div></div><div class="entry-status ${statusCls}">${statusText}</div>`;
+    list.appendChild(card);
+  });
+}
+
+function openVerifyDetail(idx){
+  state.currentVerifyIdx = idx;
+  const e = state.verifyEntries[idx];
+  document.getElementById('verifyList').classList.add('hidden');
+  document.getElementById('verifyDetail').classList.remove('hidden');
+  document.getElementById('vdPreview').src = e.image || '';
+  document.getElementById('vdNotes').value = e.verify_notes || '';
+
+  const cmp = document.getElementById('vdCompare');
+  cmp.innerHTML = '';
+  FIELDS_TO_COMPARE.forEach(f => {
+    const aiV = e.ai_result?.[f.key];
+    const gtV = e.ground_truth?.[f.key];
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:12px';
+    row.innerHTML = `<div style="font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);margin-bottom:5px">${f.label}</div><div class="compare-grid"><div class="compare-col"><div class="compare-head">Apidej (GT)</div><div class="compare-val ${!gtV?'empty':''}">${escapeHtml(gtV || 'ว่าง')}</div></div><div class="compare-col"><div class="compare-head">AI OCR</div><div class="compare-val ${!aiV?'empty':''}">${escapeHtml(aiV || 'ว่าง')}</div></div></div>`;
+    cmp.appendChild(row);
+  });
+
+  document.querySelectorAll('.decision-btn').forEach(b => b.classList.toggle('active', b.dataset.decision === e.verify_decision));
+}
+
+function backToVerifyList(){
+  document.getElementById('verifyList').classList.remove('hidden');
+  document.getElementById('verifyDetail').classList.add('hidden');
+  state.currentVerifyIdx = -1;
+}
+
+async function saveVerifyDecision(decision){
+  if (state.currentVerifyIdx < 0) return;
+  const e = state.verifyEntries[state.currentVerifyIdx];
+  e.verify_decision = decision;
+  e.verify_notes = document.getElementById('vdNotes').value.trim();
+  const tx = db.transaction(STORE, 'readwrite');
+  await new Promise((resolve, reject) => {
+    const req = tx.objectStore(STORE).put(e);
+    req.onsuccess = resolve;
+    req.onerror = () => reject(req.error);
+  });
+  document.querySelectorAll('.decision-btn').forEach(b => b.classList.toggle('active', b.dataset.decision === decision));
+}
+
+async function saveAndNext(){
+  if (state.currentVerifyIdx < 0) return;
+  const e = state.verifyEntries[state.currentVerifyIdx];
+  e.verify_notes = document.getElementById('vdNotes').value.trim();
+  const tx = db.transaction(STORE, 'readwrite');
+  await new Promise((resolve, reject) => {
+    const req = tx.objectStore(STORE).put(e);
+    req.onsuccess = resolve;
+    req.onerror = () => reject(req.error);
+  });
+  toast('💾 บันทึกแล้ว');
+  const nextIdx = state.verifyEntries.findIndex((x, i) => i > state.currentVerifyIdx && !x.verify_decision);
+  if (nextIdx >= 0) openVerifyDetail(nextIdx);
+  else { backToVerifyList(); renderVerifyList(); }
+}
+
+async function exportVerified(){
+  if (state.verifyEntries.length === 0) { toast('ไม่มีข้อมูล'); return; }
+  let csv = '\ufeffid,timestamp,drug,verify_decision,verify_notes,ai_drug,gt_drug,ai_dose,gt_dose,overall_acc\n';
+  state.verifyEntries.forEach(e => {
+    csv += [
+      e.id, new Date(e.timestamp).toISOString(),
+      csvQ(e.ground_truth?.drug_name),
+      e.verify_decision || 'pending',
+      csvQ(e.verify_notes || ''),
+      csvQ(e.ai_result?.drug_name),
+      csvQ(e.ground_truth?.drug_name),
+      e.ai_result?.dose_mg, e.ground_truth?.dose_mg,
+      ((e.overall_accuracy || 0) * 100).toFixed(1) + '%',
+    ].join(',') + '\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `medtrack_verified_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('✅ Export CSV เสร็จ');
+}
+
+async function loadFromFile(file){
+  if (!file) return;
+  if (file.name.endsWith('.json')) {
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      const entries = Array.isArray(data) ? data : (data.entries || []);
+      state.verifyEntries = entries;
+      renderVerifyList();
+      toast(`โหลด ${entries.length} entries แล้ว`);
+    } catch (e) { toast('JSON ไม่ถูกต้อง: ' + e.message); }
+  } else if (file.name.endsWith('.zip')) {
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const entriesFile = zip.file('entries.json');
+      if (!entriesFile) { toast('ไม่พบ entries.json ใน ZIP'); return; }
+      const entries = JSON.parse(await entriesFile.async('text'));
+      for (const e of entries) {
+        if (e.image_file) {
+          const imgFile = zip.file(e.image_file);
+          if (imgFile) {
+            const b64 = await imgFile.async('base64');
+            e.image = `data:image/jpeg;base64,${b64}`;
+          }
+        }
+      }
+      state.verifyEntries = entries;
+      renderVerifyList();
+      toast(`โหลด ${entries.length} entries แล้ว`);
+    } catch (e) { toast('โหลด ZIP ไม่สำเร็จ: ' + e.message); }
+  } else { toast('รองรับ .zip หรือ .json เท่านั้น'); }
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+async function init(){
+  state.deviceInfo = detectDevice();
+  renderDeviceChip();
+  await openDB();
+  await loadEntries();
+
+  document.getElementById('cameraBtn').addEventListener('click', () => document.getElementById('cameraInput').click());
+  document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+  document.getElementById('cameraInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
+  document.getElementById('fileInput').addEventListener('change', e => handleImageFile(e.target.files[0]));
+  document.getElementById('retakeBtn').addEventListener('click', resetCapture);
+  document.getElementById('fillFromAi').addEventListener('click', fillFromAI);
+  document.getElementById('saveBtn').addEventListener('click', saveEntry);
+  document.getElementById('exportBtn').addEventListener('click', exportZIP);
+  document.getElementById('clearBtn').addEventListener('click', async () => {
+    if (!confirm('ล้างทุก entry · กู้ไม่ได้ · แน่ใจ?')) return;
+    await dbClearAll();
+    await loadEntries();
+    toast('🗑️ ล้างแล้ว');
+  });
+
+  ['gt-drug_name','gt-drug_name_en','gt-dose_mg','gt-dose_unit','gt-frequency_per_day','gt-tablets_per_dose','gt-timing_type','gt-meal_anchor','gt-meal_relation','gt-interval_hours','gt-total_quantity','gt-hospital_name'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateCompare);
+    document.getElementById(id).addEventListener('change', updateCompare);
+  });
+
+  document.getElementById('modeSelfBtn').addEventListener('click', () => switchMode('self'));
+  document.getElementById('modeVerifyBtn').addEventListener('click', () => switchMode('verify'));
+
+  document.getElementById('loadZipBtn').addEventListener('click', () => document.getElementById('loadZipInput').click());
+  document.getElementById('loadZipInput').addEventListener('change', e => loadFromFile(e.target.files[0]));
+  document.getElementById('backToList').addEventListener('click', backToVerifyList);
+  document.querySelectorAll('.decision-btn').forEach(btn => {
+    btn.addEventListener('click', () => saveVerifyDecision(btn.dataset.decision));
+  });
+  document.getElementById('vdSaveBtn').addEventListener('click', saveAndNext);
+  document.getElementById('exportVerifiedBtn').addEventListener('click', exportVerified);
+}
+
+init();
+</script>
+</body>
+</html>
