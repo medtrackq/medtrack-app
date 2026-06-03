@@ -1,0 +1,107 @@
+<!doctype html><html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>คู่มือเก็บภาพ · ทีมเก็บข้อมูล MedTrack</title>
+<style>
+:root{--bg:#f5f4ef;--card:#fff;--ink:#0f172a;--mute:#64748b;--brand:#1e3a8a;--ok:#15803d;--okbg:#dcfce7;--warn:#b45309;--warnbg:#fef3c7;--bad:#b91c1c;--badbg:#fee2e2;--bd:#d6d3c7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:16px;line-height:1.6;padding:16px;padding-bottom:40px}
+.wrap{max-width:640px;margin:0 auto}
+h1{font-size:21px;margin:0 0 4px}
+.sub{color:var(--mute);font-size:14px;margin-bottom:20px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-bottom:14px}
+.card h2{font-size:17px;margin:0 0 12px;color:var(--brand);display:flex;align-items:center;gap:8px}
+.step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.step:last-child{margin-bottom:0}
+.step-n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-size:15px}
+.step-b{flex:1}
+.step-b b{display:block;margin-bottom:2px}
+.step-b span{font-size:14px;color:var(--mute)}
+.box{border-radius:10px;padding:14px 16px;margin-bottom:14px;font-size:15px}
+.box-ok{background:var(--okbg);border:1px solid var(--ok)}
+.box-warn{background:var(--warnbg);border:1px solid var(--warn)}
+.box-bad{background:var(--badbg);border:1px solid var(--bad)}
+.box b{display:block;margin-bottom:6px}
+.tag{display:inline-block;background:var(--brand);color:#fff;font-family:monospace;font-weight:700;padding:2px 10px;border-radius:6px;font-size:15px;margin:0 2px}
+.eg{background:#f1f5f9;border-radius:8px;padding:10px 14px;font-family:monospace;font-size:14px;margin:8px 0;line-height:1.8}
+ul{margin:8px 0;padding-left:22px}
+li{margin-bottom:6px}
+.divider{height:1px;background:var(--bd);margin:16px 0}
+.big{font-size:18px;font-weight:700;color:var(--brand);text-align:center;padding:10px;background:var(--okbg);border-radius:10px;margin-bottom:14px}
+</style></head><body><div class="wrap">
+
+<h1>📸 คู่มือเก็บภาพซองยา & ใบนัด</h1>
+<div class="sub">สำหรับทีมเก็บข้อมูล · อ่านครบก่อนเริ่มงาน · ทำตามทีละขั้น</div>
+
+<div class="big">งานของเรา: ถ่ายภาพซองยา + ใบนัด<br>ให้ AI ลองอ่าน เพื่อทดสอบว่าอ่านแม่นไหม</div>
+
+<div class="card">
+<h2>📱 ใช้อะไรถ่าย</h2>
+<div class="step"><div class="step-n">1</div><div class="step-b"><b>มือถือ iPhone</b><span>ถ่ายผ่านหน้าเว็บที่หัวหน้าส่งลิงก์ให้</span></div></div>
+<div class="step"><div class="step-n">2</div><div class="step-b"><b>มือถือ Android</b><span>ภาพเดียวกัน ถ่ายซ้ำด้วยเครื่อง Android</span></div></div>
+<div class="step"><div class="step-n">3</div><div class="step-b"><b>กล้อง webcam</b><span>ภาพเดียวกัน ถ่ายซ้ำด้วย webcam อีกครั้ง</span></div></div>
+<div class="box box-warn"><b>⚠️ สำคัญ: ของชิ้นเดียวกัน ถ่ายครบทั้ง 3 เครื่อง</b>ซองยาใบที่ 1 → ถ่าย iPhone, Android, webcam · แล้วค่อยไปใบที่ 2</div>
+</div>
+
+<div class="card">
+<h2>🗂️ การตั้งชื่อกล่องเก็บภาพ (batch)</h2>
+<p style="margin-top:0">ในหน้าเว็บจะมีปุ่ม "+ ใหม่" เพื่อสร้างกล่องเก็บภาพ ตั้งชื่อตามนี้:</p>
+<div class="eg">
+ตัวอักษรหน้า = เครื่องที่ใช้ถ่าย<br>
+&nbsp;&nbsp;i = iPhone<br>
+&nbsp;&nbsp;a = Android<br>
+&nbsp;&nbsp;w = webcam<br><br>
+ตัวเลขหลัง = ลำดับแบบยา (1 ถึง 21)<br><br>
+ตัวอย่าง:<br>
+&nbsp;&nbsp;<span class="tag">i01</span> = iPhone · แบบยาที่ 1<br>
+&nbsp;&nbsp;<span class="tag">a01</span> = Android · แบบยาที่ 1<br>
+&nbsp;&nbsp;<span class="tag">w05</span> = webcam · แบบยาที่ 5
+</div>
+<div class="box box-ok"><b>✅ 1 กล่อง = แบบยา 1 อย่าง ใส่ 3-4 ภาพ</b>ไม่ต้องใส่เยอะ แค่ 3-4 ภาพต่อกล่องพอ</div>
+</div>
+
+<div class="card">
+<h2>📷 ถ่ายยังไงให้ภาพดี</h2>
+<div class="step"><div class="step-n">1</div><div class="step-b"><b>วางบนพื้นเรียบ แสงสว่าง</b><span>อย่าให้เงามือ/เงาหัวบังตัวหนังสือ</span></div></div>
+<div class="step"><div class="step-n">2</div><div class="step-b"><b>ถ่ายตรง ๆ จากด้านบน</b><span>ไม่เอียง ให้เห็นตัวหนังสือชัดทุกบรรทัด</span></div></div>
+<div class="step"><div class="step-n">3</div><div class="step-b"><b>ให้ตัวหนังสืออ่านออกด้วยตาเปล่า</b><span>ถ้าตาเรายังอ่านไม่ออก AI ก็อ่านไม่ออก</span></div></div>
+<div class="step"><div class="step-n">4</div><div class="step-b"><b>ถ่าย 3-4 ภาพต่อ 1 ใบ</b><span>มุมต่างกันนิดหน่อย เผื่อภาพใดเบลอ</span></div></div>
+<div class="box box-bad"><b>🚫 ถ้าขึ้นเตือน "ภาพใหญ่เกิน 5MB"</b>ให้เข้าตั้งค่ากล้องมือถือ → ลดความละเอียดเป็น "กลาง" แล้วถ่ายใหม่</div>
+</div>
+
+<div class="card">
+<h2>💊 ซองยา: เก็บให้ครบทุกแบบ</h2>
+<p style="margin-top:0">มีแบบยา 21 อย่าง (ดูใน checklist อีกไฟล์) เก็บให้ครบทุกแบบ · <b>เน้นหาซองที่หน้าตาต่างกัน</b> เช่น:</p>
+<ul>
+<li>กินก่อนอาหาร / หลังอาหาร / ก่อนนอน</li>
+<li>กินวันละ 1, 2, 3, 4 ครั้ง</li>
+<li>กินครึ่งเม็ด / 1 เม็ด / 2 เม็ด</li>
+<li>ซองที่เขียนภาษาอังกฤษย่อ (เช่น pc, hs, bid) — เก็บด้วย!</li>
+</ul>
+<div class="box box-ok"><b>✅ ติ๊ก checklist ทุกครั้งที่เก็บได้ 1 แบบ</b>จะได้รู้ว่าเหลือแบบไหนยังไม่มี</div>
+</div>
+
+<div class="card">
+<h2>🏥 ใบนัด: เก็บจากหลายโรงพยาบาล</h2>
+<p style="margin-top:0">ใบนัดไม่มีแบบตายตัวเหมือนยา · <b>เน้นเก็บจากหลาย รพ.</b> เพราะแต่ละที่ฟอร์มไม่เหมือนกัน · ใบที่ดีต่อการทดสอบคือ:</p>
+<ul>
+<li>ใบที่มีทั้งชื่อหมอ และชื่อคนออกใบนัด (คนละคนกัน)</li>
+<li>ใบที่มีหลายตัวเลข (เลขคนไข้ HN + เลขคิว)</li>
+<li>ใบที่มี 2 วันที่ (วันออกใบ + วันนัดครั้งหน้า)</li>
+<li>ใบที่เป็นตาราง 2 ฝั่ง ซ้าย-ขวา</li>
+</ul>
+<div class="box box-bad"><b>🔒 เรื่องความเป็นส่วนตัว (สำคัญมาก)</b>ใบนัดมีชื่อจริง-เบอร์โทรคนไข้ · <b>ต้องขออนุญาตเจ้าของก่อนถ่ายทุกครั้ง</b> · ถ้าไม่ได้ขอ ใช้ใบนัดของตัวเอง/คนในครอบครัวแทน</div>
+</div>
+
+<div class="card">
+<h2>✅ ลำดับงานวันเก็บจริง</h2>
+<div class="step"><div class="step-n">1</div><div class="step-b"><b>รวบรวมซองยา/ใบนัดให้ครบก่อน</b><span>ดู checklist ว่าครบ 21 แบบไหม</span></div></div>
+<div class="step"><div class="step-n">2</div><div class="step-b"><b>สร้างกล่อง i01 → ถ่ายด้วย iPhone</b><span>3-4 ภาพ</span></div></div>
+<div class="step"><div class="step-n">3</div><div class="step-b"><b>สร้างกล่อง a01 → ถ่ายใบเดิมด้วย Android</b></div></div>
+<div class="step"><div class="step-n">4</div><div class="step-b"><b>สร้างกล่อง w01 → ถ่ายใบเดิมด้วย webcam</b></div></div>
+<div class="step"><div class="step-n">5</div><div class="step-b"><b>ทำซ้ำกับแบบที่ 2, 3, ... จนครบ</b></div></div>
+<div class="step"><div class="step-n">6</div><div class="step-b"><b>เก็บภาพให้ครบก่อน — ยังไม่ต้องกดวิเคราะห์</b><span>หัวหน้าจะกดวิเคราะห์ทีหลังเอง</span></div></div>
+</div>
+
+<div class="box box-warn" style="text-align:center"><b>มีปัญหาหน้างาน?</b>ถ่ายหน้าจอที่ติดปัญหา ส่งให้หัวหน้าทันที · อย่าเดาเอง</div>
+
+</div></body></html>
