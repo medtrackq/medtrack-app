@@ -387,27 +387,25 @@ function detectDevice(){
 
 // ════════════════════════════════════════
 // IMAGE COMPRESSION
-async function compressImage(file, maxDim = 1600, quality = 0.85){
+async function compressImage(file){
+  // เก็บภาพ "ดิบ" เหมือนแอปจริง (medtrack-scan.html) — ไม่ย่อ ไม่บีบ
+  // เพื่อให้ AI เห็นภาพเหมือนตอนคนไข้ถ่ายจริง · accuracy ตรงกับการใช้งานจริง
   return new Promise((resolve, reject) => {
+    // เช็ก 5MB เหมือนแอปจริง (กัน base64 เกิน limit 15mb ของ backend)
+    if (file.size > 5 * 1024 * 1024) {
+      reject(new Error('ภาพใหญ่เกิน 5MB · ถ่ายใหม่หรือลดความละเอียดกล้อง'));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(',')[1];
+      const mediaType = file.type || 'image/jpeg';
+      // อ่านขนาดภาพไว้แสดงผล (ไม่ได้แก้ภาพ)
       const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-          else { w = Math.round(w * maxDim / h); h = maxDim; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-        const base64 = dataUrl.split(',')[1];
-        resolve({ base64, mediaType: 'image/jpeg', dataUrl, width: w, height: h });
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
+      img.onload = () => resolve({ base64, mediaType, dataUrl, width: img.width, height: img.height });
+      img.onerror = () => resolve({ base64, mediaType, dataUrl, width: null, height: null });
+      img.src = dataUrl;
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
