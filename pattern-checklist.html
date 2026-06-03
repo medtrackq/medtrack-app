@@ -1,0 +1,161 @@
+<!doctype html><html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist · 21 Pattern ซองยา</title>
+<style>
+:root{--bg:#f5f4ef;--card:#fff;--ink:#0f172a;--mute:#64748b;--brand:#1e3a8a;--ok:#15803d;--okbg:#dcfce7;--bd:#d6d3c7}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:15px;line-height:1.5;padding:16px;padding-bottom:90px}
+.wrap{max-width:640px;margin:0 auto}
+h1{font-size:18px;margin:0 0 4px}
+.sub{color:var(--mute);font-size:13px;margin-bottom:14px}
+.prog{position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--bd);margin-bottom:12px}
+.prog-bar{height:10px;background:#e5e3da;border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:var(--brand);width:0;transition:width .25s}
+.prog-txt{font-size:13px;font-weight:600;margin-bottom:6px}
+.grp{font-weight:700;font-size:13px;color:var(--brand);margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--brand)}
+.row{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer}
+.row:has(input:checked){background:var(--okbg);border-color:var(--ok)}
+.row input{width:22px;height:22px;margin:0;flex:0 0 auto;accent-color:var(--ok);margin-top:1px}
+.num{font-family:monospace;font-weight:700;color:var(--mute);flex:0 0 auto;min-width:22px}
+.body{display:flex;flex-direction:column;gap:2px}
+.lbl{font-weight:600}
+.ex{font-size:12px;color:var(--mute)}
+.row:has(input:checked) .lbl{text-decoration:line-through;opacity:.7}
+.btns{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);padding:12px 16px;display:flex;gap:10px;justify-content:center}
+.btn{padding:10px 18px;border-radius:8px;border:1px solid var(--bd);background:var(--card);font:inherit;font-weight:600;cursor:pointer;color:var(--ink)}
+.btn-reset{color:#b91c1c;border-color:#fecaca}
+</style></head><body><div class="wrap">
+<h1>📋 Checklist · 21 Pattern ซองยา</h1>
+<div class="sub">ติ๊กเมื่อมีซองยาครบแต่ละ pattern · บันทึกอัตโนมัติในเครื่อง · ตัวอย่างยาเป็นแนวทาง ปรับตามที่หาได้จริง</div>
+<div class="prog">
+  <div class="prog-txt" id="ptxt">0 / 21 pattern</div>
+  <div class="prog-bar"><div class="prog-fill" id="pfill"></div></div>
+</div>
+<div class="grp">กลุ่ม 1 · ก่อนอาหาร</div>
+<label class="row" for="p1">
+  <input type="checkbox" id="p1" data-id="before_breakfast">
+  <span class="num">1</span>
+  <span class="body"><span class="lbl">ก่อนอาหารเช้า</span><span class="ex">ยาเบาหวานบางชนิด เช่น Glipizide, Repaglinide (ก่อนอาหารเช้า)</span></span>
+</label>
+<label class="row" for="p2">
+  <input type="checkbox" id="p2" data-id="before_lunch">
+  <span class="num">2</span>
+  <span class="body"><span class="lbl">ก่อนอาหารกลางวัน</span><span class="ex">ยาเบาหวานออกฤทธิ์สั้น มื้อกลางวัน</span></span>
+</label>
+<label class="row" for="p3">
+  <input type="checkbox" id="p3" data-id="before_dinner">
+  <span class="num">3</span>
+  <span class="body"><span class="lbl">ก่อนอาหารเย็น</span><span class="ex">ยาเบาหวานออกฤทธิ์สั้น มื้อเย็น</span></span>
+</label>
+<label class="row" for="p4">
+  <input type="checkbox" id="p4" data-id="before_all">
+  <span class="num">4</span>
+  <span class="body"><span class="lbl">ก่อนอาหารทุกมื้อ (3×/วัน)</span><span class="ex">Glipizide ก่อนอาหาร 3 มื้อ, ยาลดกรดบางชนิด</span></span>
+</label>
+<div class="grp">กลุ่ม 2 · หลังอาหาร</div>
+<label class="row" for="p5">
+  <input type="checkbox" id="p5" data-id="after_breakfast">
+  <span class="num">5</span>
+  <span class="body"><span class="lbl">หลังอาหารเช้า (1×/วัน)</span><span class="ex">Losartan, Amlodipine, Atorvastatin (ความดัน/ไขมัน วันละครั้ง)</span></span>
+</label>
+<label class="row" for="p6">
+  <input type="checkbox" id="p6" data-id="after_2x">
+  <span class="num">6</span>
+  <span class="body"><span class="lbl">หลังอาหารเช้า+เย็น (2×/วัน)</span><span class="ex">Metformin 500mg, Omeprazole bid</span></span>
+</label>
+<label class="row" for="p7">
+  <input type="checkbox" id="p7" data-id="after_all_3x">
+  <span class="num">7</span>
+  <span class="body"><span class="lbl">หลังอาหารทุกมื้อ (3×/วัน)</span><span class="ex">Metformin tid, ยาแก้อักเสบ NSAIDs</span></span>
+</label>
+<label class="row" for="p8">
+  <input type="checkbox" id="p8" data-id="after_4x">
+  <span class="num">8</span>
+  <span class="body"><span class="lbl">หลังอาหาร 4×/วัน</span><span class="ex">Paracetamol qid, ยาบางชนิด 4 มื้อ</span></span>
+</label>
+<div class="grp">กลุ่ม 3 · ก่อนนอน</div>
+<label class="row" for="p9">
+  <input type="checkbox" id="p9" data-id="bedtime_only">
+  <span class="num">9</span>
+  <span class="body"><span class="lbl">ก่อนนอน ครั้งเดียว</span><span class="ex">Simvastatin, Lorazepam, Amitriptyline (ก่อนนอน)</span></span>
+</label>
+<label class="row" for="p10">
+  <input type="checkbox" id="p10" data-id="bedtime_plus">
+  <span class="num">10</span>
+  <span class="body"><span class="lbl">มื้ออื่น + ก่อนนอน</span><span class="ex">ยาที่กินเช้า+ก่อนนอน เช่น ยาบางชนิดของระบบประสาท</span></span>
+</label>
+<div class="grp">กลุ่ม 4 · Interval (ทุก N ชม.)</div>
+<label class="row" for="p11">
+  <input type="checkbox" id="p11" data-id="q4h">
+  <span class="num">11</span>
+  <span class="body"><span class="lbl">ทุก 4 ชม. (q4h)</span><span class="ex">Paracetamol prn q4h, ยาแก้ปวดบางชนิด</span></span>
+</label>
+<label class="row" for="p12">
+  <input type="checkbox" id="p12" data-id="q6h">
+  <span class="num">12</span>
+  <span class="body"><span class="lbl">ทุก 6 ชม. (q6h)</span><span class="ex">Amoxicillin q6h, ยาปฏิชีวนะบางชนิด</span></span>
+</label>
+<label class="row" for="p13">
+  <input type="checkbox" id="p13" data-id="q8h">
+  <span class="num">13</span>
+  <span class="body"><span class="lbl">ทุก 8 ชม. (q8h)</span><span class="ex">Amoxicillin 500mg q8h, Cephalexin (ยาปฏิชีวนะ)</span></span>
+</label>
+<label class="row" for="p14">
+  <input type="checkbox" id="p14" data-id="q12h">
+  <span class="num">14</span>
+  <span class="body"><span class="lbl">ทุก 12 ชม. (q12h)</span><span class="ex">Augmentin q12h, Azithromycin บางสูตร</span></span>
+</label>
+<div class="grp">กลุ่ม 5 · PRN (เมื่อมีอาการ)</div>
+<label class="row" for="p15">
+  <input type="checkbox" id="p15" data-id="prn_pain">
+  <span class="num">15</span>
+  <span class="body"><span class="lbl">เมื่อปวด / เมื่อมีอาการ</span><span class="ex">Paracetamol prn, ยาแก้ปวด/แก้แพ้ เมื่อมีอาการ</span></span>
+</label>
+<label class="row" for="p16">
+  <input type="checkbox" id="p16" data-id="prn_max">
+  <span class="num">16</span>
+  <span class="body"><span class="lbl">PRN + จำกัดครั้ง/วัน</span><span class="ex">Tramadol prn ไม่เกิน 4 ครั้ง/วัน, ยาแก้ปวดที่มีเพดาน</span></span>
+</label>
+<div class="grp">กลุ่ม 6 · Special timing</div>
+<label class="row" for="p17">
+  <input type="checkbox" id="p17" data-id="qod">
+  <span class="num">17</span>
+  <span class="body"><span class="lbl">วันเว้นวัน (qod)</span><span class="ex">Prednisolone สูตรวันเว้นวัน, ยาบางชนิดของไต</span></span>
+</label>
+<label class="row" for="p18">
+  <input type="checkbox" id="p18" data-id="stat">
+  <span class="num">18</span>
+  <span class="body"><span class="lbl">ทันที ครั้งเดียว (stat)</span><span class="ex">ยา loading dose, ยาก่อนทำหัตถการ</span></span>
+</label>
+<div class="grp">กลุ่ม 7 · จำนวนเม็ดพิเศษ</div>
+<label class="row" for="p19">
+  <input type="checkbox" id="p19" data-id="half_tab">
+  <span class="num">19</span>
+  <span class="body"><span class="lbl">ครึ่งเม็ด (0.5 tab)</span><span class="ex">Lorazepam 0.5 เม็ด, ยาที่สั่งครึ่งเม็ด เช่น ½ tab</span></span>
+</label>
+<label class="row" for="p20">
+  <input type="checkbox" id="p20" data-id="2_tabs">
+  <span class="num">20</span>
+  <span class="body"><span class="lbl">2 เม็ดต่อมื้อ</span><span class="ex">Prednisolone 2 เม็ด/มื้อ, ยาที่สั่ง 2 tab</span></span>
+</label>
+<label class="row" for="p21">
+  <input type="checkbox" id="p21" data-id="1_5_tabs">
+  <span class="num">21</span>
+  <span class="body"><span class="lbl">1.5 เม็ด</span><span class="ex">ยาที่สั่ง 1.5 เม็ด เช่น 1½ tab</span></span>
+</label>
+
+</div>
+<div class="btns">
+  <button class="btn btn-reset" onclick="resetAll()">↺ ล้างทั้งหมด</button>
+</div>
+<script>
+const KEY='medtrack_pattern_checklist_v1';
+const boxes=[...document.querySelectorAll('input[type=checkbox]')];
+function save(){const s={};boxes.forEach(b=>s[b.id]=b.checked);try{localStorage.setItem(KEY,JSON.stringify(s))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem(KEY)||'{}');boxes.forEach(b=>{if(s[b.id])b.checked=true})}catch(e){}}
+function upd(){const n=boxes.filter(b=>b.checked).length;document.getElementById('ptxt').textContent=n+' / '+boxes.length+' pattern';document.getElementById('pfill').style.width=(n/boxes.length*100)+'%'}
+boxes.forEach(b=>b.addEventListener('change',()=>{save();upd()}));
+function resetAll(){if(!confirm('ล้างเครื่องหมายทั้งหมด?'))return;boxes.forEach(b=>b.checked=false);save();upd()}
+load();upd();
+</script>
+</body></html>
