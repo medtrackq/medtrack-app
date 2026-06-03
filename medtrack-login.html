@@ -162,6 +162,29 @@ h1{
   display:none;
 }
 .error-msg.show{display:block;}
+.friend-notice{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  text-align:left;
+  background:#FFF7E6;
+  border:1px solid #F5D88A;
+  border-radius:12px;
+  padding:12px 14px;
+  margin-bottom:16px;
+  font-size:13px;
+  color:#8A6A1A;
+  line-height:1.5;
+}
+.friend-notice-icon{
+  font-size:18px;
+  flex:0 0 auto;
+}
+.friend-notice strong{font-weight:700;color:#7A5A0A;}
+.friend-notice-sub{
+  font-size:11.5px;
+  color:#A0853A;
+}
 .loading{
   display:none;
   margin:20px 0;
@@ -196,6 +219,12 @@ h1{
     </div>
     
     <div id="errorMsg" class="error-msg"></div>
+    
+    <div class="friend-notice">
+      <span class="friend-notice-icon">🔔</span>
+      <div>ตอนเข้าสู่ระบบ กรุณากด <strong>"เพิ่มเพื่อน"</strong> หมอน้อยด้วยนะครับ<br>
+      <span class="friend-notice-sub">การแจ้งเตือนกินยาจะส่งผ่าน LINE — ถ้าไม่เพิ่มเพื่อน จะไม่ได้รับการเตือน</span></div>
+    </div>
     
     <button class="line-btn" id="loginBtn" onclick="loginWithLINE()">
       <div class="line-icon">L</div>
