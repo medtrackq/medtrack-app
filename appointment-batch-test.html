@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<title>MedTrack · Appointment Batch Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#f5f4ef; --bg-elev:#ffffff; --bg-soft:#ebe9e2;
+  --ink:#0f172a; --ink-mute:#475569; --ink-soft:#64748b;
+  --border:#d6d3c7; --border-strong:#94a3b8;
+  --brand:#0f766e; --brand-soft:#cce7e3;
+  --ok:#15803d; --ok-soft:#dcfce7;
+  --warn:#b45309; --warn-soft:#fef3c7;
+  --bad:#b91c1c; --bad-soft:#fee2e2;
+  --shadow-sm:0 1px 2px rgba(15,23,42,0.06);
+  --r:14px;
+  --font-body:"IBM Plex Sans Thai","IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:inherit}
+
+.app{max-width:780px;margin:0 auto;padding:16px 16px 100px}
+.hidden{display:none !important}
+
+.hdr{display:flex;flex-direction:column;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:18px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:36px;height:36px;border-radius:9px;background:var(--brand);color:#fff;display:grid;place-items:center;font-weight:700;font-family:var(--font-mono);font-size:14px}
+.brand-title{font-weight:700;font-size:15px;letter-spacing:-0.2px}
+.brand-sub{font-size:11px;color:var(--ink-soft);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.05em}
+.device-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:var(--bg-soft);border:1px solid var(--border);border-radius:99px;font-family:var(--font-mono);font-size:11px;color:var(--ink-mute);max-width:60%;text-align:right}
+.device-chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.card{background:var(--bg-elev);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow-sm)}
+.card-hdr{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px;gap:10px}
+.card-title{font-weight:700;font-size:15px;letter-spacing:-0.2px}
+.card-step{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.1em;background:var(--bg-soft);padding:3px 7px;border-radius:5px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 16px;border-radius:10px;font-weight:600;font-size:14px;transition:all .15s;border:1px solid transparent;text-align:center;min-height:42px}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary:disabled{background:var(--ink-soft);cursor:not-allowed;opacity:0.6}
+.btn-secondary{background:var(--bg-elev);color:var(--ink);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg-soft)}
+.btn-ghost{background:transparent;color:var(--ink-mute);padding:6px 10px;min-height:auto;font-size:13px}
+.btn-ghost:hover{color:var(--ink);background:var(--bg-soft)}
+.btn-block{width:100%}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-danger{color:var(--bad);background:var(--bg-elev);border-color:var(--bad-soft)}
+
+.form-row{display:grid;gap:6px;margin-bottom:12px}
+.form-row label{font-size:12px;color:var(--ink-mute);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:var(--font-mono)}
+.form-row input,.form-row textarea,.form-row select{width:100%;padding:10px 12px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;font-size:14px}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.form-row textarea{min-height:60px;resize:vertical}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+/* Batch list */
+.batch-list{display:grid;gap:10px}
+.batch-item{padding:12px;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;cursor:pointer;transition:all .15s}
+.batch-item:hover{border-color:var(--brand);box-shadow:var(--shadow-sm)}
+.batch-item-meta{min-width:0}
+.batch-item-title{font-weight:600;font-size:14px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.batch-item-sub{font-size:12px;color:var(--ink-soft);font-family:var(--font-mono)}
+.batch-item-stat{font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--brand);text-align:right;white-space:nowrap}
+
+/* Run thumbnails grid */
+.thumbs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:14px 0}
+.thumb{position:relative;aspect-ratio:1;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .15s}
+.thumb:hover{border-color:var(--brand)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .seq{position:absolute;top:4px;left:4px;background:rgba(15,23,42,0.75);color:#fff;font-size:10px;font-family:var(--font-mono);font-weight:600;padding:2px 5px;border-radius:4px}
+.thumb .badge{position:absolute;top:4px;right:4px;font-size:11px;background:#fff;border-radius:4px;padding:2px 5px;font-family:var(--font-mono);font-weight:700}
+.thumb .badge.pending{background:var(--bg-soft);color:var(--ink-soft)}
+.thumb .badge.success{background:var(--ok);color:#fff}
+.thumb .badge.failed{background:var(--bad);color:#fff}
+.thumb .badge.analyzing{background:var(--warn);color:#fff}
+.thumb .del{position:absolute;bottom:4px;right:4px;background:rgba(185,28,28,0.85);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;font-family:var(--font-mono);font-weight:600}
+.thumb-add{aspect-ratio:1;background:var(--bg-soft);border:2px dashed var(--border-strong);border-radius:10px;display:grid;place-items:center;cursor:pointer;color:var(--ink-soft);font-size:12px;text-align:center;padding:8px;transition:all .15s}
+.thumb-add:hover{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+.thumb-add .em{font-size:24px;margin-bottom:4px;display:block}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.stat{padding:12px 8px;background:var(--bg-soft);border-radius:10px;text-align:center}
+.stat-value{font-size:20px;font-weight:700;font-family:var(--font-mono);letter-spacing:-0.3px;line-height:1}
+.stat-label{font-size:9px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.06em;font-family:var(--font-mono);margin-top:6px;font-weight:600}
+
+@media (max-width:480px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* Progress */
+.progress{margin:14px 0}
+.progress-text{font-size:13px;color:var(--ink-mute);margin-bottom:6px;font-family:var(--font-mono)}
+.progress-track{height:8px;background:var(--bg-soft);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--brand);transition:width .3s}
+
+/* Run detail view */
+.run-detail-img{width:100%;max-height:340px;object-fit:contain;background:#000;border-radius:10px;margin-bottom:12px}
+.kv-list{display:grid;grid-template-columns:140px 1fr;gap:8px 12px;font-size:13px}
+.kv-list dt{color:var(--ink-soft);font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:0.04em;padding-top:2px}
+.kv-list dd{margin:0;font-weight:500;word-break:break-word}
+.kv-list dd.empty{color:var(--bad);font-style:italic;font-weight:600}
+.kv-list dd.empty::before{content:"✗ ";font-style:normal}
+
+.missing-banner{padding:10px 12px;background:var(--bad-soft);border:1px solid var(--bad);border-radius:8px;font-size:13px;color:var(--bad);margin-bottom:12px}
+.missing-banner strong{font-family:var(--font-mono)}
+
+/* Field analysis */
+.fa-row{display:grid;grid-template-columns:140px 1fr 60px;gap:10px;align-items:center;font-size:13px;margin-bottom:6px}
+.fa-field{color:var(--ink-mute);font-weight:500;font-size:12px}
+.fa-track{height:6px;background:var(--bg-soft);border-radius:99px;overflow:hidden}
+.fa-fill{height:100%;background:var(--ok);transition:width .4s}
+.fa-fill.med{background:var(--warn)}
+.fa-fill.low{background:var(--bad)}
+.fa-value{font-family:var(--font-mono);font-weight:600;font-size:13px;text-align:right}
+
+/* Pattern Coverage */
+.pat-group{margin-bottom:16px}
+.pat-group-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--brand);color:#fff;border-radius:8px 8px 0 0;font-weight:700;font-size:13px}
+.pat-group-body{border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;overflow:hidden}
+.pat-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border)}
+.pat-item:last-child{border-bottom:none}
+.pat-item.covered{background:var(--ok-soft)}
+.pat-item.missing{background:var(--bad-soft)}
+.pat-name{font-weight:500}
+.pat-count{font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--ink-soft)}
+.pat-status{font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;font-family:var(--font-mono)}
+.pat-status.ok{background:var(--ok);color:#fff}
+.pat-status.miss{background:var(--bad);color:#fff}
+.pat-bar{height:4px;background:var(--bg-soft);border-radius:99px;overflow:hidden;margin-top:4px}
+.pat-fill{height:100%;background:var(--ok);transition:width .4s}
+
+.section-divider{display:flex;align-items:center;gap:10px;margin:18px 0 12px}
+.section-divider::before,.section-divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.section-divider span{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ink-soft);font-weight:600}
+
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-mute);font-weight:500;padding:6px 10px;border-radius:7px;margin-bottom:12px}
+.back-btn:hover{color:var(--ink);background:var(--bg-soft)}
+
+.spinner{width:14px;height:14px;border:2px solid var(--border-strong);border-top-color:var(--brand);border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty-state{text-align:center;padding:36px 20px;color:var(--ink-soft)}
+.empty-state .em{font-size:42px;margin-bottom:10px;opacity:0.4}
+.empty-state h3{margin:0 0 4px;font-size:15px;color:var(--ink-mute)}
+.empty-state p{margin:0;font-size:13px}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;pointer-events:none;z-index:100;max-width:90%;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.tabs{display:flex;background:var(--bg-soft);border:1px solid var(--border);border-radius:10px;padding:3px;gap:3px;margin-bottom:14px}
+.tabs button{flex:1;padding:9px;border-radius:7px;font-weight:600;font-size:13px;color:var(--ink-mute);transition:all .15s}
+.tabs button.active{background:var(--bg-elev);color:var(--ink);box-shadow:var(--shadow-sm)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="hdr">
+    <div class="hdr-top">
+      <div class="brand">
+        <div class="brand-mark">นัด</div>
+        <div>
+          <div class="brand-title">Appointment Batch Test</div>
+          <div class="brand-sub">MedTrack · ใบนัดแพทย์</div>
+        </div>
+      </div>
+      <div class="device-chip"><span id="deviceLabel">detecting…</span></div>
+    </div>
+
+    <div class="tabs">
+      <button class="active" id="tabBatches" data-tab="batches">📦 Batches</button>
+      <button id="tabAnalytics" data-tab="analytics">📊 Analytics</button>
+    </div>
+  </header>
+
+  <!-- ============ BATCHES TAB ============ -->
+  <main id="batchesView">
+
+    <!-- Batch list -->
+    <section class="card" id="batchListCard">
+      <div class="card-hdr">
+        <div class="card-title">📋 Batches ทั้งหมด</div>
+        <button class="btn btn-primary" id="newBatchBtn" style="padding:6px 12px;min-height:auto;font-size:13px">+ ใหม่</button>
+      </div>
+      <div class="batch-list" id="batchList">
+        <div class="empty-state"><div class="em">📦</div><h3>ยังไม่มี batch</h3><p>กด "+ ใหม่" เริ่ม batch ใบนัดแรก</p></div>
+      </div>
+    </section>
+
+    <!-- New Batch Form -->
+    <section class="card hidden" id="newBatchCard">
+      <div class="card-hdr">
+        <div class="card-title">➕ สร้าง Batch ใหม่</div>
+      </div>
+      <div class="form-row">
+        <label>ชื่อ Batch *</label>
+        <input id="newBatchName" placeholder="เช่น ใบนัด รพ. A หรือ Test 2026-06-09" />
+      </div>
+      <div class="form-2col">
+        <div class="form-row">
+          <label>Patient Label (optional)</label>
+          <input id="newPatientLabel" placeholder="เช่น HN001" />
+        </div>
+        <div class="form-row">
+          <label>คน Test</label>
+          <input id="newCreatedBy" placeholder="Apidej" />
+        </div>
+      </div>
+      <div class="form-2col">
+        <div class="form-row">
+          <label>โรงพยาบาล</label>
+          <input id="newHospital" placeholder="เช่น สถาบันประสาทวิทยา" />
+        </div>
+        <div class="form-row">
+          <label>แผนก</label>
+          <input id="newDepartment" placeholder="เช่น อายุรกรรม" />
+        </div>
+      </div>
+      <div class="form-row">
+        <label>หมายเหตุ</label>
+        <textarea id="newNote" placeholder="optional"></textarea>
+      </div>
+      <div class="btn-grid">
+        <button class="btn btn-secondary" id="cancelNewBatch">ยกเลิก</button>
+        <button class="btn btn-primary" id="createBatchBtn">สร้าง Batch</button>
+      </div>
+    </section>
+
+    <!-- Batch Detail (active batch) -->
+    <section class="card hidden" id="batchDetailCard">
+      <button class="back-btn" id="backToBatches">← กลับไปรายการ</button>
+
+      <div class="card-hdr">
+        <div>
+          <div class="card-title" id="batchTitle">Batch</div>
+          <div style="font-size:12px;color:var(--ink-soft);font-family:var(--font-mono);margin-top:3px" id="batchSubtitle">—</div>
+        </div>
+        <button class="btn btn-ghost" id="deleteBatchBtn" style="color:var(--bad)">🗑️ ลบ</button>
+      </div>
+
+      <div class="stats-grid" id="batchStats">
+        <div class="stat"><div class="stat-value" id="statRunCount">0</div><div class="stat-label">ภาพ</div></div>
+        <div class="stat"><div class="stat-value" id="statSuccess">0</div><div class="stat-label">วิเคราะห์แล้ว</div></div>
+        <div class="stat"><div class="stat-value" id="statAvgMs">—</div><div class="stat-label">เฉลี่ย/ภาพ</div></div>
+        <div class="stat"><div class="stat-value" id="statTotalMs">—</div><div class="stat-label">เวลารวม</div></div>
+      </div>
+
+      <input type="file" id="cameraInput" class="file-input" accept="image/*" capture="environment" multiple />
+      <input type="file" id="fileInput" class="file-input" accept="image/*" multiple />
+
+      <div class="btn-grid">
+        <button class="btn btn-primary" id="cameraBtn">📸 ถ่ายเพิ่ม</button>
+        <button class="btn btn-secondary" id="uploadBtn">🖼️ จากเครื่อง</button>
+      </div>
+
+      <div class="thumbs-grid" id="thumbsGrid"></div>
+
+      <div class="progress hidden" id="analyzeProgress">
+        <div class="progress-text" id="progressText">กำลังวิเคราะห์ภาพที่ 1/10…</div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+
+      <button class="btn btn-primary btn-block" id="analyzeAllBtn" style="margin-top:14px" disabled>
+        🤖 วิเคราะห์ทั้งหมด (0 ภาพ)
+      </button>
+    </section>
+
+    <!-- Run Detail View -->
+    <section class="card hidden" id="runDetailCard">
+      <button class="back-btn" id="backToBatchDetail">← กลับไป Batch</button>
+
+      <img class="run-detail-img" id="runDetailImg" />
+
+      <div id="runDetailMissing"></div>
+
+      <div class="section-divider"><span>AI OCR Result</span></div>
+      <dl class="kv-list" id="runDetailKV"></dl>
+
+      <div class="section-divider"><span>Device & Performance</span></div>
+      <dl class="kv-list" id="runDetailMeta"></dl>
+
+      <button class="btn btn-danger btn-block" id="deleteRunBtn" style="margin-top:14px">🗑️ ลบภาพนี้</button>
+    </section>
+
+  </main>
+
+  <!-- ============ ANALYTICS TAB ============ -->
+  <main id="analyticsView" class="hidden">
+
+    <section class="card">
+      <div class="card-hdr">
+        <div class="card-title">📊 ภาพรวมระบบ</div>
+        <button class="btn btn-ghost" id="refreshStatsBtn">🔄 Refresh</button>
+      </div>
+
+      <div class="stats-grid" id="overallStats">
+        <div class="stat"><div class="stat-value" id="oStatTotal">—</div><div class="stat-label">Runs</div></div>
+        <div class="stat"><div class="stat-value" id="oStatAvgMs">—</div><div class="stat-label">เฉลี่ย ms</div></div>
+        <div class="stat"><div class="stat-value" id="oStatMinMs">—</div><div class="stat-label">เร็วสุด</div></div>
+        <div class="stat"><div class="stat-value" id="oStatMaxMs">—</div><div class="stat-label">ช้าสุด</div></div>
+      </div>
+
+      <div class="section-divider"><span>ฟิลด์ที่ AI อ่านได้ (%)</span></div>
+      <div id="fieldCompleteness">
+        <div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล</p></div>
+      </div>
+    </section>
+
+    <!-- Date Coverage -->
+    <section class="card">
+      <div class="card-hdr">
+        <div class="card-title">🗂️ ความครบของข้อมูลใบนัด</div>
+        <span class="card-step" id="patCovCount">—</span>
+      </div>
+      <div style="font-size:12px;color:var(--ink-soft);margin-bottom:14px">นับจากใบนัดที่วิเคราะห์สำเร็จ · ดูว่าฟิลด์ไหน AI อ่านได้บ่อย/ขาดบ่อย</div>
+      <div id="patternCoverage"><div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล</p></div></div>
+    </section>
+
+    <section class="card hidden" id="missingPatternsCard">
+      <div class="card-hdr"><div class="card-title">⚠️ ใบนัดที่ AI อ่านฟิลด์สำคัญไม่ครบ</div></div>
+      <div id="missingPatternsList"></div>
+    </section>
+
+  </main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+const API_BASE = 'https://api.medtrackq.com';
+
+let state = {
+  view: 'list',           // 'list' | 'newBatch' | 'batchDetail' | 'runDetail'
+  tab: 'batches',         // 'batches' | 'analytics'
+  batches: [],
+  currentBatch: null,
+  currentRuns: [],
+  currentRun: null,
+  deviceInfo: null,
+};
+
+// Device detection
+function detectDevice(){
+  const ua = navigator.userAgent;
+  const w = window.screen.width, h = window.screen.height;
+  const dpr = window.devicePixelRatio || 1;
+  let platform = 'Unknown', model = '';
+  if (/iPad/.test(ua)) { platform='iPad'; const m=ua.match(/OS (\d+_\d+)/); model=m?`iOS ${m[1].replace('_','.')}`:''; }
+  else if (/iPhone/.test(ua)) { platform='iPhone'; const m=ua.match(/OS (\d+_\d+)/); model=m?`iOS ${m[1].replace('_','.')}`:''; }
+  else if (/Android/.test(ua)) {
+    platform='Android';
+    const m=ua.match(/Android (\d+\.?\d*)/);
+    const dm=ua.match(/;\s*([^;)]+)\sBuild/)||ua.match(/Android[^;]+;\s*([^;)]+)\)/);
+    model=(dm?dm[1].trim():'')+(m?` · ${m[1]}`:'');
+  }
+  else if (/Windows/.test(ua)) platform='Windows PC';
+  else if (/Mac/.test(ua)) platform='Mac';
+  else if (/Linux/.test(ua)) platform='Linux';
+
+  let browser='';
+  if (/Edg/.test(ua)) browser='Edge';
+  else if (/Chrome/.test(ua)) browser='Chrome';
+  else if (/Firefox/.test(ua)) browser='Firefox';
+  else if (/Safari/.test(ua)) browser='Safari';
+
+  return { platform, model, browser, userAgent: ua, screen: `${w}×${h}@${dpr}x` };
+}
+
+// ════════════════════════════════════════
+// IMAGE COMPRESSION
+async function compressImage(file, maxDim = 1600, quality = 0.85){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const base64 = dataUrl.split(',')[1];
+        resolve({ base64, mediaType: 'image/jpeg', dataUrl, width: w, height: h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ════════════════════════════════════════
+// API CALLS
+
+async function apiPost(path, body){
+  const r = await fetch(API_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`${r.status}: ${err.slice(0,200)}`);
+  }
+  return r.json();
+}
+
+async function apiGet(path){
+  const r = await fetch(API_BASE + path);
+  if (!r.ok) {
+    const err = await r.text();
+    throw new Error(`${r.status}: ${err.slice(0,200)}`);
+  }
+  return r.json();
+}
+
+async function apiDelete(path){
+  const r = await fetch(API_BASE + path, { method: 'DELETE' });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+}
+
+// ════════════════════════════════════════
+// BATCH LIST
+
+async function loadBatches(){
+  try {
+    const data = await apiGet('/api/appt-test/batches');
+    state.batches = data.batches || [];
+    renderBatchList();
+  } catch (e) {
+    toast('โหลด batches ไม่ได้: ' + e.message);
+  }
+}
+
+function renderBatchList(){
+  const list = document.getElementById('batchList');
+  if (state.batches.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="em">📦</div><h3>ยังไม่มี batch</h3><p>กด "+ ใหม่" เริ่ม batch ใบนัดแรก</p></div>';
+    return;
+  }
+  list.innerHTML = '';
+  state.batches.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'batch-item';
+    const dt = new Date(b.created_at).toLocaleString('th-TH', { dateStyle:'short', timeStyle:'short' });
+    const successCount = b.success_count || 0;
+    const runCount = b.run_count || 0;
+    const avgMs = b.avg_response_ms ? Math.round(b.avg_response_ms) + 'ms' : '—';
+    card.innerHTML = `
+      <div class="batch-item-meta">
+        <div class="batch-item-title">${escapeHtml(b.batch_name)}</div>
+        <div class="batch-item-sub">${escapeHtml(b.created_by || '—')} · ${dt}</div>
+      </div>
+      <div class="batch-item-stat">
+        ${successCount}/${runCount}<br><span style="opacity:0.7">${avgMs}</span>
+      </div>
+    `;
+    card.onclick = () => openBatch(b.id);
+    list.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════
+// NEW BATCH
+
+function showNewBatchForm(){
+  document.getElementById('batchListCard').classList.add('hidden');
+  document.getElementById('newBatchCard').classList.remove('hidden');
+  document.getElementById('newBatchName').focus();
+}
+
+function hideNewBatchForm(){
+  document.getElementById('newBatchCard').classList.add('hidden');
+  document.getElementById('batchListCard').classList.remove('hidden');
+  ['newBatchName','newPatientLabel','newCreatedBy','newHospital','newDepartment','newNote'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+}
+
+async function createBatch(){
+  const batch_name = document.getElementById('newBatchName').value.trim();
+  if (!batch_name) { toast('กรอกชื่อ batch ก่อน'); return; }
+
+  try {
+    const data = await apiPost('/api/appt-test/batches', {
+      batch_name,
+      patient_label: document.getElementById('newPatientLabel').value.trim() || null,
+      created_by: document.getElementById('newCreatedBy').value.trim() || null,
+      hospital_name: document.getElementById('newHospital').value.trim() || null,
+      department: document.getElementById('newDepartment').value.trim() || null,
+      note: document.getElementById('newNote').value.trim() || null,
+    });
+    toast('✅ สร้าง batch แล้ว');
+    hideNewBatchForm();
+    await loadBatches();
+    openBatch(data.batch.id);
+  } catch (e) {
+    toast('สร้างไม่สำเร็จ: ' + e.message);
+  }
+}
+
+// ════════════════════════════════════════
+// BATCH DETAIL
+
+async function openBatch(batchId){
+  const batch = state.batches.find(b => b.id === batchId);
+  if (!batch) { toast('ไม่พบ batch'); return; }
+  state.currentBatch = batch;
+
+  document.getElementById('batchListCard').classList.add('hidden');
+  document.getElementById('batchDetailCard').classList.remove('hidden');
+
+  document.getElementById('batchTitle').textContent = batch.batch_name;
+  const sub = [batch.created_by, batch.hospital_name, batch.department].filter(Boolean).join(' · ');
+  document.getElementById('batchSubtitle').textContent = sub || '—';
+
+  await loadRuns();
+}
+
+async function loadRuns(){
+  if (!state.currentBatch) return;
+  try {
+    const data = await apiGet(`/api/appt-test/batches/${state.currentBatch.id}/runs`);
+    state.currentRuns = (data.runs || []).map(r => {
+      if (typeof r.ai_raw_response === 'string' && r.ai_raw_response) {
+        try { r.ai_raw_response = JSON.parse(r.ai_raw_response); } catch(e) {}
+      }
+      return r;
+    });
+    renderRuns();
+    renderBatchStats();
+  } catch (e) {
+    toast('โหลด runs ไม่ได้: ' + e.message);
+  }
+}
+
+function renderRuns(){
+  const grid = document.getElementById('thumbsGrid');
+  grid.innerHTML = '';
+
+  state.currentRuns.forEach(r => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    thumb.onclick = (ev) => {
+      if (ev.target.classList.contains('del')) return;
+      openRunDetail(r.id);
+    };
+
+    // Status badge
+    let badgeText = '⋯', badgeCls = 'pending';
+    if (r.status === 'success') { badgeText = '✓'; badgeCls = 'success'; }
+    else if (r.status === 'failed') { badgeText = '✗'; badgeCls = 'failed'; }
+    else if (r.status === 'analyzing') { badgeText = '◌'; badgeCls = 'analyzing'; }
+
+    thumb.innerHTML = `
+      <div class="seq">#${r.sequence_num}</div>
+      <div class="badge ${badgeCls}">${badgeText}</div>
+      <div class="del" data-id="${r.id}">ลบ</div>
+    `;
+
+    // Load thumbnail (lazy)
+    fetch(`${API_BASE}/api/appt-test/runs/${r.id}/image`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.image_base64) {
+          const img = document.createElement('img');
+          img.src = `data:${data.media_type};base64,${data.image_base64}`;
+          thumb.insertBefore(img, thumb.firstChild);
+        }
+      })
+      .catch(() => {});
+
+    // Delete handler
+    thumb.querySelector('.del').onclick = async (ev) => {
+      ev.stopPropagation();
+      if (!confirm('ลบภาพนี้?')) return;
+      try {
+        await apiDelete(`/api/appt-test/runs/${r.id}`);
+        toast('ลบแล้ว');
+        await loadRuns();
+      } catch (e) { toast('ลบไม่สำเร็จ'); }
+    };
+
+    grid.appendChild(thumb);
+  });
+
+  // Add button (if under limit)
+  if (state.currentRuns.length < 20) {
+    const addBtn = document.createElement('div');
+    addBtn.className = 'thumb-add';
+    addBtn.innerHTML = '<div><span class="em">+</span><span>เพิ่ม</span></div>';
+    addBtn.onclick = () => document.getElementById('cameraInput').click();
+    grid.appendChild(addBtn);
+  }
+
+  // Analyze button state
+  const pendingCount = state.currentRuns.filter(r => r.status === 'pending').length;
+  const btn = document.getElementById('analyzeAllBtn');
+  btn.disabled = pendingCount === 0;
+  btn.textContent = pendingCount > 0 ? `🤖 วิเคราะห์ทั้งหมด (${pendingCount} ภาพ)` : '✅ วิเคราะห์ครบแล้ว';
+}
+
+function renderBatchStats(){
+  const runs = state.currentRuns;
+  const successRuns = runs.filter(r => r.status === 'success');
+  const totalMs = successRuns.reduce((s, r) => s + (r.ai_response_ms || 0), 0);
+  const avgMs = successRuns.length > 0 ? Math.round(totalMs / successRuns.length) : 0;
+
+  document.getElementById('statRunCount').textContent = runs.length;
+  document.getElementById('statSuccess').textContent = successRuns.length;
+  document.getElementById('statAvgMs').textContent = avgMs > 0 ? `${avgMs}ms` : '—';
+  document.getElementById('statTotalMs').textContent = totalMs > 0 ? `${(totalMs/1000).toFixed(1)}s` : '—';
+}
+
+// ════════════════════════════════════════
+// UPLOAD IMAGES
+
+async function handleFiles(files){
+  if (!files || files.length === 0) return;
+  if (!state.currentBatch) { toast('ยังไม่ได้เลือก batch'); return; }
+
+  const slotsAvailable = 20 - state.currentRuns.length;
+  if (slotsAvailable <= 0) { toast('ครบ 20 ภาพแล้ว · ลบบางภาพก่อน'); return; }
+
+  const filesToUpload = Array.from(files).slice(0, slotsAvailable);
+  if (filesToUpload.length < files.length) {
+    toast(`Upload ได้แค่ ${slotsAvailable}/${files.length} ภาพ (จำกัด 20)`);
+  }
+
+  for (let i = 0; i < filesToUpload.length; i++) {
+    const file = filesToUpload[i];
+    if (!file.type.startsWith('image/')) continue;
+
+    toast(`📤 กำลัง upload ${i+1}/${filesToUpload.length}…`);
+
+    try {
+      const compressed = await compressImage(file);
+      const seqNum = state.currentRuns.length + i + 1;
+
+      await apiPost('/api/appt-test/runs', {
+        batch_id: state.currentBatch.id,
+        image_base64: compressed.base64,
+        media_type: compressed.mediaType,
+        device_info: state.deviceInfo,
+        sequence_num: seqNum,
+      });
+    } catch (e) {
+      toast(`Upload ภาพที่ ${i+1} ล้มเหลว: ${e.message}`);
+    }
+  }
+
+  await loadRuns();
+  toast(`✅ Upload ${filesToUpload.length} ภาพแล้ว`);
+}
+
+// ════════════════════════════════════════
+// BULK ANALYZE
+
+async function analyzeAll(){
+  const pending = state.currentRuns.filter(r => r.status === 'pending');
+  if (pending.length === 0) return;
+
+  const progressEl = document.getElementById('analyzeProgress');
+  const progressText = document.getElementById('progressText');
+  const progressFill = document.getElementById('progressFill');
+  progressEl.classList.remove('hidden');
+
+  document.getElementById('analyzeAllBtn').disabled = true;
+
+  const startTime = Date.now();
+  let success = 0, failed = 0;
+
+  for (let i = 0; i < pending.length; i++) {
+    const run = pending[i];
+    const pct = Math.round((i / pending.length) * 100);
+    progressText.textContent = `กำลังวิเคราะห์ภาพที่ ${i+1}/${pending.length}…`;
+    progressFill.style.width = pct + '%';
+
+    try {
+      await apiPost(`/api/appt-test/runs/${run.id}/analyze`, {});
+      success++;
+    } catch (e) {
+      console.error(`Analyze ${run.id} failed:`, e.message);
+      failed++;
+    }
+  }
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  progressFill.style.width = '100%';
+  progressText.textContent = `✅ เสร็จ ${success}/${pending.length} ภาพ · ใช้เวลา ${elapsed}s`;
+
+  setTimeout(() => progressEl.classList.add('hidden'), 4000);
+
+  await loadRuns();
+  toast(`✅ วิเคราะห์เสร็จ · ${success} success, ${failed} failed`);
+}
+
+// ════════════════════════════════════════
+// RUN DETAIL
+
+async function openRunDetail(runId){
+  const run = state.currentRuns.find(r => r.id === runId);
+  if (!run) return;
+  state.currentRun = run;
+
+  document.getElementById('batchDetailCard').classList.add('hidden');
+  document.getElementById('runDetailCard').classList.remove('hidden');
+
+  // Load image
+  try {
+    const imgData = await apiGet(`/api/appt-test/runs/${runId}/image`);
+    document.getElementById('runDetailImg').src = `data:${imgData.media_type};base64,${imgData.image_base64}`;
+  } catch (e) { console.error(e); }
+
+  // Missing fields banner
+  const missingEl = document.getElementById('runDetailMissing');
+  if (run.missing_fields && run.missing_fields.length > 0) {
+    missingEl.innerHTML = `<div class="missing-banner">⚠️ <strong>AI อ่านไม่ได้:</strong> ${run.missing_fields.join(', ')}</div>`;
+  } else if (run.status === 'success') {
+    missingEl.innerHTML = `<div class="missing-banner" style="background:var(--ok-soft);border-color:var(--ok);color:var(--ok)">✅ <strong>อ่านครบทุกฟิลด์สำคัญ</strong></div>`;
+  } else if (run.status === 'failed') {
+    missingEl.innerHTML = `<div class="missing-banner">❌ <strong>วิเคราะห์ไม่สำเร็จ:</strong> ${escapeHtml(run.error_message || 'unknown')}</div>`;
+  } else {
+    missingEl.innerHTML = `<div class="missing-banner" style="background:var(--bg-soft);border-color:var(--border);color:var(--ink-soft)">⏳ <strong>ยังไม่ได้วิเคราะห์</strong></div>`;
+  }
+
+  // AI Result KV
+  const kvList = document.getElementById('runDetailKV');
+  kvList.innerHTML = '';
+  const fields = [
+    ['patient_name','ชื่อผู้ป่วย'],['hn','HN'],
+    ['doctor_name','ชื่อแพทย์'],['department','คลินิก/แผนก'],
+    ['hospital_name','โรงพยาบาล'],['building','อาคาร/ชั้น'],
+    ['date_iso','วันที่นัด (ค.ศ.)'],['date_str','วันที่ (ดิบ)'],['time_str','เวลานัด'],
+    ['instructions','คำแนะนำ'],['note','หมายเหตุ'],['confidence','Confidence'],
+  ];
+  fields.forEach(([k, label]) => {
+    let v = run.ai_raw_response?.[k];
+    const dd = document.createElement('dd');
+    const isEmpty = v === null || v === undefined || v === '' || v === 'null' || (Array.isArray(v) && v.length === 0);
+    if (isEmpty) { dd.className = 'empty'; dd.textContent = 'ไม่มี'; }
+    else if (Array.isArray(v)) { dd.textContent = v.join(' · '); }
+    else { dd.textContent = String(v); }
+    const dt = document.createElement('dt');
+    dt.textContent = label;
+    kvList.appendChild(dt);
+    kvList.appendChild(dd);
+  });
+
+  // Meta
+  const meta = document.getElementById('runDetailMeta');
+  meta.innerHTML = '';
+  const metaFields = [
+    ['Device', `${run.device_platform || '—'} · ${run.device_model || ''} · ${run.device_browser || ''}`],
+    ['Image Size', run.image_size_kb ? `${run.image_size_kb} KB` : '—'],
+    ['Response Time', run.ai_response_ms ? `${run.ai_response_ms} ms` : '—'],
+    ['Status', run.status],
+    ['Created', new Date(run.created_at).toLocaleString('th-TH')],
+  ];
+  metaFields.forEach(([label, val]) => {
+    const dt = document.createElement('dt'); dt.textContent = label;
+    const dd = document.createElement('dd'); dd.textContent = val;
+    meta.appendChild(dt); meta.appendChild(dd);
+  });
+
+  document.getElementById('deleteRunBtn').onclick = async () => {
+    if (!confirm('ลบภาพนี้?')) return;
+    try {
+      await apiDelete(`/api/appt-test/runs/${runId}`);
+      toast('ลบแล้ว');
+      document.getElementById('runDetailCard').classList.add('hidden');
+      document.getElementById('batchDetailCard').classList.remove('hidden');
+      await loadRuns();
+    } catch (e) { toast('ลบไม่สำเร็จ'); }
+  };
+}
+
+// ════════════════════════════════════════
+// ANALYTICS
+
+async function loadAnalytics(){
+  try {
+    const data = await apiGet('/api/appt-test/stats');
+    renderOverallStats(data.field_stats);
+    renderFieldCompleteness(data.field_stats);
+    renderPatternCoverage(state.currentRuns || []);
+  } catch (e) {
+    toast('โหลด stats ไม่ได้: ' + e.message);
+  }
+}
+
+function renderOverallStats(s){
+  if (!s) return;
+  document.getElementById('oStatTotal').textContent = s.total_success || 0;
+  document.getElementById('oStatAvgMs').textContent = s.avg_response_ms ? Math.round(s.avg_response_ms) : '—';
+  document.getElementById('oStatMinMs').textContent = s.min_response_ms || '—';
+  document.getElementById('oStatMaxMs').textContent = s.max_response_ms || '—';
+}
+
+function renderFieldCompleteness(s){
+  const el = document.getElementById('fieldCompleteness');
+  if (!s || !s.total_success) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล</p></div>';
+    return;
+  }
+  const total = parseInt(s.total_success);
+  const fields = [
+    ['doctor_name', s.missing_doctor_name, 'ชื่อแพทย์'],
+    ['hospital_name', s.missing_hospital_name, 'โรงพยาบาล'],
+    ['date_iso', s.missing_date_iso, 'วันที่นัด'],
+    ['hn', s.missing_hn, 'HN'],
+    ['patient_name', s.missing_patient_name, 'ชื่อผู้ป่วย'],
+  ];
+  el.innerHTML = '';
+  fields.forEach(([key, missing, label]) => {
+    const pct = Math.round(((total - parseInt(missing)) / total) * 100);
+    const cls = pct >= 85 ? '' : pct >= 65 ? 'med' : 'low';
+    const row = document.createElement('div');
+    row.className = 'fa-row';
+    row.innerHTML = `
+      <div class="fa-field">${label}</div>
+      <div class="fa-track"><div class="fa-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="fa-value">${pct}%</div>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function renderDeviceComparison(devices){
+  const el = document.getElementById('deviceComparison');
+  if (!devices || devices.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล</p></div>';
+    return;
+  }
+  el.innerHTML = '';
+  devices.forEach(d => {
+    const row = document.createElement('div');
+    row.style.cssText = 'padding:10px;background:var(--bg-soft);border-radius:8px;margin-bottom:8px;font-size:13px';
+    row.innerHTML = `
+      <div style="font-weight:600">${escapeHtml(d.device_platform || '—')} · ${escapeHtml(d.device_model || '')}</div>
+      <div style="color:var(--ink-soft);font-family:var(--font-mono);font-size:12px;margin-top:4px">
+        ${d.run_count} runs · ${Math.round(d.avg_response_ms || 0)}ms avg · ${Math.round(d.avg_image_kb || 0)}KB
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+
+// ════════════════════════════════════════
+// HELPERS
+
+function escapeHtml(s){
+  if (s === null || s === undefined) return '—';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ════════════════════════════════════════
+// INIT
+
+
+// ════════════════════════════════════════
+// FIELD COVERAGE (ใบนัด)
+// ════════════════════════════════════════
+
+// 9 ฟิลด์ใบนัด + label + ว่าเป็นฟิลด์สำคัญ (critical) ไหม
+const APPT_FIELDS = [
+  { key: 'patient_name', label: 'ชื่อผู้ป่วย', critical: true },
+  { key: 'hn',           label: 'HN',          critical: true },
+  { key: 'doctor_name',  label: 'ชื่อแพทย์',   critical: true },
+  { key: 'department',   label: 'คลินิก/แผนก', critical: false },
+  { key: 'hospital_name',label: 'โรงพยาบาล',   critical: true },
+  { key: 'building',     label: 'อาคาร/ชั้น',  critical: false },
+  { key: 'date_iso',     label: 'วันที่นัด',   critical: true },
+  { key: 'time_str',     label: 'เวลานัด',     critical: false },
+];
+
+function apptFieldEmpty(v){
+  return v === null || v === undefined || v === '' || v === 'null'
+      || (Array.isArray(v) && v.length === 0);
+}
+
+function renderPatternCoverage(currentRuns){
+  const el = document.getElementById('patternCoverage');
+  if (!el) return;
+
+  const successRuns = (currentRuns || []).filter(r => r.status === 'success' && r.ai_raw_response);
+
+  if (successRuns.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>ยังไม่มีข้อมูล · วิเคราะห์ใบนัดก่อน</p></div>';
+    document.getElementById('patCovCount').textContent = '—';
+    document.getElementById('missingPatternsCard').classList.add('hidden');
+    return;
+  }
+
+  const total = successRuns.length;
+  let html = '';
+  let criticalOk = 0, criticalTotal = 0;
+
+  // นับว่าแต่ละฟิลด์ AI อ่านได้กี่ใบจากทั้งหมด
+  for (const f of APPT_FIELDS) {
+    const readCount = successRuns.filter(r => !apptFieldEmpty(r.ai_raw_response?.[f.key])).length;
+    const pct = Math.round((readCount / total) * 100);
+    const cls = pct >= 85 ? '' : pct >= 65 ? 'med' : 'low';
+    if (f.critical) { criticalTotal++; if (pct >= 85) criticalOk++; }
+    html += `<div class="fa-row">
+      <div class="fa-field">${f.label}${f.critical ? ' <span style="color:var(--bad)">*</span>' : ''}</div>
+      <div class="fa-track"><div class="fa-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="fa-value">${pct}%</div>
+    </div>`;
+  }
+  html += '<div style="font-size:11px;color:var(--ink-soft);margin-top:10px"><span style="color:var(--bad)">*</span> ฟิลด์สำคัญ — ต้องอ่านได้ ≥85% ก่อนเปิดใช้จริง</div>';
+  el.innerHTML = html;
+  document.getElementById('patCovCount').textContent = `${criticalOk}/${criticalTotal} critical ผ่าน`;
+
+  // รายการใบนัดที่อ่านฟิลด์สำคัญไม่ครบ
+  const missingCard = document.getElementById('missingPatternsCard');
+  const missingList = document.getElementById('missingPatternsList');
+  const badRuns = successRuns.filter(r => (r.missing_fields || []).length > 0);
+
+  if (badRuns.length > 0) {
+    missingCard.classList.remove('hidden');
+    missingList.innerHTML = badRuns.map(r =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);font-size:13px">
+        <span style="color:var(--bad);font-weight:700;font-family:var(--font-mono)">#${r.sequence_num}</span>
+        <div>
+          <div style="font-weight:600">${escapeHtml(r.ai_raw_response?.hospital_name || 'ไม่ระบุ รพ.')}</div>
+          <div style="font-size:11px;color:var(--ink-soft)">ขาด: ${(r.missing_fields||[]).join(', ')}</div>
+        </div>
+      </div>`
+    ).join('');
+  } else {
+    missingCard.classList.add('hidden');
+  }
+}
+
+
+async function init(){
+  state.deviceInfo = detectDevice();
+  const d = state.deviceInfo;
+  document.getElementById('deviceLabel').textContent = (d.model ? `${d.platform} · ${d.model}` : d.platform) + (d.browser ? ` · ${d.browser}` : '');
+
+  // Wire up
+  document.getElementById('newBatchBtn').addEventListener('click', showNewBatchForm);
+  document.getElementById('cancelNewBatch').addEventListener('click', hideNewBatchForm);
+  document.getElementById('createBatchBtn').addEventListener('click', createBatch);
+  document.getElementById('backToBatches').addEventListener('click', () => {
+    document.getElementById('batchDetailCard').classList.add('hidden');
+    document.getElementById('batchListCard').classList.remove('hidden');
+    state.currentBatch = null;
+    loadBatches();
+  });
+  document.getElementById('backToBatchDetail').addEventListener('click', () => {
+    document.getElementById('runDetailCard').classList.add('hidden');
+    document.getElementById('batchDetailCard').classList.remove('hidden');
+  });
+
+  document.getElementById('cameraBtn').addEventListener('click', () => document.getElementById('cameraInput').click());
+  document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
+  document.getElementById('cameraInput').addEventListener('change', e => { handleFiles(e.target.files); e.target.value=''; });
+  document.getElementById('fileInput').addEventListener('change', e => { handleFiles(e.target.files); e.target.value=''; });
+
+  document.getElementById('analyzeAllBtn').addEventListener('click', analyzeAll);
+
+  document.getElementById('deleteBatchBtn').addEventListener('click', async () => {
+    if (!state.currentBatch) return;
+    if (!confirm('ลบ batch นี้และภาพทั้งหมด?')) return;
+    try {
+      await apiDelete(`/api/appt-test/batches/${state.currentBatch.id}`);
+      toast('ลบแล้ว');
+      document.getElementById('batchDetailCard').classList.add('hidden');
+      document.getElementById('batchListCard').classList.remove('hidden');
+      state.currentBatch = null;
+      await loadBatches();
+    } catch (e) { toast('ลบไม่สำเร็จ'); }
+  });
+
+  // Tabs
+  document.getElementById('tabBatches').addEventListener('click', () => switchTab('batches'));
+  document.getElementById('tabAnalytics').addEventListener('click', () => switchTab('analytics'));
+  document.getElementById('refreshStatsBtn').addEventListener('click', loadAnalytics);
+
+  await loadBatches();
+}
+
+function switchTab(tab){
+  state.tab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('batchesView').classList.toggle('hidden', tab !== 'batches');
+  document.getElementById('analyticsView').classList.toggle('hidden', tab !== 'analytics');
+  if (tab === 'analytics') { loadAnalytics(); renderPatternCoverage(state.currentRuns || []); }
+}
+
+init();
+</script>
+</body>
+</html>
