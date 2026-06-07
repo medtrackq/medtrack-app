@@ -795,6 +795,7 @@ async function openRunDetail(runId){
     ['timing_type','Timing'],['meal_anchor','Meal Anchor'],['meal_relation','Meal Rel'],
     ['interval_hours','Interval (hr)'],['total_quantity','รวม'],
     ['indication','ข้อบ่งใช้'],['hospital_name','รพ.'],['confidence','Confidence'],
+    ['_debug_label_text','🔍 AI อ่านจากซอง'],['_debug_timing_reasoning','🔍 เหตุผล timing'],
   ];
   fields.forEach(([k, label]) => {
     const v = run.ai_raw_response?.[k];
