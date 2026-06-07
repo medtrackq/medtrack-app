@@ -383,24 +383,66 @@ function detectDevice(){
 // ════════════════════════════════════════
 // IMAGE COMPRESSION
 async function compressImage(file){
-  // เก็บภาพ "ดิบ" เหมือนแอปจริง (medtrack-scan.html) — ไม่ย่อ ไม่บีบ
-  // เพื่อให้ AI เห็นภาพเหมือนตอนคนไข้ถ่ายจริง · accuracy ตรงกับการใช้งานจริง
+  // Hybrid: ภาพ ≤2MB ส่งดิบ (เหมือนแอปคนไข้จริง)
+  //         ภาพ >2MB บีบลงให้ ≈2MB (กัน upload ค้างกับ net ช้า)
+  const RAW_LIMIT = 2 * 1024 * 1024;   // 2 MB
+  const HARD_LIMIT = 5 * 1024 * 1024;  // 5 MB safeguard
+  if (file.size > HARD_LIMIT) {
+    throw new Error('ภาพใหญ่เกิน 5MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
+  }
+
+  // ภาพเล็ก → ส่งดิบ ไม่บีบ ไม่ย่อ
+  if (file.size <= RAW_LIMIT) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const base64 = dataUrl.split(',')[1];
+        const mediaType = file.type || 'image/jpeg';
+        const img = new Image();
+        img.onload = () => resolve({ base64, mediaType, dataUrl, width: img.width, height: img.height });
+        img.onerror = () => resolve({ base64, mediaType, dataUrl, width: null, height: null });
+        img.src = dataUrl;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ภาพใหญ่ → บีบลงให้พอดี ~2MB
+  // คงสัดส่วน, ย่อด้านยาว, ลด quality เป็นขั้น ๆ จน ≤RAW_LIMIT
   return new Promise((resolve, reject) => {
-    // เช็ก 5MB เหมือนแอปจริง (กัน base64 เกิน limit 15mb ของ backend)
-    if (file.size > 5 * 1024 * 1024) {
-      reject(new Error('ภาพใหญ่เกิน 5MB · ถ่ายใหม่หรือลดความละเอียดกล้อง'));
-      return;
-    }
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      const base64 = dataUrl.split(',')[1];
-      const mediaType = file.type || 'image/jpeg';
-      // อ่านขนาดภาพไว้แสดงผล (ไม่ได้แก้ภาพ)
       const img = new Image();
-      img.onload = () => resolve({ base64, mediaType, dataUrl, width: img.width, height: img.height });
-      img.onerror = () => resolve({ base64, mediaType, dataUrl, width: null, height: null });
-      img.src = dataUrl;
+      img.onload = () => {
+        const maxDim = 2000;  // ด้านยาวสุดไม่เกิน 2000px (พอสำหรับ OCR อ่านตัวหนังสือซอง)
+        let { width: w, height: h } = img;
+        if (Math.max(w, h) > maxDim) {
+          const scale = maxDim / Math.max(w, h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // ลอง quality 0.92 → 0.85 → 0.78 → 0.70 หา quality สูงสุดที่ทำให้ ≤ RAW_LIMIT
+        const tries = [0.92, 0.85, 0.78, 0.70];
+        let finalDataUrl = null;
+        for (const q of tries) {
+          const dataUrl = canvas.toDataURL('image/jpeg', q);
+          // ขนาดประมาณการของ base64 → bytes: length * 0.75
+          const approxBytes = (dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75;
+          finalDataUrl = dataUrl;
+          if (approxBytes <= RAW_LIMIT) break;
+        }
+        const base64 = finalDataUrl.split(',')[1];
+        resolve({ base64, mediaType: 'image/jpeg', dataUrl: finalDataUrl, width: w, height: h });
+      };
+      img.onerror = () => reject(new Error('โหลดภาพไม่สำเร็จ'));
+      img.src = e.target.result;
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
