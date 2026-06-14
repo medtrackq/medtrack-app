@@ -740,9 +740,9 @@ async function analyzeAll(){
   const errors = [];
 
   // Config: delay between images + retry on failure
-  const DELAY_MS = 2000;        // หน่วง 2 วิ ระหว่างใบ (กัน backend overload/memory)
-  const MAX_RETRY = 2;          // ลองใหม่สูงสุด 2 ครั้ง
-  const TIMEOUT_MS = 60000;     // timeout 60 วิ ต่อใบ (AI ~9s แต่เผื่อช้า)
+  const DELAY_MS = 4000;        // หน่วง 4 วิ ระหว่างใบ (กันชน rate limit 30/นาที)
+  const MAX_RETRY = 2;          // ลองใหม่สูงสุด 2 ครั้ง (เฉพาะ error ที่ retry ได้)
+  const TIMEOUT_MS = 90000;     // timeout 90 วิ ต่อใบ (AI ~20-25s + เผื่อ)
 
   const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
@@ -758,7 +758,6 @@ async function analyzeAll(){
       try {
         if (attempt > 1) {
           progressText.textContent = `ภาพที่ ${i+1}/${pending.length} — ลองใหม่ครั้งที่ ${attempt-1}…`;
-          await sleep(2000 * attempt);  // backoff: รอนานขึ้นแต่ละครั้ง
         }
         await apiPost(`/api/ocr-test/runs/${run.id}/analyze`, {}, TIMEOUT_MS);
         ok = true;
@@ -766,6 +765,17 @@ async function analyzeAll(){
       } catch (e) {
         lastErr = e.message || String(e);
         console.error(`Analyze ${run.id} attempt ${attempt} failed:`, lastErr);
+
+        // 429 rate_limit → รอนาน (60 วิ) แล้วค่อยลองใหม่ ไม่ยิงรัว
+        if (lastErr.includes('429') || lastErr.includes('rate_limit')) {
+          if (attempt <= MAX_RETRY) {
+            progressText.textContent = `ภาพที่ ${i+1} — ติด rate limit รอ 60 วิ…`;
+            await sleep(60000);  // รอครบนาที ให้ rate window reset
+          }
+        } else if (attempt <= MAX_RETRY) {
+          // error อื่น (network/502) → backoff สั้น
+          await sleep(3000 * attempt);
+        }
       }
     }
 
@@ -776,7 +786,7 @@ async function analyzeAll(){
       errors.push(`ภาพ #${i+1} (run ${run.id}): ${lastErr}`);
     }
 
-    // Delay between images (ยกเว้นใบสุดท้าย) — ให้ backend หายใจ + คืน memory
+    // Delay between images (ยกเว้นใบสุดท้าย) — กันชน rate limit + ให้ backend หายใจ
     if (i < pending.length - 1) {
       await sleep(DELAY_MS);
     }
