@@ -626,17 +626,27 @@ function renderRuns(){
       <div class="del" data-id="${r.id}">ลบ</div>
     `;
 
-    // Load thumbnail (lazy)
-    fetch(`${API_BASE}/api/ocr-test/runs/${r.id}/image`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.image_base64) {
-          const img = document.createElement('img');
-          img.src = `data:${data.media_type};base64,${data.image_base64}`;
-          thumb.insertBefore(img, thumb.firstChild);
-        }
-      })
-      .catch(() => {});
+    // Load thumbnail (lazy + cached เพื่อไม่ยิง /image ซ้ำทุกครั้งที่ loadRuns)
+    if (!window._imgCache) window._imgCache = {};
+    const cached = window._imgCache[r.id];
+    if (cached) {
+      const img = document.createElement('img');
+      img.src = cached;
+      thumb.insertBefore(img, thumb.firstChild);
+    } else {
+      fetch(`${API_BASE}/api/ocr-test/runs/${r.id}/image`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.image_base64) {
+            const src = `data:${data.media_type};base64,${data.image_base64}`;
+            window._imgCache[r.id] = src;  // cache ไว้ ไม่โหลดซ้ำ
+            const img = document.createElement('img');
+            img.src = src;
+            thumb.insertBefore(img, thumb.firstChild);
+          }
+        })
+        .catch(() => {});
+    }
 
     // Delete handler
     thumb.querySelector('.del').onclick = async (ev) => {
