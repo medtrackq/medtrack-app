@@ -457,17 +457,24 @@ async function compressImage(file){
 // ════════════════════════════════════════
 // API CALLS
 
-async function apiPost(path, body){
-  const r = await fetch(API_BASE + path, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  if (!r.ok) {
-    const err = await r.text();
-    throw new Error(`${r.status}: ${err.slice(0,200)}`);
+async function apiPost(path, body, timeoutMs){
+  const controller = new AbortController();
+  const timer = timeoutMs ? setTimeout(() => controller.abort(), timeoutMs) : null;
+  try {
+    const r = await fetch(API_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!r.ok) {
+      const err = await r.text();
+      throw new Error(`${r.status}: ${err.slice(0,200)}`);
+    }
+    return r.json();
+  } finally {
+    if (timer) clearTimeout(timer);
   }
-  return r.json();
 }
 
 async function apiGet(path){
@@ -730,6 +737,14 @@ async function analyzeAll(){
 
   const startTime = Date.now();
   let success = 0, failed = 0;
+  const errors = [];
+
+  // Config: delay between images + retry on failure
+  const DELAY_MS = 2000;        // หน่วง 2 วิ ระหว่างใบ (กัน backend overload/memory)
+  const MAX_RETRY = 2;          // ลองใหม่สูงสุด 2 ครั้ง
+  const TIMEOUT_MS = 60000;     // timeout 60 วิ ต่อใบ (AI ~9s แต่เผื่อช้า)
+
+  const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
   for (let i = 0; i < pending.length; i++) {
     const run = pending[i];
@@ -737,12 +752,33 @@ async function analyzeAll(){
     progressText.textContent = `กำลังวิเคราะห์ภาพที่ ${i+1}/${pending.length}…`;
     progressFill.style.width = pct + '%';
 
-    try {
-      await apiPost(`/api/ocr-test/runs/${run.id}/analyze`, {});
+    let ok = false;
+    let lastErr = '';
+    for (let attempt = 1; attempt <= MAX_RETRY + 1; attempt++) {
+      try {
+        if (attempt > 1) {
+          progressText.textContent = `ภาพที่ ${i+1}/${pending.length} — ลองใหม่ครั้งที่ ${attempt-1}…`;
+          await sleep(2000 * attempt);  // backoff: รอนานขึ้นแต่ละครั้ง
+        }
+        await apiPost(`/api/ocr-test/runs/${run.id}/analyze`, {}, TIMEOUT_MS);
+        ok = true;
+        break;
+      } catch (e) {
+        lastErr = e.message || String(e);
+        console.error(`Analyze ${run.id} attempt ${attempt} failed:`, lastErr);
+      }
+    }
+
+    if (ok) {
       success++;
-    } catch (e) {
-      console.error(`Analyze ${run.id} failed:`, e.message);
+    } else {
       failed++;
+      errors.push(`ภาพ #${i+1} (run ${run.id}): ${lastErr}`);
+    }
+
+    // Delay between images (ยกเว้นใบสุดท้าย) — ให้ backend หายใจ + คืน memory
+    if (i < pending.length - 1) {
+      await sleep(DELAY_MS);
     }
   }
 
@@ -750,10 +786,16 @@ async function analyzeAll(){
   progressFill.style.width = '100%';
   progressText.textContent = `✅ เสร็จ ${success}/${pending.length} ภาพ · ใช้เวลา ${elapsed}s`;
 
-  setTimeout(() => progressEl.classList.add('hidden'), 4000);
+  setTimeout(() => progressEl.classList.add('hidden'), 5000);
 
   await loadRuns();
-  toast(`✅ วิเคราะห์เสร็จ · ${success} success, ${failed} failed`);
+
+  if (failed > 0) {
+    toast(`⚠️ วิเคราะห์เสร็จ · ${success} สำเร็จ, ${failed} ล้มเหลว`);
+    console.warn('Failed runs:\n' + errors.join('\n'));
+  } else {
+    toast(`✅ วิเคราะห์เสร็จครบ ${success} ภาพ`);
+  }
 }
 
 // ════════════════════════════════════════
@@ -788,72 +830,23 @@ async function openRunDetail(runId){
   // AI Result KV
   const kvList = document.getElementById('runDetailKV');
   kvList.innerHTML = '';
-
-  // ── Schema adapter: V9 uses doses[] array, V8 uses root fields ──
-  const raw = run.ai_raw_response || {};
-  const doses = Array.isArray(raw.doses) ? raw.doses : null;
-  const isV9 = doses && doses.length > 0;
-
-  function doseSummary() {
-    if (!isV9) {
-      const tab = raw.tablets_per_dose;
-      const anchor = raw.meal_anchor;
-      const rel = raw.meal_relation;
-      const freq = raw.frequency_per_day;
-      return {
-        freqDisplay: freq ?? 'ไม่มี',
-        doseLines: [`${tab ?? '?'} เม็ด · ${anchor ?? '?'}/${rel ?? ''}`]
-      };
-    }
-    const lines = doses.map((d, i) => {
-      const qty = d.ml_per_dose != null
-        ? `${d.ml_per_dose} mL`
-        : `${d.tablets_per_dose ?? '?'} เม็ด`;
-      const time = d.custom_time && d.time ? ` @ ${d.time}` : '';
-      const anchor = d.meal_anchor || '?';
-      const rel = d.meal_relation || '';
-      const freqPat = d.frequency_pattern && d.frequency_pattern !== 'daily'
-        ? ` [${d.frequency_pattern}]` : '';
-      return `มื้อ ${d.slot_order ?? (i+1)}: ${qty} · ${anchor}/${rel}${time}${freqPat}`;
-    });
-    return { freqDisplay: `${doses.length} มื้อ/วัน`, doseLines: lines };
-  }
-  const summary = doseSummary();
-
   const fields = [
     ['drug_name_raw','ชื่อตามซอง (ดิบ)'],['drug_name','ชื่อยา (TH)'],['drug_name_en','ชื่อยา (EN)'],
-    ['drug_brand','ยี่ห้อ (Brand)'],
     ['dose_mg','Dose'],['dose_unit','Unit'],
-    ['__freq','วัน/ครั้ง'],['__doses','มื้อ/ขนาด'],
-    ['is_high_alert','⚠️ High-Alert'],['drug_class','กลุ่มยา'],
+    ['frequency_per_day','วัน/ครั้ง'],['tablets_per_dose','เม็ด/มื้อ'],
+    ['timing_type','Timing'],['meal_anchor','Meal Anchor'],['meal_relation','Meal Rel'],
     ['interval_hours','Interval (hr)'],['total_quantity','รวม'],
-    ['special_instructions','คำแนะนำพิเศษ'],
     ['indication','ข้อบ่งใช้'],['hospital_name','รพ.'],['confidence','Confidence'],
     ['_debug_label_text','🔍 AI อ่านจากซอง'],['_debug_timing_reasoning','🔍 เหตุผล timing'],
-    ['_debug_extra_text','🔍 ข้อความเพิ่มเติม'],
   ];
   fields.forEach(([k, label]) => {
+    const v = run.ai_raw_response?.[k];
+    const dd = document.createElement('dd');
+    const isEmpty = v === null || v === undefined || v === '' || v === 'null';
+    if (isEmpty) { dd.className = 'empty'; dd.textContent = 'ไม่มี'; }
+    else { dd.textContent = String(v); }
     const dt = document.createElement('dt');
     dt.textContent = label;
-    const dd = document.createElement('dd');
-
-    if (k === '__freq') {
-      dd.textContent = summary.freqDisplay;
-    } else if (k === '__doses') {
-      dd.innerHTML = summary.doseLines.map(l =>
-        `<div style="margin:2px 0">${l.replace(/</g,'&lt;')}</div>`
-      ).join('');
-    } else if (k === 'is_high_alert') {
-      const v = raw.is_high_alert;
-      if (v === true) { dd.textContent = '🔴 ใช่'; dd.style.color = '#c00'; dd.style.fontWeight = 'bold'; }
-      else { dd.className = 'empty'; dd.textContent = 'ไม่ใช่'; }
-    } else {
-      const v = raw[k];
-      const isEmpty = v === null || v === undefined || v === '' || v === 'null'
-        || (Array.isArray(v) && v.length === 0);
-      if (isEmpty) { dd.className = 'empty'; dd.textContent = 'ไม่มี'; }
-      else { dd.textContent = String(v); }
-    }
     kvList.appendChild(dt);
     kvList.appendChild(dd);
   });
@@ -1023,39 +1016,13 @@ const PATTERNS = [
 
 function detectPatternForRun(run) {
   if (!run || run.status !== 'success' || !run.ai_raw_response) return null;
-
-  // ── Schema adapter: V9 stores timing in doses[], V8 at root ──
-  const raw = run.ai_raw_response || {};
-  const doses = Array.isArray(raw.doses) ? raw.doses : null;
-  const isV9 = doses && doses.length > 0;
-
-  let r;
-  if (isV9) {
-    const d0 = doses[0] || {};
-    // Derive a V8-like view from V9 doses for pattern matching
-    r = {
-      ai_meal_anchor: d0.meal_anchor,
-      ai_meal_relation: d0.meal_relation,
-      ai_timing_type: d0.custom_time ? 'interval'
-                      : (d0.meal_anchor === 'bedtime' ? 'bedtime' : 'meal'),
-      ai_frequency_per_day: doses.length,
-      ai_raw_response: {
-        ...raw,
-        // expose first dose's tablets at root for tablet-count patterns
-        tablets_per_dose: d0.tablets_per_dose,
-        interval_hours: raw.interval_hours,
-      },
-    };
-  } else {
-    r = {
-      ai_meal_anchor: run.ai_meal_anchor,
-      ai_meal_relation: run.ai_meal_relation,
-      ai_timing_type: run.ai_timing_type,
-      ai_frequency_per_day: run.ai_frequency_per_day ? parseInt(run.ai_frequency_per_day) : null,
-      ai_raw_response: run.ai_raw_response,
-    };
-  }
-
+  const r = {
+    ai_meal_anchor: run.ai_meal_anchor,
+    ai_meal_relation: run.ai_meal_relation,
+    ai_timing_type: run.ai_timing_type,
+    ai_frequency_per_day: run.ai_frequency_per_day ? parseInt(run.ai_frequency_per_day) : null,
+    ai_raw_response: run.ai_raw_response,
+  };
   for (const group of PATTERNS) {
     for (const item of group.items) {
       try {
