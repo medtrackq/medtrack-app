@@ -386,74 +386,32 @@ function detectDevice(){
 }
 
 // ════════════════════════════════════════
-// IMAGE COMPRESSION
+// IMAGE LOADING — เลียนแบบ MedTrack Scan (production)
 async function compressImage(file){
-  // ย่อภาพถ้า: (1) ไฟล์ > 2MB หรือ (2) ด้านยาว > 2000px
-  // เช็คทั้ง "ขนาดไฟล์" และ "dimension" — ภาพ MP สูงแม้ไฟล์เล็กก็ต้องย่อ
-  // (ภาพใหญ่ → AI ช้า → proxy timeout → 502)
-  const RAW_LIMIT = 2 * 1024 * 1024;   // 2 MB
-  const HARD_LIMIT = 15 * 1024 * 1024; // 15 MB safeguard (กล้องมือถือ MP สูง)
-  const MAX_DIM = 3000;                // ด้านยาวสุดที่ยอมส่งดิบ (เพิ่ม 2500→3000 ลองสุดท้าย แก้ "เช้า/เย็น" สับสน)
+  // MedTrack Scan ส่งภาพดิบ ไม่ resize ไม่บีบ quality
+  // (ที่นี่ต้องทำเหมือนกัน เพื่อให้ผลทดสอบ = production จริง)
+  //
+  // เหตุผล: resize ทำให้ตัวอักษรเล็ก → AI สับสน "เช้า/เย็น"
+  // MedTrack Scan พบว่าส่งดิบ AI อ่านถูก
+  //
+  // จำกัดแค่ขนาดไฟล์ (ไม่ resize dimension)
+  const HARD_LIMIT = 5 * 1024 * 1024;  // 5 MB (เท่ากับ MedTrack Scan)
   if (file.size > HARD_LIMIT) {
-    throw new Error('ภาพใหญ่เกิน 15MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
+    throw new Error('ภาพใหญ่เกิน 5MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
   }
 
-  // โหลดภาพเช็ค dimension ก่อน — ตัดสินใจว่าต้องย่อไหม
-  const probe = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => resolve({ dataUrl: e.target.result, w: img.width, h: img.height });
-      img.onerror = () => reject(new Error('โหลดภาพไม่สำเร็จ'));
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
-  const tooLargePixels = Math.max(probe.w, probe.h) > MAX_DIM;
-  const tooLargeBytes = file.size > RAW_LIMIT;
-
-  // ภาพเล็กพอทั้ง 2 เกณฑ์ → ส่งดิบ ไม่บีบ
-  if (!tooLargePixels && !tooLargeBytes) {
-    const base64 = probe.dataUrl.split(',')[1];
-    return { base64, mediaType: file.type || 'image/jpeg', dataUrl: probe.dataUrl, width: probe.w, height: probe.h };
-  }
-  // ไม่งั้น → ตกไปบีบ/ย่อด้านล่าง (resize เป็น MAX_DIM + ลด quality)
-  // ภาพใหญ่ → บีบลงให้พอดี ~2MB
-  // คงสัดส่วน, ย่อด้านยาว, ลด quality เป็นขั้น ๆ จน ≤RAW_LIMIT
+  // อ่านภาพดิบ ส่งเลย ไม่ผ่าน canvas
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(',')[1];
+      const mediaType = file.type || 'image/jpeg';
+      // โหลด img เพื่อเก็บ dimension (ไว้แสดงเฉย ๆ ไม่ resize)
       const img = new Image();
-      img.onload = () => {
-        const maxDim = 3000;  // ด้านยาวสุดไม่เกิน 3000px (ลองสุดท้าย แก้ "เช้า/เย็น" สับสน — ถ้ายังไม่ได้ = ปัญหา AI bias)
-        let { width: w, height: h } = img;
-        if (Math.max(w, h) > maxDim) {
-          const scale = maxDim / Math.max(w, h);
-          w = Math.round(w * scale);
-          h = Math.round(h * scale);
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-
-        // ลอง quality 0.92 → 0.85 → 0.78 → 0.70 หา quality สูงสุดที่ทำให้ ≤ RAW_LIMIT
-        const tries = [0.92, 0.85, 0.78, 0.70];
-        let finalDataUrl = null;
-        for (const q of tries) {
-          const dataUrl = canvas.toDataURL('image/jpeg', q);
-          // ขนาดประมาณการของ base64 → bytes: length * 0.75
-          const approxBytes = (dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75;
-          finalDataUrl = dataUrl;
-          if (approxBytes <= RAW_LIMIT) break;
-        }
-        const base64 = finalDataUrl.split(',')[1];
-        resolve({ base64, mediaType: 'image/jpeg', dataUrl: finalDataUrl, width: w, height: h });
-      };
-      img.onerror = () => reject(new Error('โหลดภาพไม่สำเร็จ'));
-      img.src = e.target.result;
+      img.onload = () => resolve({ base64, mediaType, dataUrl, width: img.width, height: img.height });
+      img.onerror = () => resolve({ base64, mediaType, dataUrl, width: null, height: null });
+      img.src = dataUrl;
     };
     reader.onerror = reject;
     reader.readAsDataURL(file);
