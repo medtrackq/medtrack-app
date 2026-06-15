@@ -850,20 +850,74 @@ async function openRunDetail(runId){
   // AI Result KV
   const kvList = document.getElementById('runDetailKV');
   kvList.innerHTML = '';
+  // AI ตอบเป็น doses[] array — ดึงข้อมูล dose มาแสดง (รองรับหลายมื้อ)
+  const aiResp = run.ai_raw_response || {};
+  const doses = Array.isArray(aiResp.doses) ? aiResp.doses : [];
+
+  // แปลง frequency_pattern + จำนวน doses → ข้อความ "วัน/ครั้ง"
+  function freqText() {
+    if (doses.length === 0) return null;
+    const pat = doses[0].frequency_pattern || 'daily';
+    if (pat === 'weekly') return 'สัปดาห์ละ ' + doses.length + ' ครั้ง';
+    if (pat === 'monthly') return 'เดือนละ ' + doses.length + ' ครั้ง';
+    if (pat === 'alternate') return 'วันเว้นวัน (' + doses.length + ' มื้อ)';
+    if (pat === 'every_n_days') return 'ทุก ' + (doses[0].frequency_interval || '?') + ' วัน';
+    return 'วันละ ' + doses.length + ' ครั้ง'; // daily
+  }
+  // รวมค่าจากหลายมื้อเป็นข้อความเดียว (เช่น เม็ด/มื้อ = "2, 1")
+  function joinDose(key) {
+    if (doses.length === 0) return null;
+    const vals = doses.map(d => d[key]).filter(v => v !== null && v !== undefined && v !== '');
+    if (vals.length === 0) return null;
+    return vals.join(', ');
+  }
+  // แปลง meal_anchor code → ไทย
+  const anchorTH = { breakfast:'เช้า (breakfast)', lunch:'กลางวัน (lunch)', dinner:'เย็น (dinner)', all:'ทุกมื้อ (all)', bedtime:'ก่อนนอน (bedtime)' };
+  function anchorText() {
+    if (doses.length === 0) return null;
+    const anchors = doses.map(d => anchorTH[d.meal_anchor] || d.meal_anchor).filter(Boolean);
+    return anchors.length ? anchors.join(' + ') : null;
+  }
+  const relTH = { before:'ก่อนอาหาร (before)', after:'หลังอาหาร (after)', '':'—' };
+  function relText() {
+    if (doses.length === 0) return null;
+    const r = doses[0].meal_relation;
+    return relTH[r] !== undefined ? relTH[r] : r;
+  }
+  function customTimeText() {
+    if (doses.length === 0) return null;
+    const times = doses.filter(d => d.custom_time && d.time).map(d => d.time);
+    return times.length ? times.join(', ') : null;
+  }
+
+  // fields: [key, label, valueOverride?]
+  // ถ้ามี valueOverride (function) → ใช้ค่านั้น (ดึงจาก doses[])
+  // ถ้าไม่มี → อ่าน top-level ตามปกติ
   const fields = [
     ['drug_name_raw','ชื่อตามซอง (ดิบ)'],['drug_name','ชื่อยา (TH)'],['drug_name_en','ชื่อยา (EN)'],
     ['dose_mg','Dose'],['dose_unit','Unit'],
-    ['frequency_per_day','วัน/ครั้ง'],['tablets_per_dose','เม็ด/มื้อ'],
-    ['timing_type','Timing'],['meal_anchor','Meal Anchor'],['meal_relation','Meal Rel'],
+    [null,'วัน/ครั้ง', freqText],
+    [null,'เม็ด/มื้อ', () => joinDose('tablets_per_dose')],
+    [null,'มล./มื้อ', () => joinDose('ml_per_dose')],
+    [null,'Meal Anchor', anchorText],
+    [null,'Meal Rel', relText],
+    [null,'เวลาเฉพาะ', customTimeText],
     ['interval_hours','Interval (hr)'],['total_quantity','รวม'],
+    [null,'จำนวนมื้อ/วัน', () => doses.length || null],
+    ['is_high_alert','⚠️ High-alert'],['drug_class','กลุ่มยา'],
+    ['special_instructions','คำเตือนพิเศษ'],
     ['indication','ข้อบ่งใช้'],['hospital_name','รพ.'],['confidence','Confidence'],
     ['_debug_label_text','🔍 AI อ่านจากซอง'],['_debug_timing_reasoning','🔍 เหตุผล timing'],
   ];
-  fields.forEach(([k, label]) => {
-    const v = run.ai_raw_response?.[k];
+  fields.forEach(([k, label, override]) => {
+    let v;
+    if (typeof override === 'function') { v = override(); }
+    else { v = aiResp[k]; }
     const dd = document.createElement('dd');
     const isEmpty = v === null || v === undefined || v === '' || v === 'null';
     if (isEmpty) { dd.className = 'empty'; dd.textContent = 'ไม่มี'; }
+    else if (v === true) { dd.textContent = 'ใช่'; dd.style.color = 'var(--warn)'; dd.style.fontWeight = '700'; }
+    else if (v === false) { dd.textContent = 'ไม่'; }
     else { dd.textContent = String(v); }
     const dt = document.createElement('dt');
     dt.textContent = label;
