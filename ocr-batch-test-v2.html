@@ -393,7 +393,7 @@ async function compressImage(file){
   // (ภาพใหญ่ → AI ช้า → proxy timeout → 502)
   const RAW_LIMIT = 2 * 1024 * 1024;   // 2 MB
   const HARD_LIMIT = 15 * 1024 * 1024; // 15 MB safeguard (กล้องมือถือ MP สูง)
-  const MAX_DIM = 2000;                // ด้านยาวสุดที่ยอมส่งดิบ
+  const MAX_DIM = 2500;                // ด้านยาวสุดที่ยอมส่งดิบ (เพิ่ม 2000→2500 กัน "เช้า/เย็น" สับสน)
   if (file.size > HARD_LIMIT) {
     throw new Error('ภาพใหญ่เกิน 15MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
   }
@@ -427,7 +427,7 @@ async function compressImage(file){
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const maxDim = 2000;  // ด้านยาวสุดไม่เกิน 2000px (พอสำหรับ OCR อ่านตัวหนังสือซอง)
+        const maxDim = 2500;  // ด้านยาวสุดไม่เกิน 2500px (พอสำหรับ OCR อ่านตัวหนังสือซอง + แยก "เช้า/เย็น" ได้)
         let { width: w, height: h } = img;
         if (Math.max(w, h) > maxDim) {
           const scale = maxDim / Math.max(w, h);
