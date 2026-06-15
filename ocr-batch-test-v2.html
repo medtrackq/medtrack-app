@@ -388,32 +388,38 @@ function detectDevice(){
 // ════════════════════════════════════════
 // IMAGE COMPRESSION
 async function compressImage(file){
-  // Hybrid: ภาพ ≤2MB ส่งดิบ (เหมือนแอปคนไข้จริง)
-  //         ภาพ >2MB บีบลงให้ ≈2MB (กัน upload ค้างกับ net ช้า)
+  // ย่อภาพถ้า: (1) ไฟล์ > 2MB หรือ (2) ด้านยาว > 2000px
+  // เช็คทั้ง "ขนาดไฟล์" และ "dimension" — ภาพ MP สูงแม้ไฟล์เล็กก็ต้องย่อ
+  // (ภาพใหญ่ → AI ช้า → proxy timeout → 502)
   const RAW_LIMIT = 2 * 1024 * 1024;   // 2 MB
-  const HARD_LIMIT = 5 * 1024 * 1024;  // 5 MB safeguard
+  const HARD_LIMIT = 15 * 1024 * 1024; // 15 MB safeguard (กล้องมือถือ MP สูง)
+  const MAX_DIM = 2000;                // ด้านยาวสุดที่ยอมส่งดิบ
   if (file.size > HARD_LIMIT) {
-    throw new Error('ภาพใหญ่เกิน 5MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
+    throw new Error('ภาพใหญ่เกิน 15MB · ถ่ายใหม่หรือลดความละเอียดกล้อง');
   }
 
-  // ภาพเล็ก → ส่งดิบ ไม่บีบ ไม่ย่อ
-  if (file.size <= RAW_LIMIT) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        const base64 = dataUrl.split(',')[1];
-        const mediaType = file.type || 'image/jpeg';
-        const img = new Image();
-        img.onload = () => resolve({ base64, mediaType, dataUrl, width: img.width, height: img.height });
-        img.onerror = () => resolve({ base64, mediaType, dataUrl, width: null, height: null });
-        img.src = dataUrl;
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
+  // โหลดภาพเช็ค dimension ก่อน — ตัดสินใจว่าต้องย่อไหม
+  const probe = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => resolve({ dataUrl: e.target.result, w: img.width, h: img.height });
+      img.onerror = () => reject(new Error('โหลดภาพไม่สำเร็จ'));
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
+  const tooLargePixels = Math.max(probe.w, probe.h) > MAX_DIM;
+  const tooLargeBytes = file.size > RAW_LIMIT;
+
+  // ภาพเล็กพอทั้ง 2 เกณฑ์ → ส่งดิบ ไม่บีบ
+  if (!tooLargePixels && !tooLargeBytes) {
+    const base64 = probe.dataUrl.split(',')[1];
+    return { base64, mediaType: file.type || 'image/jpeg', dataUrl: probe.dataUrl, width: probe.w, height: probe.h };
+  }
+  // ไม่งั้น → ตกไปบีบ/ย่อด้านล่าง (resize เป็น MAX_DIM + ลด quality)
   // ภาพใหญ่ → บีบลงให้พอดี ~2MB
   // คงสัดส่วน, ย่อด้านยาว, ลด quality เป็นขั้น ๆ จน ≤RAW_LIMIT
   return new Promise((resolve, reject) => {
