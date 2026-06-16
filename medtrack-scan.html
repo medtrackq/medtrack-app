@@ -2394,7 +2394,10 @@ async function saveToBackend(medsList) {
       const schedules = [{
         reminder_time: reminderTime,
         meal_anchor: anchor,
-        meal_relation: relation
+        meal_relation: relation,
+        tablets_per_dose: parseFloat(m.tablets_per_dose) || 1,
+        ml_per_dose: (m.ml_per_dose !== undefined && m.ml_per_dose !== null && m.ml_per_dose !== '')
+          ? parseFloat(m.ml_per_dose) : null
       }];
       
       const body = {
@@ -2403,8 +2406,6 @@ async function saveToBackend(medsList) {
         drug_name_en: m.drug_name_en || null,
         dose_mg: parseFloat(m.dose_mg) || 0,
         dose_unit: m.dose_unit || 'mg',
-        tablets_per_dose: parseInt(m.tablets_per_dose) || 1,
-        frequency_per_day: parseInt(m.frequency_per_day) || 1,
         timing_type: 'meal',
         total_tablets: parseInt(m.total_tablets) || null,
         total_days: parseInt(m.total_days) || null,
