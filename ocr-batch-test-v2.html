@@ -679,20 +679,23 @@ async function handleFiles(files){
       const compressed = await compressImage(file);
       const seqNum = state.currentRuns.length + i + 1;
 
-      await apiPost('/api/ocr-test/runs', {
+      // ⭐ Hybrid flow: ส่งภาพ → AI ตรง (ไม่ผ่าน DB round-trip)
+      // เหมือน MedTrack Scan production ทุกประการ
+      await apiPost('/api/ocr-test/scan-direct', {
         batch_id: state.currentBatch.id,
         image_base64: compressed.base64,
         media_type: compressed.mediaType,
         device_info: state.deviceInfo,
         sequence_num: seqNum,
-      });
+        save_image: true,  // เก็บ image ใน DB ด้วย (เปิด history view ภาพย้อนหลัง)
+      }, 90000);
     } catch (e) {
       toast(`Upload ภาพที่ ${i+1} ล้มเหลว: ${e.message}`);
     }
   }
 
   await loadRuns();
-  toast(`✅ Upload ${filesToUpload.length} ภาพแล้ว`);
+  toast(`✅ Upload + วิเคราะห์ ${filesToUpload.length} ภาพแล้ว`);
 }
 
 // ════════════════════════════════════════
