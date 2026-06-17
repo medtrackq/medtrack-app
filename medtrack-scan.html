@@ -690,6 +690,31 @@ label.upbtn{cursor:pointer}
     </div>
   </div>
 </div>
+
+<!-- ─── PATCH P3: Non-oral medication warning modal ─── -->
+<div class="mbk" id="nonOralModal">
+  <div class="api-modal" style="max-width:480px">
+    <h3 style="color:#D97706;font-size:15px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">⚠️</span>
+      <span>ระบบยังไม่รองรับยาประเภทนี้</span>
+    </h3>
+    <p style="margin-top:8px;color:var(--t2);font-size:13px;line-height:1.6">
+      ระบบ MedTrack รองรับเฉพาะยากินและยาน้ำในขณะนี้<br>
+      ยาประเภทอื่นจะรองรับในเวอร์ชันถัดไป
+    </p>
+    <div id="nonOralList" style="margin:14px 0;max-height:200px;overflow-y:auto"></div>
+    <p id="nonOralNote" style="font-size:12px;color:var(--t2);font-style:italic;margin-bottom:14px"></p>
+    <div class="mbtns" style="display:flex;gap:8px">
+      <button class="mb-s" style="flex:1;background:var(--ac);color:#fff" onclick="closeNonOralModal()">ตกลง</button>
+    </div>
+  </div>
+</div>
+<style>
+#nonOralModal .nor-item{padding:10px 12px;background:#FEF3C7;border-left:3px solid #D97706;border-radius:6px;margin-bottom:8px}
+#nonOralModal .nor-drug{font-weight:600;font-size:14px;color:#92400E;margin-bottom:2px}
+#nonOralModal .nor-form{font-size:12px;color:#A16207}
+</style>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1165,6 +1190,54 @@ function fixTotalDays(med){
   return med;
 }
 
+// ─── PATCH P3: dose_form support — oral vs non-oral detection ───
+const ORAL_DOSE_FORMS = [
+  'oral_tablet', 'oral_capsule', 'oral_syrup',
+  'oral_sublingual', 'oral_chewable', 'oral_effervescent'
+];
+const DOSE_FORM_LABEL_TH = {
+  eye_drops:   'ยาหยอดตา',
+  ear_drops:   'ยาหยอดหู',
+  inhaler:     'ยาสูดดม / ยาพ่น',
+  topical:     'ยาทา / ครีม / ขี้ผึ้ง',
+  injection:   'ยาฉีด',
+  suppository: 'ยาเหน็บ',
+  nasal_spray: 'ยาพ่นจมูก',
+  vaginal:     'ยาเหน็บช่องคลอด',
+  unknown:     'ประเภทยาไม่ทราบ'
+};
+function isOralDoseForm(form) {
+  if (!form) return true; // ถ้าไม่มี dose_form → assume oral (backward compat)
+  return ORAL_DOSE_FORMS.includes(form.toLowerCase());
+}
+function doseFormLabel(form) {
+  return DOSE_FORM_LABEL_TH[form] || form || 'ประเภทไม่ทราบ';
+}
+function showNonOralModal(nonOralList, allBlocked) {
+  const modal = document.getElementById('nonOralModal');
+  if (!modal) return;
+  const listDiv = document.getElementById('nonOralList');
+  listDiv.innerHTML = nonOralList.map(item =>
+    `<div class="nor-item">
+       <div class="nor-drug">${escapeHtml(item.drug_name)}</div>
+       <div class="nor-form">ประเภท: ${escapeHtml(item.label)}</div>
+     </div>`
+  ).join('');
+  const note = document.getElementById('nonOralNote');
+  note.textContent = allBlocked
+    ? 'ยาที่สแกนมาทั้งหมดเป็นยาที่ระบบยังไม่รองรับ'
+    : 'ยาเหล่านี้จะไม่ถูกบันทึก — รายการอื่นจะดำเนินการต่อ';
+  modal.classList.add('on');
+}
+function closeNonOralModal() {
+  const modal = document.getElementById('nonOralModal');
+  if (modal) modal.classList.remove('on');
+}
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => 
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 async function analyzeAll(){
   if(!photoQueue.length)return;
   document.getElementById('btnAnalyze').disabled=true;
@@ -1201,9 +1274,36 @@ async function analyzeAll(){
   }
   updateProgBar(photoQueue.length,photoQueue.length);
 
+  // ─── PATCH P3: dose_form check — filter non-oral medications ───
+  // Filter meds into oral / non-oral based on AI's dose_form detection
+  const NON_ORAL_INFO = [];
+  meds = meds.filter(m => {
+    const form = (m.dose_form || '').toLowerCase();
+    if (form && form !== '' && !isOralDoseForm(form)) {
+      NON_ORAL_INFO.push({
+        drug_name: m.drug_name || '(ไม่ทราบชื่อยา)',
+        dose_form: form,
+        label: doseFormLabel(form)
+      });
+      return false; // remove from meds list
+    }
+    return true; // keep oral meds
+  });
+
+  // ถ้ามี non-oral → แสดง modal เตือน
+  if (NON_ORAL_INFO.length > 0) {
+    showNonOralModal(NON_ORAL_INFO, meds.length === 0);
+  }
+
   // ถ้าไม่มีผลลัพธ์เลย — แจ้งผู้ใช้
-  if(!meds.length){
+  if(!meds.length && NON_ORAL_INFO.length === 0){
     alert('❌ วิเคราะห์ไม่สำเร็จทั้งหมด\n\nอาจเป็นเพราะ:\n• เซิร์ฟเวอร์มีปัญหา\n• รูปไม่ชัด\n• อินเทอร์เน็ตไม่เสถียร\n\nลองใหม่อีกครั้ง');
+    document.getElementById('btnAnalyze').disabled=false;
+    document.getElementById('btnAddPhoto').disabled=false;
+    return;
+  }
+  // ถ้ามี non-oral ทั้งหมด (ไม่มี oral เหลือ) → ไม่แสดง result section
+  if(!meds.length){
     document.getElementById('btnAnalyze').disabled=false;
     document.getElementById('btnAddPhoto').disabled=false;
     return;
