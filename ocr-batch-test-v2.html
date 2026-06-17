@@ -854,12 +854,41 @@ async function openRunDetail(runId){
     const times = doses.filter(d => d.custom_time && d.time).map(d => d.time);
     return times.length ? times.join(', ') : null;
   }
+  // แปลง dose_form code → ไทย + flag ถ้าเป็น non-oral
+  const ORAL_FORMS_SET = new Set([
+    'oral_tablet','oral_capsule','oral_syrup',
+    'oral_sublingual','oral_chewable','oral_effervescent'
+  ]);
+  const DOSE_FORM_TH = {
+    oral_tablet:'เม็ด (oral_tablet)',
+    oral_capsule:'แคปซูล (oral_capsule)',
+    oral_syrup:'ยาน้ำ (oral_syrup)',
+    oral_sublingual:'อมใต้ลิ้น (sublingual)',
+    oral_chewable:'เคี้ยว (chewable)',
+    oral_effervescent:'เม็ดฟู่ (effervescent)',
+    eye_drops:'ยาหยอดตา',
+    ear_drops:'ยาหยอดหู',
+    inhaler:'ยาสูดดม / ยาพ่น',
+    topical:'ยาทา / ครีม',
+    injection:'ยาฉีด',
+    suppository:'ยาเหน็บ',
+    nasal_spray:'ยาพ่นจมูก',
+    vaginal:'ยาเหน็บช่องคลอด',
+    unknown:'ไม่ทราบประเภท'
+  };
+  function doseFormDisplay(form) {
+    if (!form) return null;
+    const f = String(form).toLowerCase();
+    const label = DOSE_FORM_TH[f] || f;
+    return ORAL_FORMS_SET.has(f) ? label : `⚠️ ${label} (ไม่รองรับ)`;
+  }
 
   // fields: [key, label, valueOverride?]
   // ถ้ามี valueOverride (function) → ใช้ค่านั้น (ดึงจาก doses[])
   // ถ้าไม่มี → อ่าน top-level ตามปกติ
   const fields = [
     ['drug_name_raw','ชื่อตามซอง (ดิบ)'],['drug_name','ชื่อยา (TH)'],['drug_name_en','ชื่อยา (EN)'],
+    [null,'รูปแบบยา (route)', () => doseFormDisplay(aiResp.dose_form)],
     ['dose_mg','Dose'],['dose_unit','Unit'],
     [null,'วัน/ครั้ง', freqText],
     [null,'เม็ด/มื้อ', () => joinDose('tablets_per_dose')],
@@ -884,6 +913,14 @@ async function openRunDetail(runId){
     else if (v === true) { dd.textContent = 'ใช่'; dd.style.color = 'var(--warn)'; dd.style.fontWeight = '700'; }
     else if (v === false) { dd.textContent = 'ไม่'; }
     else { dd.textContent = String(v); }
+    // Highlight dose_form row when non-oral
+    if (label === 'รูปแบบยา (route)' && v && typeof v === 'string' && v.startsWith('⚠️')) {
+      dd.style.color = 'var(--warn)';
+      dd.style.fontWeight = '700';
+      dd.style.background = 'rgba(217, 119, 6, 0.1)';
+      dd.style.padding = '2px 6px';
+      dd.style.borderRadius = '3px';
+    }
     const dt = document.createElement('dt');
     dt.textContent = label;
     kvList.appendChild(dt);
