@@ -882,6 +882,17 @@ async function openRunDetail(runId){
     const label = DOSE_FORM_TH[f] || f;
     return ORAL_FORMS_SET.has(f) ? label : `⚠️ ${label} (ไม่รองรับ)`;
   }
+  // Display post-processor corrections (e.g., half-tablet)
+  function postProcessorDisplay() {
+    const applied = aiResp._post_processor_applied;
+    if (!Array.isArray(applied) || applied.length === 0) return null;
+    return applied.map(a => {
+      if (a.rule === 'half_tablet_correction') {
+        return `🛡️ แก้อัตโนมัติ: ครึ่งเม็ด (${a.doses_corrected} doses, pattern: ${a.pattern})`;
+      }
+      return `🛡️ ${a.rule}`;
+    }).join(' · ');
+  }
 
   // fields: [key, label, valueOverride?]
   // ถ้ามี valueOverride (function) → ใช้ค่านั้น (ดึงจาก doses[])
@@ -889,6 +900,7 @@ async function openRunDetail(runId){
   const fields = [
     ['drug_name_raw','ชื่อตามซอง (ดิบ)'],['drug_name','ชื่อยา (TH)'],['drug_name_en','ชื่อยา (EN)'],
     [null,'รูปแบบยา (route)', () => doseFormDisplay(aiResp.dose_form)],
+    [null,'🛡️ Auto-correct', () => postProcessorDisplay()],
     ['dose_mg','Dose'],['dose_unit','Unit'],
     [null,'วัน/ครั้ง', freqText],
     [null,'เม็ด/มื้อ', () => joinDose('tablets_per_dose')],
@@ -918,6 +930,14 @@ async function openRunDetail(runId){
       dd.style.color = 'var(--warn)';
       dd.style.fontWeight = '700';
       dd.style.background = 'rgba(217, 119, 6, 0.1)';
+      dd.style.padding = '2px 6px';
+      dd.style.borderRadius = '3px';
+    }
+    // Highlight post-processor correction (safety net triggered)
+    if (label === '🛡️ Auto-correct' && v && typeof v === 'string' && v.startsWith('🛡️')) {
+      dd.style.color = '#16A34A';
+      dd.style.fontWeight = '700';
+      dd.style.background = 'rgba(22, 163, 74, 0.1)';
       dd.style.padding = '2px 6px';
       dd.style.borderRadius = '3px';
     }
