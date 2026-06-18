@@ -2489,15 +2489,27 @@ async function saveToBackend(medsList) {
       const finalM = ((totalMin + 1440) % 1440) % 60;
       const reminderTime = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
       
-      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + reminderTime);
+      // PATCH P7: ตรวจสอบ custom_time จาก AI response (Madopar-style "เวลา 21.00")
+      // ถ้า AI detect custom_time = true → ส่งเป็น override ของ meal_anchor calculation
+      // Backend calculateReminderTime จะใช้ time นี้แทนการคำนวณตาม meal_anchor
+      const aiDose = (m.doses && m.doses[0]) || {};
+      const aiCustomTime = aiDose.custom_time === true;
+      const aiTime = aiDose.time || m.time || null;
+      
+      // ถ้ามี custom_time → ใช้ AI's time, ไม่งั้น ใช้ reminderTime ที่คำนวณตาม meal
+      const finalReminderTime = (aiCustomTime && aiTime) ? aiTime : reminderTime;
+      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + finalReminderTime + 
+                  (aiCustomTime ? ' (custom_time)' : ' (from meal_anchor)'));
       
       const schedules = [{
-        reminder_time: reminderTime,
+        reminder_time: finalReminderTime,
         meal_anchor: anchor,
         meal_relation: relation,
         tablets_per_dose: parseFloat(m.tablets_per_dose) || 1,
         ml_per_dose: (m.ml_per_dose !== undefined && m.ml_per_dose !== null && m.ml_per_dose !== '')
-          ? parseFloat(m.ml_per_dose) : null
+          ? parseFloat(m.ml_per_dose) : null,
+        custom_time: aiCustomTime,
+        time: aiTime
       }];
       
       const body = {
