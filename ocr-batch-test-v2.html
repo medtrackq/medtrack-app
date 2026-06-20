@@ -1126,6 +1126,21 @@ async function openRunDetail(runId){
     const dayOfWeek = d0.day_of_week;
     const dayOfMonth = d0.day_of_month;
     
+    // every_n_hours → แสดงเวลาในวัน (06:00, 14:00, 22:00) ไม่ใช่วันที่
+    if (pat === 'every_n_hours') {
+      const ih = interval || 8;
+      const start = '06:00'; // default first dose (จริงใช้ ivStart ใน production)
+      const [sh, sm] = start.split(':').map(Number);
+      const startMin = sh * 60 + sm;
+      const cnt = Math.round(24 / ih);
+      const slots = [];
+      for (let n = 0; n < cnt; n++) {
+        const tot = (startMin + n * ih * 60) % 1440;
+        slots.push(`${String(Math.floor(tot/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);
+      }
+      return `ทุก ${ih} ชม. → ${slots.join(', ')} (เริ่ม 06:00)`;
+    }
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dates = [];
@@ -1182,7 +1197,11 @@ async function openRunDetail(runId){
     [null,'Meal Anchor', anchorText],
     [null,'Meal Rel', relText],
     [null,'เวลาเฉพาะ', customTimeText],
-    ['interval_hours','Interval (hr)'],['total_quantity','รวม'],
+    [null,'Interval (hr)', () => {
+      const d0 = doses[0] || {};
+      return d0.frequency_pattern === 'every_n_hours' ? (d0.frequency_interval || null) : null;
+    }],
+    ['total_quantity','รวม'],
     [null,'จำนวนมื้อ/วัน', () => doses.length || null],
     ['is_high_alert','⚠️ High-alert'],['drug_class','กลุ่มยา'],
     ['special_instructions','คำเตือนพิเศษ'],
