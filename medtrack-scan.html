@@ -1544,7 +1544,7 @@ function renderMedList(){
     const timingText = summarizeTimingLabel(m.doses);
     const sub=[ds, freqText, timingText, m.total_days?m.total_days+' '+t('rfDays'):''].filter(Boolean).join(' · ');
     const c=document.createElement('div');c.className='mchip';
-    c.innerHTML=`<div class="mcdot" style="background:var(--ac)"></div><div class="mcinfo"><div class="mcnm">${escapeHtml(m.drug_name||'')}${courseTag}</div><div class="mcsb">${escapeHtml(sub)}</div></div><button class="mcrem" onclick="removeMed(${i})">×</button>`;
+    c.innerHTML=`<div class="mcdot" style="background:var(--ac)"></div><div class="mcinfo"><div class="mcnm">${escapeHtml(m.drug_name_raw || m.drug_name||'')}${courseTag}</div><div class="mcsb">${escapeHtml(sub)}</div></div><button class="mcrem" onclick="removeMed(${i})">×</button>`;
     el.appendChild(c);
   });
 }
@@ -1627,7 +1627,7 @@ function renderDcards(){
       <div class="dc-hd">
         ${q?`<img class="dc-thumb" src="${q.dataUrl}">`:'' }
         <div style="flex:1">
-          <div class="dc-nm">${escapeHtml(m.drug_name||'—')}</div>
+          <div class="dc-nm">${escapeHtml(m.drug_name_raw || m.drug_name||'—')}</div>
         ${m.must_complete_course?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#DC2626;line-height:1.5"><b>⚠️ ต้องกินให้ครบคอร์ส ${m.total_days||''}  วัน</b><br>${escapeHtml(m.course_completion_warning||'ห้ามหยุดยาเองแม้อาการดีขึ้นแล้ว')}</div>`:''}
         ${m.is_prn?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#92400E;line-height:1.5">💊 <b>กินเมื่อมีอาการ</b> · กินซ้ำได้ทุก ${m.prn_min_interval_hours||4} ชั่วโมง · ไม่เกิน ${m.prn_max_per_day||4} ครั้ง/วัน</div>`:''}
         ${m.is_continuous?`<div style="background:#E0FFF6;border:1px solid #6EE7B7;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#065F46">🔄 <b>ยากินต่อเนื่อง</b> ห้ามหยุดยาเองโดยไม่ปรึกษาแพทย์</div>`:''}
