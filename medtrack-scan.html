@@ -1714,6 +1714,16 @@ function buildSchedule(medList,meals){
       frequency_pattern: med.frequency_pattern || 'daily'
     }];
 
+    // Interval (ทุก N ชม.) schema ใหม่ → ivMeds bucket (คำนวณ N slots)
+    const d0check = doses[0];
+    if (d0check.frequency_pattern === 'every_n_hours') {
+      // เก็บ interval_hours จาก frequency_interval (schema ใหม่)
+      med._intervalHours = d0check.frequency_interval || med.interval_hours || 8;
+      med._intervalTablets = d0check.tablets_per_dose ?? med.tablets_per_dose ?? 1;
+      ivMeds.push(med);
+      return;
+    }
+
     // Non-daily (alternate/weekly/monthly) → skipMeds bucket
     const d0 = doses[0];
     const pat = d0.frequency_pattern || 'daily';
@@ -1744,18 +1754,8 @@ function buildSchedule(medList,meals){
         return;
       }
 
-      // Priority 2: Non-daily → use ivStart
-      // (skipMeds bucket จัดการแล้วก่อนหน้านี้ — ไม่ถึง forEach นี้)
-      // แต่ถ้า frequency_pattern === 'every_n_hours' จะอยู่ใน loop นี้
+      // Priority 2: every_n_hours → ไปที่ ivMeds bucket แล้ว (ไม่ถึงตรงนี้)
       const pat = d.frequency_pattern || 'daily';
-      if (pat === 'every_n_hours') {
-        const ivStartEl = document.getElementById('ivStart');
-        const startTime = ivStartEl?.value || '08:00';
-        const hh = parseInt(startTime.split(':')[0]);
-        const periodIdx = hh < 12 ? 0 : hh < 17 ? 1 : hh < 21 ? 2 : 3;
-        periods[periodIdx].drugs.push({drug:med, time:startTime, cls:'fixed', lbl:'เวลาเฉพาะ'});
-        return;
-      }
 
       // Priority 3: Bedtime
       if (anch === 'bedtime' || rel === 'bedtime') {
@@ -1842,12 +1842,13 @@ function rebundleIfReady(){
   });
   const ivc=document.getElementById('ivcards');ivc.innerHTML='';
   ivMeds.forEach(med=>{
-    const ih=med.interval_hours||8;const st=document.getElementById('ivStart')?.value||'08:00';
+    const ih=med._intervalHours||med.interval_hours||8;const st=document.getElementById('ivStart')?.value||'08:00';
+    const tabletsPerDose=med._intervalTablets??med.tablets_per_dose??1;
     const[sh,sm]=st.split(':').map(Number);const stMin=sh*60+sm;const cnt=Math.round(24/ih);const slots=[];
     for(let n=0;n<cnt;n++){const tot=stMin+n*ih*60;slots.push(`${String(Math.floor((tot%1440)/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);}
     totalAlerts+=slots.length;
     const card=document.createElement('div');card.className='iv-card';
-    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${med.drug_name}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${fmtNum(med.tablets_per_dose||1)} ${t('ivUnit')}</div></div>`).join('')}</div>`;
+    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${escapeHtml(med.drug_name_raw||med.drug_name)}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${fmtNum(tabletsPerDose)} ${t('ivUnit')}</div></div>`).join('')}</div>`;
     ivc.appendChild(card);
   });
   const pc=document.getElementById('prncards');pc.innerHTML='';
@@ -2894,6 +2895,33 @@ async function saveToBackend(medsList) {
         };
       });
       
+      // INTERVAL: แตก every_n_hours → หลาย schedules (ทุก N ชม.)
+      // เช่น "ทุก 8 ชม." + ivStart 06:00 → 06:00, 14:00, 22:00
+      const expandedSchedules = [];
+      for (const sch of schedules) {
+        if (sch.frequency_pattern === 'every_n_hours') {
+          const ih = parseInt(sch.frequency_interval) || 8;
+          const ivStartEl = document.getElementById('ivStart');
+          const startTime = ivStartEl?.value || '08:00';
+          const [sh, sm] = startTime.split(':').map(Number);
+          const startMin = sh * 60 + sm;
+          const count = Math.round(24 / ih);  // จำนวน doses/วัน
+          for (let n = 0; n < count; n++) {
+            const totalMin = (startMin + n * ih * 60) % 1440;
+            const hh = String(Math.floor(totalMin / 60)).padStart(2, '0');
+            const mm = String(totalMin % 60).padStart(2, '0');
+            expandedSchedules.push({
+              ...sch,
+              reminder_time: `${hh}:${mm}`,
+              meal_anchor: 'all',  // interval ไม่ผูกมื้อ
+              slot_order: n + 1
+            });
+          }
+        } else {
+          expandedSchedules.push(sch);
+        }
+      }
+      
       const body = {
         user_id: USER_ID,
         drug_name: m.drug_name,
@@ -2911,7 +2939,7 @@ async function saveToBackend(medsList) {
         doctor_name: m.doctor_name || null,
         hospital_name: m.hospital_name || null,
         dispense_date: m.dispense_date || null,
-        schedules: schedules
+        schedules: expandedSchedules
       };
       
       // Track first hospital/doctor for scan_history
