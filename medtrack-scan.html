@@ -2853,8 +2853,8 @@ async function saveToBackend(medsList) {
           finalReminderTime = ivStartEl?.value || '08:00';
           reminderSource = 'ivStart (non-daily)';
         } else if (anchor === 'bedtime' || relation === 'bedtime') {
-          // Priority 3: bedtime fixed
-          finalReminderTime = '21:00';
+          // Priority 3: bedtime — ใช้เวลานอนของ user (ไม่ใช้ offset)
+          finalReminderTime = userMeals.bedtime || '21:00';
           reminderSource = 'bedtime fixed';
         } else {
           // Priority 4: meal_anchor
