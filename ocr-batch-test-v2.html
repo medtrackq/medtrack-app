@@ -261,9 +261,10 @@ input,select,textarea{font:inherit;color:inherit}
       <input type="file" id="fileInput" class="file-input" accept="image/*" multiple />
 
       <div class="btn-grid">
-        <button class="btn btn-primary" id="cameraBtn">📸 ถ่ายเพิ่ม</button>
+        <button class="btn btn-primary" id="scannerBtn">🎯 สแกน (มีกรอบ)</button>
         <button class="btn btn-secondary" id="uploadBtn">🖼️ จากเครื่อง</button>
       </div>
+      <button class="btn btn-secondary btn-block" id="cameraBtn" style="margin-top:8px">📸 ถ่ายปกติ (ไม่มีกรอบ)</button>
 
       <div class="thumbs-grid" id="thumbsGrid"></div>
 
@@ -341,6 +342,83 @@ input,select,textarea{font:inherit;color:inherit}
   </main>
 
 </div>
+
+<!-- ─── SCANNER MODAL (Camera + Frame Overlay) ─── -->
+<div id="scannerModal">
+  <div id="scCameraView">
+    <video id="scVideo" playsinline autoplay muted></video>
+    <canvas id="scCanvas" style="display:none"></canvas>
+    <div id="scFlash"></div>
+    <div id="scOverlay">
+      <div class="sc-mask" id="scMaskTop"></div>
+      <div class="sc-mask" id="scMaskBottom"></div>
+      <div class="sc-mask" id="scMaskLeft"></div>
+      <div class="sc-mask" id="scMaskRight"></div>
+      <div id="scTarget">
+        <div class="sc-corner tl"></div><div class="sc-corner tr"></div>
+        <div class="sc-corner bl"></div><div class="sc-corner br"></div>
+        <div id="scScanline"></div>
+      </div>
+    </div>
+    <div id="scHint">
+      <div id="scHintBadge">🎯 วางซองยาให้อยู่ในกรอบ</div>
+      <div id="scHintSub">ให้ฉลากชัด ไม่เอียง แสงพอดี · เห็นตัวอักษรครบทุกบรรทัด</div>
+    </div>
+    <button id="scClose" onclick="closeScannerModal()">✕</button>
+  </div>
+  <div id="scControls">
+    <div class="sc-side" onclick="scFlip()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </div>
+    <div id="scShutter" onclick="scCapture()"></div>
+    <div class="sc-side" style="visibility:hidden"></div>
+  </div>
+  <!-- Preview -->
+  <div id="scPreview">
+    <div id="scPreviewImgWrap"><img id="scPreviewImg" alt="preview"></div>
+    <div id="scPreviewControls">
+      <button class="sc-pv-btn sc-retake" onclick="scRetake()">↺ ถ่ายใหม่</button>
+      <button class="sc-pv-btn sc-use" onclick="scUse()">✓ ใช้ภาพนี้</button>
+    </div>
+  </div>
+</div>
+<style>
+#scannerModal{position:fixed;inset:0;z-index:1000;background:#0A0E1A;display:none;flex-direction:column}
+#scannerModal.on{display:flex}
+#scCameraView{position:relative;flex:1;overflow:hidden;background:#000}
+#scVideo{width:100%;height:100%;object-fit:cover;display:block}
+#scOverlay{position:absolute;inset:0;pointer-events:none}
+.sc-mask{position:absolute;background:rgba(10,14,26,0.55)}
+#scMaskTop{top:0;left:0;right:0}#scMaskBottom{bottom:0;left:0;right:0}
+#scTarget{position:absolute;border-radius:14px}
+.sc-corner{position:absolute;width:34px;height:34px;border:3.5px solid #34D399}
+.sc-corner.tl{top:-2px;left:-2px;border-right:none;border-bottom:none;border-radius:14px 0 0 0}
+.sc-corner.tr{top:-2px;right:-2px;border-left:none;border-bottom:none;border-radius:0 14px 0 0}
+.sc-corner.bl{bottom:-2px;left:-2px;border-right:none;border-top:none;border-radius:0 0 0 14px}
+.sc-corner.br{bottom:-2px;right:-2px;border-left:none;border-top:none;border-radius:0 0 14px 0}
+#scScanline{position:absolute;left:8%;right:8%;height:2.5px;background:linear-gradient(90deg,transparent,#34D399,transparent);box-shadow:0 0 8px #34D399;animation:scScan 2.6s ease-in-out infinite}
+@keyframes scScan{0%,100%{top:12%;opacity:0.4}50%{top:88%;opacity:1}}
+#scHint{position:absolute;left:0;right:0;top:max(20px,env(safe-area-inset-top));text-align:center;padding:0 24px;pointer-events:none}
+#scHintBadge{display:inline-block;background:rgba(16,185,129,0.16);backdrop-filter:blur(8px);border:1px solid rgba(52,211,153,0.4);color:#D1FAE5;font-size:13.5px;font-weight:600;padding:8px 16px;border-radius:100px}
+#scHintSub{margin-top:10px;color:rgba(255,255,255,0.82);font-size:12px;line-height:1.5;text-shadow:0 1px 3px rgba(0,0,0,0.6)}
+#scClose{position:absolute;top:max(16px,env(safe-area-inset-top));right:16px;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border:none;color:#fff;font-size:18px;cursor:pointer;z-index:10}
+#scControls{padding:20px 32px calc(20px + env(safe-area-inset-bottom));background:#0A0E1A;display:flex;align-items:center;justify-content:space-between}
+.sc-side{width:52px;height:52px;border-radius:14px;background:#1A2235;border:1px solid #2A3550;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#scShutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,0.25);cursor:pointer;position:relative;transition:transform 0.1s}
+#scShutter:active{transform:scale(0.92)}
+#scShutter::after{content:'';position:absolute;inset:5px;border-radius:50%;background:#10B981}
+#scFlash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:5}
+#scFlash.fire{animation:scFlashAnim 0.3s ease-out}
+@keyframes scFlashAnim{0%{opacity:0.85}100%{opacity:0}}
+#scPreview{position:absolute;inset:0;background:#0A0E1A;z-index:20;display:none;flex-direction:column}
+#scPreview.on{display:flex}
+#scPreviewImgWrap{flex:1;display:flex;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+#scPreviewImg{max-width:100%;max-height:100%;border-radius:12px;object-fit:contain}
+#scPreviewControls{padding:18px 24px calc(18px + env(safe-area-inset-bottom));display:flex;gap:12px}
+.sc-pv-btn{flex:1;padding:15px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.sc-retake{background:#1A2235;color:#94A3B8;border:1px solid #2A3550;flex:0.8}
+.sc-use{background:#10B981;color:#fff}
+</style>
 
 <div class="toast" id="toast"></div>
 
@@ -657,6 +735,124 @@ function renderBatchStats(){
 // ════════════════════════════════════════
 // UPLOAD IMAGES
 
+// ════════════════════════════════════════
+// SCANNER MODAL (Camera + Frame + Crop)
+let scStream = null;
+let scFacingMode = 'environment';
+let scCapturedDataUrl = null;
+
+async function openScannerModal() {
+  if (!state.currentBatch) { toast('ยังไม่ได้เลือก batch'); return; }
+  document.getElementById('scannerModal').classList.add('on');
+  document.getElementById('scPreview').classList.remove('on');
+  await scStartCamera();
+}
+
+function closeScannerModal() {
+  if (scStream) { scStream.getTracks().forEach(t => t.stop()); scStream = null; }
+  document.getElementById('scannerModal').classList.remove('on');
+  document.getElementById('scPreview').classList.remove('on');
+  scCapturedDataUrl = null;
+}
+
+function scPositionFrame() {
+  const view = document.getElementById('scCameraView');
+  const vw = view.clientWidth, vh = view.clientHeight;
+  const fw = vw * 0.86, fh = fw * 0.72;
+  const fx = (vw - fw) / 2, fy = (vh - fh) / 2 - vh * 0.04;
+  const target = document.getElementById('scTarget');
+  target.style.left = fx + 'px'; target.style.top = fy + 'px';
+  target.style.width = fw + 'px'; target.style.height = fh + 'px';
+  document.getElementById('scMaskTop').style.height = fy + 'px';
+  const mb = document.getElementById('scMaskBottom');
+  mb.style.top = (fy + fh) + 'px'; mb.style.bottom = '0';
+  const ml = document.getElementById('scMaskLeft');
+  ml.style.top = fy + 'px'; ml.style.height = fh + 'px'; ml.style.width = fx + 'px';
+  const mr = document.getElementById('scMaskRight');
+  mr.style.top = fy + 'px'; mr.style.height = fh + 'px';
+  mr.style.left = (fx + fw) + 'px'; mr.style.right = '0';
+  window._scFrame = { fx, fy, fw, fh, vw, vh };
+}
+
+async function scStartCamera() {
+  try {
+    if (scStream) scStream.getTracks().forEach(t => t.stop());
+    scStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: scFacingMode, width: { ideal: 2560 }, height: { ideal: 1440 } },
+      audio: false
+    });
+    const video = document.getElementById('scVideo');
+    video.srcObject = scStream;
+    await video.play();
+    scPositionFrame();
+  } catch (err) {
+    console.error('[scanner] error:', err.name, err.message);
+    toast('เปิดกล้องไม่ได้: ' + err.name + ' — ลองใช้ "จากเครื่อง" แทน');
+    closeScannerModal();
+  }
+}
+
+function scFlip() {
+  scFacingMode = (scFacingMode === 'environment') ? 'user' : 'environment';
+  scStartCamera();
+}
+
+function scCapture() {
+  const video = document.getElementById('scVideo');
+  if (!video.videoWidth) return;
+  const flash = document.getElementById('scFlash');
+  flash.classList.add('fire'); setTimeout(() => flash.classList.remove('fire'), 300);
+
+  const canvas = document.getElementById('scCanvas');
+  const f = window._scFrame;
+  const vRatio = video.videoWidth / video.videoHeight;
+  const dRatio = f.vw / f.vh;
+  let drawW, drawH, offX, offY;
+  if (vRatio > dRatio) {
+    drawH = f.vh; drawW = f.vh * vRatio; offX = (drawW - f.vw) / 2; offY = 0;
+  } else {
+    drawW = f.vw; drawH = f.vw / vRatio; offX = 0; offY = (drawH - f.vh) / 2;
+  }
+  const scale = video.videoWidth / drawW;
+  const cropX = (f.fx + offX) * scale, cropY = (f.fy + offY) * scale;
+  const cropW = f.fw * scale, cropH = f.fh * scale;
+  // Resize → max 1568px (Claude Vision optimal)
+  const MAX = 1568;
+  const ratio = Math.min(1, MAX / Math.max(cropW, cropH));
+  canvas.width = Math.round(cropW * ratio);
+  canvas.height = Math.round(cropH * ratio);
+  canvas.getContext('2d').drawImage(video, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+  scCapturedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+  console.log('[scanner] crop:', Math.round(cropW)+'x'+Math.round(cropH), '→', canvas.width+'x'+canvas.height,
+              '('+Math.round(scCapturedDataUrl.length*0.75/1024)+' KB)');
+  document.getElementById('scPreviewImg').src = scCapturedDataUrl;
+  document.getElementById('scPreview').classList.add('on');
+}
+
+function scRetake() {
+  scCapturedDataUrl = null;
+  document.getElementById('scPreview').classList.remove('on');
+}
+
+// แปลง dataUrl → File → ส่งเข้า handleFiles (pipeline เดิม)
+async function scUse() {
+  if (!scCapturedDataUrl) return;
+  // dataURL → Blob → File
+  const res = await fetch(scCapturedDataUrl);
+  const blob = await res.blob();
+  const file = new File([blob], 'scan_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+  closeScannerModal();
+  await handleFiles([file]);  // ส่งเข้า pipeline OCR Test เดิม
+}
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('scannerModal').classList.contains('on')) {
+    clearTimeout(window._scResizeTimer);
+    window._scResizeTimer = setTimeout(scPositionFrame, 150);
+  }
+});
+
+// ════════════════════════════════════════
 async function handleFiles(files){
   if (!files || files.length === 0) return;
   if (!state.currentBatch) { toast('ยังไม่ได้เลือก batch'); return; }
@@ -894,6 +1090,82 @@ async function openRunDetail(runId){
     }).join(' · ');
   }
 
+  // ─── PATCH P8.1: Frequency Pattern Detail Display ───
+  const DAY_OF_WEEK_TH_TEST = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+  const FREQ_LABEL_TEST = {
+    daily:'ทุกวัน', alternate:'วันเว้นวัน', every_n_days:'ทุก N วัน',
+    weekly:'สัปดาห์ละ 1 ครั้ง', monthly:'เดือนละ 1 ครั้ง'
+  };
+  // แสดงรายละเอียด pattern + day_of_week / day_of_month / interval
+  function frequencyDetailText() {
+    if (doses.length === 0) return null;
+    const d0 = doses[0];
+    const pat = d0.frequency_pattern || 'daily';
+    if (pat === 'daily') return null; // ไม่แสดงสำหรับ daily (ค่าธรรมดา)
+    let txt = FREQ_LABEL_TEST[pat] || pat;
+    if (pat === 'weekly' && d0.day_of_week !== null && d0.day_of_week !== undefined) {
+      txt += ` · ทุกวัน${DAY_OF_WEEK_TH_TEST[d0.day_of_week]} (day_of_week=${d0.day_of_week})`;
+    } else if (pat === 'monthly' && d0.day_of_month !== null && d0.day_of_month !== undefined) {
+      txt += ` · ทุกวันที่ ${d0.day_of_month} ของเดือน`;
+    } else if (pat === 'every_n_days' && d0.frequency_interval) {
+      txt += ` · ทุก ${d0.frequency_interval} วัน`;
+    } else if (pat === 'alternate') {
+      txt += ` · เริ่ม +2 วัน หลังวันสแกน`;
+    }
+    return txt;
+  }
+
+  // คำนวณ 3 ครั้งถัดไป (ใช้ logic เดียวกับ MedTrack Scan popup)
+  function nextDosesPreview() {
+    if (doses.length === 0) return null;
+    const d0 = doses[0];
+    const pat = d0.frequency_pattern || 'daily';
+    if (pat === 'daily') return null;
+    
+    const interval = d0.frequency_interval || 1;
+    const dayOfWeek = d0.day_of_week;
+    const dayOfMonth = d0.day_of_month;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dates = [];
+    const maxLookahead = 365;
+    
+    let cursor = new Date(today);
+    cursor.setDate(cursor.getDate() + 1);
+    
+    for (let i = 0; i < maxLookahead && dates.length < 3; i++) {
+      let isDue = false;
+      if (pat === 'alternate') {
+        const diff = Math.round((cursor - today) / (24*60*60*1000));
+        isDue = diff > 0 && diff % 2 === 0;
+      } else if (pat === 'every_n_days') {
+        const diff = Math.round((cursor - today) / (24*60*60*1000));
+        isDue = diff > 0 && diff % interval === 0;
+      } else if (pat === 'weekly') {
+        if (dayOfWeek !== null && dayOfWeek !== undefined) {
+          isDue = cursor.getDay() === dayOfWeek;
+        } else {
+          const diff = Math.round((cursor - today) / (24*60*60*1000));
+          isDue = diff > 0 && diff % 7 === 0;
+        }
+      } else if (pat === 'monthly') {
+        if (dayOfMonth !== null && dayOfMonth !== undefined) {
+          isDue = cursor.getDate() === dayOfMonth;
+        } else {
+          const diff = Math.round((cursor - today) / (24*60*60*1000));
+          isDue = diff > 0 && diff % 30 === 0;
+        }
+      }
+      if (isDue) dates.push(new Date(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    
+    if (dates.length === 0) return 'คำนวณไม่ได้';
+    const MTH_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return dates.map(d => `${d.getDate()} ${MTH_TH[d.getMonth()]} ${d.getFullYear() + 543}`).join(', ');
+  }
+
   // fields: [key, label, valueOverride?]
   // ถ้ามี valueOverride (function) → ใช้ค่านั้น (ดึงจาก doses[])
   // ถ้าไม่มี → อ่าน top-level ตามปกติ
@@ -903,6 +1175,8 @@ async function openRunDetail(runId){
     [null,'🛡️ Auto-correct', () => postProcessorDisplay()],
     ['dose_mg','Dose'],['dose_unit','Unit'],
     [null,'วัน/ครั้ง', freqText],
+    [null,'📅 รอบที่กิน (Pattern detail)', frequencyDetailText],
+    [null,'📍 ครั้งถัดไป (3 ครั้ง)', nextDosesPreview],
     [null,'เม็ด/มื้อ', () => joinDose('tablets_per_dose')],
     [null,'มล./มื้อ', () => joinDose('ml_per_dose')],
     [null,'Meal Anchor', anchorText],
@@ -938,6 +1212,14 @@ async function openRunDetail(runId){
       dd.style.color = '#16A34A';
       dd.style.fontWeight = '700';
       dd.style.background = 'rgba(22, 163, 74, 0.1)';
+      dd.style.padding = '2px 6px';
+      dd.style.borderRadius = '3px';
+    }
+    // Highlight non-daily frequency pattern rows (alternate/weekly/monthly)
+    if ((label === '📅 รอบที่กิน (Pattern detail)' || label === '📍 ครั้งถัดไป (3 ครั้ง)') && v) {
+      dd.style.color = '#0369A1';
+      dd.style.fontWeight = '600';
+      dd.style.background = 'rgba(14, 165, 233, 0.1)';
       dd.style.padding = '2px 6px';
       dd.style.borderRadius = '3px';
     }
@@ -1228,6 +1510,7 @@ async function init(){
   document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('fileInput').click());
   document.getElementById('cameraInput').addEventListener('change', e => { handleFiles(e.target.files); e.target.value=''; });
   document.getElementById('fileInput').addEventListener('change', e => { handleFiles(e.target.files); e.target.value=''; });
+  document.getElementById('scannerBtn').addEventListener('click', openScannerModal);
 
   document.getElementById('analyzeAllBtn').addEventListener('click', analyzeAll);
 
