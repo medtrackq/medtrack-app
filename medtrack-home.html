@@ -1555,7 +1555,7 @@ async function loadMealMeds() {
       // Drug names
       const drugNames = p.doses.map(d => {
         const dose = d.dose_mg ? ` ${fmtDose(d.dose_mg, d.dose_unit)}` : '';
-        return (d.drug_name || 'ไม่ระบุ') + dose;
+        return ((d.drug_name_raw || d.drug_name) || 'ไม่ระบุ') + dose;
       }).join(' · ');
       
       html += `
@@ -1691,7 +1691,7 @@ function loadMedsFromStorage(){
       : curHour > mealMin-30
         ? '<span style="color:#F59E0B;font-size:11px">⏰ รอ</span>'
         : '';
-    const drugNames = schedule[meal].map(m=>`${m.drug_name} ${fmtDose(m.dose_mg, m.dose_unit)}`).join(' · ');
+    const drugNames = schedule[meal].map(m=>`${m.drug_name_raw || m.drug_name} ${fmtDose(m.dose_mg, m.dose_unit)}`).join(' · ');
     mealHTML += `
       <div class="sheet-item" onclick="switchSheet('confirm')">
         <div class="sheet-item-ico" style="background:#F0FFF4;font-size:18px">${mealIcons[meal]}</div>
@@ -1710,7 +1710,7 @@ function loadMedsFromStorage(){
         <div class="sheet-item">
           <div class="sheet-item-ico" style="background:#FFFBEB;font-size:18px">💊</div>
           <div class="sheet-item-info">
-            <div class="sheet-item-title">${med.drug_name} <span style="background:#F59E0B;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">PRN</span></div>
+            <div class="sheet-item-title">${med.drug_name_raw || med.drug_name} <span style="background:#F59E0B;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">PRN</span></div>
             <div class="sheet-item-sub">กินเมื่อมีอาการ · ทุก ${med.prn_min_interval_hours||4} ชม.</div>
           </div>
         </div>`;
@@ -1724,7 +1724,7 @@ function loadMedsFromStorage(){
         <div class="sheet-item">
           <div class="sheet-item-ico" style="background:#EFF6FF;font-size:18px">⏱️</div>
           <div class="sheet-item-info">
-            <div class="sheet-item-title">${med.drug_name} <span style="background:#1D4ED8;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">ทุก ${med.interval_hours} ชม.</span></div>
+            <div class="sheet-item-title">${med.drug_name_raw || med.drug_name} <span style="background:#1D4ED8;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">ทุก ${med.interval_hours} ชม.</span></div>
             <div class="sheet-item-sub">${fmtDose(med.dose_mg, med.dose_unit)}</div>
           </div>
         </div>`;
@@ -2081,7 +2081,7 @@ function renderTodayDoses(doses, date){
       <div class="td-item ${s.cls}">
         <div class="td-time">${time}</div>
         <div class="td-info">
-          <div class="td-drug">${d.drug_name||'ยา'}</div>
+          <div class="td-drug">${d.drug_name_raw || d.drug_name || 'ยา'}</div>
           <div class="td-meta">${meta || '—'}</div>
         </div>
         ${actionBtn}
@@ -3550,7 +3550,7 @@ async function mcLoadView(view){
             <div class="mc-card-hd">
               <div class="mc-card-thumb">💊</div>
               <div class="mc-card-meta">
-                <div class="mc-card-date">${m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
+                <div class="mc-card-date">${m.drug_name_raw || m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
                 <div class="mc-card-hospital">เคยสั่ง ${m.scan_count} ครั้ง · ${m.hospitals.length} รพ.</div>
               </div>
               <div class="mc-card-badge">${m.scan_count}×</div>
@@ -3592,7 +3592,7 @@ function mcRenderCard(s){
   let medsList = '';
   if (isMed && s.medications?.length > 0) {
     medsList = `<div class="mc-card-meds">${s.medications.map(m => 
-      `<span class="mc-card-meds-bold">${m.name}</span> ${fmtDose(m.dose_value, m.dose_unit||'')}`
+      `<span class="mc-card-meds-bold">${m.drug_name_raw || m.name}</span> ${fmtDose(m.dose_value, m.dose_unit||'')}`
     ).join(' · ')}</div>`;
   } else if (s.ai_raw_data) {
     const raw = typeof s.ai_raw_data === 'string' ? JSON.parse(s.ai_raw_data) : s.ai_raw_data;
@@ -3660,7 +3660,7 @@ async function mcOpenDetail(scanId){
       dataHtml += '<div style="margin-top:14px"><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px">💊 ยา ' + s.medications.length + ' ตัว</div>';
       dataHtml += s.medications.map(m => `
         <div class="mc-med-item">
-          <div class="mc-med-name">${m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
+          <div class="mc-med-name">${m.drug_name_raw || m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
           ${m.instruction_text ? `<div class="mc-med-dose">${m.instruction_text}</div>` : ''}
         </div>
       `).join('');
