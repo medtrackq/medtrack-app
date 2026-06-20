@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MedTrack — สแกนซองยา</title>
+<style>
+  :root {
+    --ac: #10B981;
+    --ac-d: #059669;
+    --frame: #34D399;
+    --bg: #0A0E1A;
+    --warn: #FBBF24;
+    --err: #EF4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; overflow:hidden; background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  
+  #app { position:fixed; inset:0; display:flex; flex-direction:column; }
+
+  /* ─── Camera View ─── */
+  #cameraView { position:relative; flex:1; overflow:hidden; background:#000; }
+  #video { width:100%; height:100%; object-fit:cover; display:block; }
+  #canvas { display:none; }
+  
+  /* ─── Frame Overlay ─── */
+  #overlay { position:absolute; inset:0; pointer-events:none; }
+  
+  /* Dark mask รอบกรอบ */
+  .mask { position:absolute; background:rgba(10,14,26,0.55); }
+  #maskTop { top:0; left:0; right:0; }
+  #maskBottom { bottom:0; left:0; right:0; }
+  #maskLeft { left:0; }
+  #maskRight { right:0; }
+  
+  /* กรอบเป้าหมาย */
+  #target {
+    position:absolute;
+    border-radius:14px;
+  }
+  /* มุม 4 จุด */
+  .corner {
+    position:absolute; width:34px; height:34px;
+    border:3.5px solid var(--frame);
+  }
+  .corner.tl { top:-2px; left:-2px; border-right:none; border-bottom:none; border-radius:14px 0 0 0; }
+  .corner.tr { top:-2px; right:-2px; border-left:none; border-bottom:none; border-radius:0 14px 0 0; }
+  .corner.bl { bottom:-2px; left:-2px; border-right:none; border-top:none; border-radius:0 0 0 14px; }
+  .corner.br { bottom:-2px; right:-2px; border-left:none; border-top:none; border-radius:0 0 14px 0; }
+  
+  /* เส้น scan animation */
+  #scanline {
+    position:absolute; left:8%; right:8%; height:2.5px;
+    background:linear-gradient(90deg, transparent, var(--frame), transparent);
+    box-shadow:0 0 8px var(--frame);
+    animation:scan 2.6s ease-in-out infinite;
+  }
+  @keyframes scan {
+    0%, 100% { top:12%; opacity:0.4; }
+    50% { top:88%; opacity:1; }
+  }
+  
+  /* ─── คำแนะนำ ─── */
+  #hint {
+    position:absolute; left:0; right:0; top:max(28px, env(safe-area-inset-top));
+    text-align:center; padding:0 24px; pointer-events:none;
+  }
+  #hintBadge {
+    display:inline-flex; align-items:center; gap:7px;
+    background:rgba(16,185,129,0.16); backdrop-filter:blur(8px);
+    border:1px solid rgba(52,211,153,0.4);
+    color:#D1FAE5; font-size:13.5px; font-weight:600;
+    padding:8px 16px; border-radius:100px;
+  }
+  #hintSub {
+    margin-top:10px; color:rgba(255,255,255,0.82); font-size:12.5px;
+    line-height:1.5; text-shadow:0 1px 3px rgba(0,0,0,0.6);
+  }
+
+  /* ─── Controls ─── */
+  #controls {
+    padding:20px 24px calc(20px + env(safe-area-inset-bottom));
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:space-between;
+    gap:18px;
+  }
+  .ctrl-side { width:52px; height:52px; display:flex; align-items:center; justify-content:center; }
+  
+  .gallery-btn {
+    width:52px; height:52px; border-radius:14px;
+    background:#1A2235; border:1px solid #2A3550;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background 0.15s;
+  }
+  .gallery-btn:active { background:#243150; }
+  .gallery-btn svg { width:22px; height:22px; stroke:#94A3B8; }
+  
+  #shutter {
+    width:74px; height:74px; border-radius:50%;
+    background:#fff; border:5px solid rgba(255,255,255,0.25);
+    cursor:pointer; position:relative;
+    transition:transform 0.1s;
+  }
+  #shutter:active { transform:scale(0.92); }
+  #shutter::after {
+    content:''; position:absolute; inset:5px;
+    border-radius:50%; background:var(--ac);
+    transition:background 0.15s;
+  }
+  #shutter:active::after { background:var(--ac-d); }
+  #shutter.disabled { opacity:0.4; pointer-events:none; }
+  
+  .flip-btn {
+    width:52px; height:52px; border-radius:14px;
+    background:#1A2235; border:1px solid #2A3550;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .flip-btn:active { background:#243150; }
+  .flip-btn svg { width:22px; height:22px; stroke:#94A3B8; }
+
+  /* ─── Preview (หลังถ่าย) ─── */
+  #preview { position:fixed; inset:0; background:var(--bg); z-index:20; display:none; flex-direction:column; }
+  #preview.on { display:flex; }
+  #previewImgWrap { flex:1; display:flex; align-items:center; justify-content:center; padding:16px; overflow:hidden; }
+  #previewImg { max-width:100%; max-height:100%; border-radius:12px; object-fit:contain; }
+  #previewControls {
+    padding:18px 24px calc(18px + env(safe-area-inset-bottom));
+    display:flex; gap:12px;
+  }
+  .pv-btn {
+    flex:1; padding:15px; border-radius:14px; border:none;
+    font-size:15px; font-weight:700; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-family:inherit;
+  }
+  .pv-retake { background:#1A2235; color:#94A3B8; border:1px solid #2A3550; }
+  .pv-retake:active { background:#243150; }
+  .pv-use { background:var(--ac); color:#fff; }
+  .pv-use:active { background:var(--ac-d); }
+  .pv-btn svg { width:18px; height:18px; }
+
+  /* ─── Permission / Error states ─── */
+  #fallback { position:fixed; inset:0; background:var(--bg); z-index:30; display:none;
+    flex-direction:column; align-items:center; justify-content:center; padding:32px; text-align:center; }
+  #fallback.on { display:flex; }
+  #fallback .ico { width:64px; height:64px; margin-bottom:20px; }
+  #fallback .ico svg { width:100%; height:100%; stroke:var(--warn); }
+  #fallback h2 { color:#fff; font-size:18px; margin-bottom:10px; }
+  #fallback p { color:#94A3B8; font-size:14px; line-height:1.6; margin-bottom:24px; max-width:300px; }
+  #fallbackBtn {
+    background:var(--ac); color:#fff; border:none;
+    padding:14px 28px; border-radius:14px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+
+  /* captured flash */
+  #flash { position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none; z-index:5; }
+  #flash.fire { animation:flashAnim 0.3s ease-out; }
+  @keyframes flashAnim { 0% { opacity:0.85; } 100% { opacity:0; } }
+
+  .hidden-input { display:none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Camera View -->
+  <div id="cameraView">
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="canvas"></canvas>
+    <div id="flash"></div>
+    
+    <!-- Frame Overlay -->
+    <div id="overlay">
+      <div class="mask" id="maskTop"></div>
+      <div class="mask" id="maskBottom"></div>
+      <div class="mask" id="maskLeft"></div>
+      <div class="mask" id="maskRight"></div>
+      
+      <div id="target">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div id="scanline"></div>
+      </div>
+    </div>
+    
+    <!-- คำแนะนำ -->
+    <div id="hint">
+      <div id="hintBadge">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 7V5a2 2 0 012-2h2M17 3h2a2 2 0 012 2v2M21 17v2a2 2 0 01-2 2h-2M7 21H5a2 2 0 01-2-2v-2"/></svg>
+        <span>วางซองยาให้อยู่ในกรอบ</span>
+      </div>
+      <div id="hintSub">ให้ฉลากชัด ไม่เอียง แสงพอดี<br>เห็นตัวอักษรครบทุกบรรทัด</div>
+    </div>
+  </div>
+  
+  <!-- Controls -->
+  <div id="controls">
+    <div class="gallery-btn" onclick="document.getElementById('galleryInput').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    </div>
+    <div id="shutter" onclick="capturePhoto()"></div>
+    <div class="flip-btn" onclick="flipCamera()">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- Preview หลังถ่าย -->
+<div id="preview">
+  <div id="previewImgWrap"><img id="previewImg" alt="ภาพที่ถ่าย"></div>
+  <div id="previewControls">
+    <button class="pv-btn pv-retake" onclick="retake()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+      ถ่ายใหม่
+    </button>
+    <button class="pv-btn pv-use" onclick="usePhoto()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+      ใช้ภาพนี้
+    </button>
+  </div>
+</div>
+
+<!-- Fallback (permission denied / no camera) -->
+<div id="fallback">
+  <div class="ico">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+  </div>
+  <h2 id="fbTitle">เปิดกล้องไม่ได้</h2>
+  <p id="fbMsg">กรุณาอนุญาตให้ใช้กล้อง หรือเลือกรูปจากแกลเลอรีแทน</p>
+  <button id="fallbackBtn" onclick="document.getElementById('galleryInput').click()">เลือกรูปจากแกลเลอรี</button>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="galleryInput" class="hidden-input" accept="image/*" onchange="onGallerySelect(event)">
+
+<script>
+let stream = null;
+let facingMode = 'environment';
+let capturedDataUrl = null;
+
+// ─── กำหนดตำแหน่งกรอบ (aspect ratio ของซองยา ~ 4:3 แนวนอน) ───
+function positionFrame() {
+  const view = document.getElementById('cameraView');
+  const vw = view.clientWidth;
+  const vh = view.clientHeight;
+  
+  // กรอบ = 86% กว้าง, aspect 4:3
+  const fw = vw * 0.86;
+  const fh = fw * 0.72; // ซองยาแนวนอน
+  const fx = (vw - fw) / 2;
+  const fy = (vh - fh) / 2 - vh * 0.04; // ขยับขึ้นนิด เผื่อ controls
+  
+  const target = document.getElementById('target');
+  target.style.left = fx + 'px';
+  target.style.top = fy + 'px';
+  target.style.width = fw + 'px';
+  target.style.height = fh + 'px';
+  
+  // Masks
+  document.getElementById('maskTop').style.height = fy + 'px';
+  document.getElementById('maskBottom').style.top = (fy + fh) + 'px';
+  document.getElementById('maskBottom').style.bottom = '0';
+  document.getElementById('maskLeft').style.top = fy + 'px';
+  document.getElementById('maskLeft').style.height = fh + 'px';
+  document.getElementById('maskLeft').style.width = fx + 'px';
+  document.getElementById('maskRight').style.top = fy + 'px';
+  document.getElementById('maskRight').style.height = fh + 'px';
+  document.getElementById('maskRight').style.left = (fx + fw) + 'px';
+  document.getElementById('maskRight').style.right = '0';
+  
+  // เก็บค่าไว้ใช้ตอน crop
+  window._frame = { fx, fy, fw, fh, vw, vh };
+}
+
+// ─── เริ่มกล้อง ───
+async function startCamera() {
+  try {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: facingMode,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      },
+      audio: false
+    });
+    
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    await video.play();
+    
+    document.getElementById('fallback').classList.remove('on');
+    positionFrame();
+  } catch (err) {
+    console.error('[camera] error:', err.name, err.message);
+    showFallback(err);
+  }
+}
+
+function showFallback(err) {
+  const fb = document.getElementById('fallback');
+  const title = document.getElementById('fbTitle');
+  const msg = document.getElementById('fbMsg');
+  
+  if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    title.textContent = 'ยังไม่ได้อนุญาตกล้อง';
+    msg.textContent = 'กรุณาอนุญาตให้ใช้กล้องในการตั้งค่าเบราว์เซอร์ หรือเลือกรูปจากแกลเลอรีแทน';
+  } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+    title.textContent = 'ไม่พบกล้อง';
+    msg.textContent = 'อุปกรณ์นี้ไม่มีกล้อง หรือใช้งานไม่ได้ กรุณาเลือกรูปจากแกลเลอรีแทน';
+  } else {
+    title.textContent = 'เปิดกล้องไม่ได้';
+    msg.textContent = 'เกิดข้อผิดพลาด กรุณาเลือกรูปจากแกลเลอรีแทน';
+  }
+  fb.classList.add('on');
+}
+
+// ─── ถ่ายภาพ + crop ตามกรอบ ───
+function capturePhoto() {
+  const video = document.getElementById('video');
+  if (!video.videoWidth) return;
+  
+  // Flash effect
+  const flash = document.getElementById('flash');
+  flash.classList.add('fire');
+  setTimeout(() => flash.classList.remove('fire'), 300);
+  
+  const canvas = document.getElementById('canvas');
+  const f = window._frame;
+  
+  // คำนวณ mapping: video object-fit:cover → ต้องหา scale + offset จริง
+  const vRatio = video.videoWidth / video.videoHeight;
+  const dRatio = f.vw / f.vh;
+  
+  let drawW, drawH, offX, offY;
+  if (vRatio > dRatio) {
+    // video กว้างกว่า display → crop ซ้าย-ขวา
+    drawH = f.vh;
+    drawW = f.vh * vRatio;
+    offX = (drawW - f.vw) / 2;
+    offY = 0;
+  } else {
+    // video สูงกว่า → crop บน-ล่าง
+    drawW = f.vw;
+    drawH = f.vw / vRatio;
+    offX = 0;
+    offY = (drawH - f.vh) / 2;
+  }
+  
+  // แปลงพิกัดกรอบ (display) → พิกัด video จริง
+  const scale = video.videoWidth / drawW;
+  const cropX = (f.fx + offX) * scale;
+  const cropY = (f.fy + offY) * scale;
+  const cropW = f.fw * scale;
+  const cropH = f.fh * scale;
+  
+  // Resize output ให้ max 1568px (Claude Vision optimal)
+  const MAX = 1568;
+  const ratio = Math.min(1, MAX / Math.max(cropW, cropH));
+  canvas.width = Math.round(cropW * ratio);
+  canvas.height = Math.round(cropH * ratio);
+  
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, canvas.width, canvas.height);
+  
+  capturedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+  
+  console.log('[capture]', 'crop:', Math.round(cropW) + 'x' + Math.round(cropH), 
+              '→ output:', canvas.width + 'x' + canvas.height,
+              '(' + Math.round(capturedDataUrl.length * 0.75 / 1024) + ' KB)');
+  
+  // แสดง preview
+  document.getElementById('previewImg').src = capturedDataUrl;
+  document.getElementById('preview').classList.add('on');
+}
+
+function retake() {
+  capturedDataUrl = null;
+  document.getElementById('preview').classList.remove('on');
+}
+
+function usePhoto() {
+  if (!capturedDataUrl) return;
+  // ในระบบจริง: ส่ง capturedDataUrl กลับไปยัง MedTrack Scan
+  // postMessage หรือ callback
+  const sizeKB = Math.round(capturedDataUrl.length * 0.75 / 1024);
+  alert('✅ ภาพพร้อมส่งให้ AI วิเคราะห์\n\nขนาด: ' + sizeKB + ' KB\nความละเอียด: ' + 
+        document.getElementById('canvas').width + 'x' + document.getElementById('canvas').height + ' px\n\n' +
+        '(ในระบบจริง ภาพนี้จะถูกส่งเข้า OCR pipeline)');
+  
+  // demo: กลับไปถ่ายใหม่
+  retake();
+}
+
+// ─── สลับกล้องหน้า-หลัง ───
+function flipCamera() {
+  facingMode = (facingMode === 'environment') ? 'user' : 'environment';
+  startCamera();
+}
+
+// ─── เลือกจากแกลเลอรี ───
+function onGallerySelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = ev => {
+    capturedDataUrl = ev.target.result;
+    document.getElementById('previewImg').src = capturedDataUrl;
+    document.getElementById('preview').classList.add('on');
+    document.getElementById('fallback').classList.remove('on');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Resize handler ───
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(positionFrame, 150);
+});
+
+// ─── Init ───
+startCamera();
+</script>
+</body>
+</html>
