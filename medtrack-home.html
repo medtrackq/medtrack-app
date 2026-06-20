@@ -1357,6 +1357,28 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
 const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
 
+// ── Number Display Helpers ──
+// ตัด .00 ที่ไม่จำเป็น แต่เก็บทศนิยม (0.5, 2.5)
+// fmtNum(20000.00) → "20000" | fmtNum(0.50) → "0.5" | fmtNum(2.50) → "2.5"
+function fmtNum(n) {
+  if (n === null || n === undefined || n === '') return '';
+  const num = parseFloat(n);
+  if (isNaN(num)) return String(n);
+  return String(num); // parseFloat ตัด trailing zeros อัตโนมัติ
+}
+// แสดง dose + unit เช่น "50 mg", "20000 iu" (เว้นวรรค)
+function fmtDose(dose, unit) {
+  const d = fmtNum(dose);
+  if (!d) return '';
+  return d + ' ' + (unit || 'mg');
+}
+// แสดงจำนวนเม็ด เช่น "1 เม็ด", "0.5 เม็ด", "2.5 เม็ด"
+function fmtTablets(n, suffix) {
+  const v = fmtNum(n);
+  if (!v) return '';
+  return v + ' ' + (suffix || 'เม็ด');
+}
+
 // 🔐 AUTH GATE — verify session before showing app
 (async function authGate() {
   // Bypass for debug user_id parameter (test mode)
@@ -1532,7 +1554,7 @@ async function loadMealMeds() {
       
       // Drug names
       const drugNames = p.doses.map(d => {
-        const dose = d.dose_mg ? ` ${d.dose_mg}${d.dose_unit||'mg'}` : '';
+        const dose = d.dose_mg ? ` ${fmtDose(d.dose_mg, d.dose_unit)}` : '';
         return (d.drug_name || 'ไม่ระบุ') + dose;
       }).join(' · ');
       
@@ -1669,7 +1691,7 @@ function loadMedsFromStorage(){
       : curHour > mealMin-30
         ? '<span style="color:#F59E0B;font-size:11px">⏰ รอ</span>'
         : '';
-    const drugNames = schedule[meal].map(m=>`${m.drug_name} ${m.dose_mg||''}${m.dose_unit||'mg'}`).join(' · ');
+    const drugNames = schedule[meal].map(m=>`${m.drug_name} ${fmtDose(m.dose_mg, m.dose_unit)}`).join(' · ');
     mealHTML += `
       <div class="sheet-item" onclick="switchSheet('confirm')">
         <div class="sheet-item-ico" style="background:#F0FFF4;font-size:18px">${mealIcons[meal]}</div>
@@ -1703,7 +1725,7 @@ function loadMedsFromStorage(){
           <div class="sheet-item-ico" style="background:#EFF6FF;font-size:18px">⏱️</div>
           <div class="sheet-item-info">
             <div class="sheet-item-title">${med.drug_name} <span style="background:#1D4ED8;color:#fff;font-size:9px;padding:1px 6px;border-radius:8px">ทุก ${med.interval_hours} ชม.</span></div>
-            <div class="sheet-item-sub">${med.dose_mg||''} ${med.dose_unit||'mg'}</div>
+            <div class="sheet-item-sub">${fmtDose(med.dose_mg, med.dose_unit)}</div>
           </div>
         </div>`;
     });
@@ -2043,8 +2065,8 @@ function renderTodayDoses(doses, date){
   list.innerHTML = doses.map(d => {
     const s = statusMap[d.status] || statusMap.pending;
     const time = (d.scheduled_time||'').substring(0,5); // HH:MM
-    const dose = d.dose_mg ? `${d.dose_mg}${d.dose_unit||'mg'}` : '';
-    const tablets = d.tablets_per_dose ? `${d.tablets_per_dose} เม็ด` : '';
+    const dose = d.dose_mg ? fmtDose(d.dose_mg, d.dose_unit) : '';
+    const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
     const meta = [dose, tablets].filter(x=>x).join(' · ');
     
     let actionBtn = '';
@@ -3307,7 +3329,7 @@ function rsSelectMed(medId){
   // Fill form
   document.getElementById('rsEditMedName').textContent = med.name || 'ไม่ระบุชื่อ';
   const doseText = med.dose_value 
-    ? `${med.dose_value}${med.dose_unit || 'mg'}`
+    ? `${fmtDose(med.dose_value, med.dose_unit)}`
     : '';
   document.getElementById('rsEditMedDose').textContent = doseText;
   
@@ -3528,7 +3550,7 @@ async function mcLoadView(view){
             <div class="mc-card-hd">
               <div class="mc-card-thumb">💊</div>
               <div class="mc-card-meta">
-                <div class="mc-card-date">${m.name} ${m.dose_value || ''}${m.dose_unit || ''}</div>
+                <div class="mc-card-date">${m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
                 <div class="mc-card-hospital">เคยสั่ง ${m.scan_count} ครั้ง · ${m.hospitals.length} รพ.</div>
               </div>
               <div class="mc-card-badge">${m.scan_count}×</div>
@@ -3570,7 +3592,7 @@ function mcRenderCard(s){
   let medsList = '';
   if (isMed && s.medications?.length > 0) {
     medsList = `<div class="mc-card-meds">${s.medications.map(m => 
-      `<span class="mc-card-meds-bold">${m.name}</span> ${m.dose_value || ''}${m.dose_unit || ''}`
+      `<span class="mc-card-meds-bold">${m.name}</span> ${fmtDose(m.dose_value, m.dose_unit||'')}`
     ).join(' · ')}</div>`;
   } else if (s.ai_raw_data) {
     const raw = typeof s.ai_raw_data === 'string' ? JSON.parse(s.ai_raw_data) : s.ai_raw_data;
@@ -3638,7 +3660,7 @@ async function mcOpenDetail(scanId){
       dataHtml += '<div style="margin-top:14px"><div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:8px">💊 ยา ' + s.medications.length + ' ตัว</div>';
       dataHtml += s.medications.map(m => `
         <div class="mc-med-item">
-          <div class="mc-med-name">${m.name} ${m.dose_value || ''}${m.dose_unit || ''}</div>
+          <div class="mc-med-name">${m.name} ${fmtDose(m.dose_value, m.dose_unit||'')}</div>
           ${m.instruction_text ? `<div class="mc-med-dose">${m.instruction_text}</div>` : ''}
         </div>
       `).join('');
