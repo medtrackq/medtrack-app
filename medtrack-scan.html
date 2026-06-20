@@ -1717,7 +1717,13 @@ function buildSchedule(medList,meals){
       const cls = rel === 'before' ? 'before' : rel === 'with' ? 'with' : 'after';
       const lbl = t('t' + ({before:'Before', after:'After', with:'With', empty_stomach:'Before'}[rel] || 'After'));
 
-      // Custom time priority → fixed period
+      // PATCH P9: Priority order
+      // 1. AI custom_time (Madopar 21:00) → ใช้ตรง ๆ
+      // 2. Non-daily (alternate/weekly/monthly/every_n_hours) → ใช้ ivStart
+      // 3. bedtime → 21:00 (fixed)
+      // 4. meal_anchor → คำนวณตามเวลาอาหาร
+
+      // Priority 1: Custom time from AI
       if (d.custom_time === true && d.time) {
         const hh = parseInt(d.time.split(':')[0]);
         const periodIdx = hh < 12 ? 0 : hh < 17 ? 1 : hh < 21 ? 2 : 3;
@@ -1725,7 +1731,20 @@ function buildSchedule(medList,meals){
         return;
       }
 
-      // Bedtime
+      // Priority 2: Non-daily → use ivStart
+      // (skipMeds bucket จัดการแล้วก่อนหน้านี้ — ไม่ถึง forEach นี้)
+      // แต่ถ้า frequency_pattern === 'every_n_hours' จะอยู่ใน loop นี้
+      const pat = d.frequency_pattern || 'daily';
+      if (pat === 'every_n_hours') {
+        const ivStartEl = document.getElementById('ivStart');
+        const startTime = ivStartEl?.value || '08:00';
+        const hh = parseInt(startTime.split(':')[0]);
+        const periodIdx = hh < 12 ? 0 : hh < 17 ? 1 : hh < 21 ? 2 : 3;
+        periods[periodIdx].drugs.push({drug:med, time:startTime, cls:'fixed', lbl:'เวลาเฉพาะ'});
+        return;
+      }
+
+      // Priority 3: Bedtime
       if (anch === 'bedtime' || rel === 'bedtime') {
         periods[3].drugs.push({drug:med, time:'21:00', cls:'fixed', lbl:t('tNight')});
         return;
@@ -1741,8 +1760,7 @@ function buildSchedule(medList,meals){
         return;
       }
 
-      // meal_anchor=all → กระจายเป็น 1 มื้อ (breakfast default — single dose case)
-      // ถ้า multi-dose จะ loop ผ่าน doses[] อยู่แล้ว แต่ละ dose ระบุ anchor ชัด
+      // Priority 4: meal_anchor → ใช้เวลาอาหาร
       const targetAnchor = anch === 'all' ? 'breakfast' : anch;
       let mealTime = meals[targetAnchor];
       if (!mealTime) {
@@ -1761,22 +1779,40 @@ function buildSchedule(medList,meals){
 
 function rebundleIfReady(){
   if(!meds.length)return;
-  // อัปเดต label มื้อแรก ตามประเภทยา
-  const hasInterval = meds.some(m=>m.timing_type==='interval'&&!m.is_prn);
-  const hasSkip = meds.some(m=>(parseInt(m.skip_days)||0)>0);
+  // PATCH P9: detect non-daily/interval จาก schema ใหม่ (doses[].frequency_pattern)
+  const hasInterval = meds.some(m => {
+    const pat = m.doses?.[0]?.frequency_pattern;
+    return pat === 'every_n_hours';
+  });
+  const hasSkip = meds.some(m => {
+    const pat = m.doses?.[0]?.frequency_pattern;
+    return pat && pat !== 'daily' && pat !== 'every_n_hours';
+    // alternate / weekly / monthly / every_n_days
+  });
+  // Backward compat — legacy flat fields
+  const hasIntervalLegacy = meds.some(m => m.timing_type === 'interval' && !m.is_prn);
+  const hasSkipLegacy = meds.some(m => (parseInt(m.skip_days) || 0) > 0);
+  const showInterval = hasInterval || hasIntervalLegacy;
+  const showSkip = hasSkip || hasSkipLegacy;
+  
   const fdRow = document.getElementById('firstDoseRow');
   if(fdRow){
     const badges = fdRow.querySelectorAll('.first-dose-badge');
-    if(badges[0]) badges[0].style.display = hasInterval?'inline-flex':'none';
-    if(badges[1]) badges[1].style.display = hasSkip?'inline-flex':'none';
-    fdRow.style.borderTopColor = (hasInterval||hasSkip)?'var(--ac)':'var(--bd)';
-    fdRow.style.opacity = (hasInterval||hasSkip)?'1':'0.5';
+    if(badges[0]) badges[0].style.display = showInterval ? 'inline-flex' : 'none';
+    if(badges[1]) badges[1].style.display = showSkip ? 'inline-flex' : 'none';
+    fdRow.style.borderTopColor = (showInterval || showSkip) ? 'var(--ac)' : 'var(--bd)';
+    fdRow.style.opacity = (showInterval || showSkip) ? '1' : '0.5';
     const lbl = fdRow.querySelector('.first-dose-lbl');
     if(lbl){
-      if(hasInterval&&hasSkip) lbl.childNodes[0].textContent='⏱️ เริ่มกินมื้อแรกกี่โมง? ';
-      else if(hasInterval) lbl.childNodes[0].textContent='⏱️ กินมื้อแรก (ทุก '+meds.find(m=>m.timing_type==='interval')?.interval_hours+'ชม.) กี่โมง? ';
-      else if(hasSkip) lbl.childNodes[0].textContent='⏱️ กินมื้อแรก (วันเว้นวัน) กี่โมง? ';
-      else lbl.childNodes[0].textContent='⏱️ เริ่มกินมื้อแรกกี่โมง? ';
+      // Find first interval med สำหรับแสดงชั่วโมง
+      const ivMed = meds.find(m => m.doses?.[0]?.frequency_pattern === 'every_n_hours') 
+                  || meds.find(m => m.timing_type === 'interval');
+      const ivHours = ivMed?.doses?.[0]?.frequency_interval || ivMed?.interval_hours;
+      
+      if(showInterval && showSkip) lbl.childNodes[0].textContent = '⏱️ เริ่มกินมื้อแรกกี่โมง? ';
+      else if(showInterval) lbl.childNodes[0].textContent = '⏱️ กินมื้อแรก (ทุก ' + (ivHours || 'X') + ' ชม.) กี่โมง? ';
+      else if(showSkip) lbl.childNodes[0].textContent = '⏱️ กินมื้อแรก กี่โมง? ';
+      else lbl.childNodes[0].textContent = '⏱️ เริ่มกินมื้อแรกกี่โมง? ';
     }
   }
   const meals=getMeals();
@@ -1825,25 +1861,58 @@ function rebundleIfReady(){
 
   // Skip/Alternate day cards — วันเว้นวัน / ทุก N วัน
   skipMeds.forEach(med=>{
-    const skip=parseInt(med.skip_days)||1;
-    const skipLabel=skip===1?'วันเว้นวัน':`ทุก ${skip+1} วัน`;
-    const rel=med.meal_relation||'after';
-    const anch=med.meal_anchor||'breakfast';
-    const mealLabel={breakfast:'เช้า',lunch:'กลางวัน',dinner:'เย็น',bedtime:'ก่อนนอน',all:'เช้า'}[anch]||'เช้า';
-    const relLabel={before:'ก่อนอาหาร',after:'หลังอาหาร',with:'พร้อมอาหาร',bedtime:'ก่อนนอน'}[rel]||'หลังอาหาร';
-    const off=parseInt(med.offset_minutes)||(rel==='before'?-30:15);
-    const mealTime=anch==='bedtime'?'21:00':addMin(getMeals()[anch==='all'?'breakfast':anch]||'07:00',off);
-    const el=document.createElement('div');
-    el.style.cssText='border:1.5px solid #7C3AED;border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;background:#F5F3FF;margin-top:7px';
-    el.innerHTML=`
+    // PATCH P9: ใช้ schema ใหม่ + ivStart
+    const d0 = med.doses?.[0] || {};
+    const pat = d0.frequency_pattern || 'daily';
+    const interval = d0.frequency_interval || 1;
+    
+    // Skip label จาก frequency_pattern
+    let skipLabel;
+    if (pat === 'alternate') skipLabel = 'วันเว้นวัน';
+    else if (pat === 'every_n_days') skipLabel = `ทุก ${interval} วัน`;
+    else if (pat === 'weekly') skipLabel = 'สัปดาห์ละ 1 ครั้ง';
+    else if (pat === 'monthly') skipLabel = 'เดือนละ 1 ครั้ง';
+    else {
+      // Legacy fallback
+      const skip = parseInt(med.skip_days) || 1;
+      skipLabel = skip === 1 ? 'วันเว้นวัน' : `ทุก ${skip+1} วัน`;
+    }
+    
+    const rel = d0.meal_relation || med.meal_relation || 'after';
+    const anch = d0.meal_anchor || med.meal_anchor || 'breakfast';
+    const tablets = d0.tablets_per_dose ?? med.tablets_per_dose ?? 1;
+    
+    // PATCH P9: ใช้ ivStart ถ้า non-daily ไม่ระบุมื้อ
+    const useIvStart = pat !== 'daily' && (anch === 'all' || anch === 'custom' || !anch);
+    let mealTime;
+    let mealLabel;
+    if (d0.custom_time && d0.time) {
+      mealTime = d0.time;
+      mealLabel = 'เวลา ' + d0.time;
+    } else if (useIvStart) {
+      mealTime = document.getElementById('ivStart')?.value || '08:00';
+      mealLabel = 'เริ่ม ' + mealTime;
+    } else if (anch === 'bedtime') {
+      mealTime = '21:00';
+      mealLabel = 'ก่อนนอน';
+    } else {
+      const off = (rel === 'before' ? -30 : rel === 'with' ? 0 : 15);
+      mealTime = addMin(getMeals()[anch === 'all' ? 'breakfast' : anch] || '07:00', off);
+      mealLabel = {breakfast:'เช้า', lunch:'กลางวัน', dinner:'เย็น', bedtime:'ก่อนนอน', all:'เช้า'}[anch] || 'เช้า';
+    }
+    const relLabel = {before:'ก่อนอาหาร', after:'หลังอาหาร', with:'พร้อมอาหาร', bedtime:'ก่อนนอน', '':''}[rel] || '';
+    
+    const el = document.createElement('div');
+    el.style.cssText = 'border:1.5px solid #7C3AED;border-radius:10px;padding:10px 12px;display:flex;align-items:flex-start;gap:10px;background:#F5F3FF;margin-top:7px';
+    el.innerHTML = `
       <div style="font-size:20px;flex-shrink:0">📅</div>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:#111">${med.drug_name}${med.dose_mg?' '+med.dose_mg+med.dose_unit:''}</div>
-        <div style="font-size:12px;font-weight:600;color:#7C3AED;margin-top:3px">${skipLabel} · มื้อ${mealLabel} ${mealTime}</div>
-        <div style="font-size:11px;color:#6B7280;margin-top:2px">${relLabel} · ${med.tablets_per_dose||1} ${med.dose_unit==='mL'?'mL':'เม็ด'}</div>
-        ${med.must_complete_course?'<div style="font-size:10px;color:#DC2626;margin-top:3px;font-weight:600">⚠️ '+( med.course_completion_warning||'ห้ามหยุดยาเอง')+'</div>':''}
+        <div style="font-size:13px;font-weight:700;color:#111">${escapeHtml(med.drug_name||'')}${med.dose_mg ? ' ' + med.dose_mg + (med.dose_unit||'') : ''}</div>
+        <div style="font-size:12px;font-weight:600;color:#7C3AED;margin-top:3px">${escapeHtml(skipLabel)} · ${escapeHtml(mealLabel)} ${escapeHtml(mealTime)}</div>
+        <div style="font-size:11px;color:#6B7280;margin-top:2px">${escapeHtml(relLabel)} · ${tablets} ${med.dose_unit === 'mL' ? 'mL' : 'เม็ด'}</div>
+        ${med.must_complete_course ? '<div style="font-size:10px;color:#DC2626;margin-top:3px;font-weight:600">⚠️ ' + escapeHtml(med.course_completion_warning || 'ห้ามหยุดยาเอง') + '</div>' : ''}
       </div>
-      <div style="background:#7C3AED;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;flex-shrink:0">${skipLabel}</div>
+      <div style="background:#7C3AED;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;flex-shrink:0">${escapeHtml(skipLabel)}</div>
     `;
     pc.appendChild(el);
     totalAlerts++;
@@ -2755,21 +2824,45 @@ async function saveToBackend(medsList) {
         else if (relation === 'with') offsetMin = 0;
         else if (relation === 'empty_stomach') offsetMin = -60;
         
-        // Calculate reminder_time จาก meal anchor
+        // Calculate reminder_time จาก meal anchor (default fallback)
         const [bh, bm] = baseMealTime.split(':').map(Number);
         const totalMin = bh * 60 + bm + offsetMin;
         const finalH = Math.floor((totalMin + 1440) % 1440 / 60);
         const finalM = ((totalMin + 1440) % 1440) % 60;
         const reminderTimeFromMeal = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
         
-        // PATCH P7: custom_time priority
+        // PATCH P9: Priority order
+        // 1. AI custom_time (Madopar 21:00) → ใช้ตรง ๆ
+        // 2. Non-daily (alternate/weekly/monthly/every_n_hours) → ใช้ ivStart
+        // 3. bedtime → 21:00 (fixed)
+        // 4. meal_anchor → คำนวณตามเวลาอาหาร
         const customTime = d.custom_time === true;
         const explicitTime = d.time || null;
-        const finalReminderTime = (customTime && explicitTime) ? explicitTime : reminderTimeFromMeal;
+        const pat = d.frequency_pattern || 'daily';
+        const isNonDaily = pat !== 'daily';
         
-        console.log(`[saveToBackend] ${m.drug_name} dose[${idx}] → anchor=${anchor} reminder=${finalReminderTime} ` +
-                    (customTime ? '(custom_time)' : '(from meal)') + 
-                    ' freq=' + (d.frequency_pattern || 'daily'));
+        let finalReminderTime;
+        let reminderSource;
+        if (customTime && explicitTime) {
+          // Priority 1: AI custom_time
+          finalReminderTime = explicitTime;
+          reminderSource = 'custom_time';
+        } else if (isNonDaily) {
+          // Priority 2: Non-daily — use ivStart
+          const ivStartEl = document.getElementById('ivStart');
+          finalReminderTime = ivStartEl?.value || '08:00';
+          reminderSource = 'ivStart (non-daily)';
+        } else if (anchor === 'bedtime' || relation === 'bedtime') {
+          // Priority 3: bedtime fixed
+          finalReminderTime = '21:00';
+          reminderSource = 'bedtime fixed';
+        } else {
+          // Priority 4: meal_anchor
+          finalReminderTime = reminderTimeFromMeal;
+          reminderSource = 'meal_anchor';
+        }
+        
+        console.log(`[saveToBackend] ${m.drug_name} dose[${idx}] → anchor=${anchor} reminder=${finalReminderTime} (${reminderSource}) freq=${pat}`);
         
         return {
           reminder_time: finalReminderTime,
@@ -2781,7 +2874,7 @@ async function saveToBackend(medsList) {
             ? parseFloat(d.ml_per_dose) : null,
           custom_time: customTime,
           time: explicitTime,
-          frequency_pattern: d.frequency_pattern || 'daily',
+          frequency_pattern: pat,
           frequency_interval: parseInt(d.frequency_interval) || 1,
           day_of_week: (d.day_of_week !== null && d.day_of_week !== undefined) ? parseInt(d.day_of_week) : null,
           day_of_month: (d.day_of_month !== null && d.day_of_month !== undefined) ? parseInt(d.day_of_month) : null
