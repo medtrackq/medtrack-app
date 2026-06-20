@@ -715,6 +715,35 @@ label.upbtn{cursor:pointer}
 #nonOralModal .nor-form{font-size:12px;color:#A16207}
 </style>
 
+<!-- ─── PATCH P8: Non-Daily Frequency Pattern Confirm Modal ─── -->
+<div class="mbk" id="nonDailyModal">
+  <div class="api-modal" style="max-width:500px">
+    <h3 style="color:#0EA5E9;font-size:15px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">📅</span>
+      <span>ยืนยันตารางการกิน</span>
+    </h3>
+    <p style="margin-top:8px;color:var(--t2);font-size:13px;line-height:1.6">
+      ยาด้านล่างไม่ได้กินทุกวัน — กรุณาตรวจสอบก่อนบันทึก
+    </p>
+    <div id="nonDailyList" style="margin:14px 0;max-height:320px;overflow-y:auto"></div>
+    <p style="font-size:11px;color:var(--t2);font-style:italic;margin-bottom:14px">
+      💡 หากต้องการให้เริ่มกินวันอื่น ให้สแกนใหม่ในวันนั้น
+    </p>
+    <div class="mbtns" style="display:flex;gap:8px">
+      <button class="mb-c" style="flex:1" onclick="closeNonDailyModal()">ยกเลิก</button>
+      <button class="mb-s" style="flex:2;background:var(--ac);color:#fff" onclick="confirmNonDailySave()">✅ ยืนยัน — บันทึก</button>
+    </div>
+  </div>
+</div>
+<style>
+#nonDailyModal .ndm-item{padding:12px;background:#F0F9FF;border-left:3px solid #0EA5E9;border-radius:6px;margin-bottom:10px;font-size:13px;line-height:1.7}
+#nonDailyModal .ndm-drug{font-weight:600;color:#075985;margin-bottom:4px;font-size:14px}
+#nonDailyModal .ndm-pattern{color:#0C4A6E;font-weight:500}
+#nonDailyModal .ndm-detail{color:#0369A1;font-size:12px}
+#nonDailyModal .ndm-start{color:#16A34A;margin-top:4px}
+#nonDailyModal .ndm-next{color:var(--t2);font-size:12px;margin-top:2px}
+</style>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -955,61 +984,10 @@ const DEMOS=[
   {n:'Omeprazole 20mg',      l1:'รับประทานครั้งละ 1 เม็ด วันละ 1 ครั้ง',   l2:'ก่อนอาหารเช้า 30 นาที  30 เม็ด',    c:'#1f618d'},
 ];
 function useDemo(){
-  // ใช้ index เดียวกับ DEMO_OCR
-  const idx = photoQueue.length % DEMOS.length;
-  const d = DEMOS[idx];
-  const ocr = DEMO_OCR[idx];
-
-  const cv=document.createElement('canvas');cv.width=600;cv.height=420;
-  const x=cv.getContext('2d');
-  // background
-  x.fillStyle='#f9f6f0';x.fillRect(0,0,600,420);
-  x.strokeStyle='#ccc';x.lineWidth=2;x.strokeRect(8,8,584,404);
-  // header
-  x.fillStyle=d.c;x.fillRect(0,0,600,72);
-  x.fillStyle='#fff';x.font='bold 18px sans-serif';x.fillText('รพ. รามาธิบดี',16,30);
-  x.font='12px sans-serif';x.fillText('ฝ่ายเภสัชกรรม',16,50);
-  // patient
-  x.fillStyle='#444';x.font='12px sans-serif';
-  x.fillText('ผู้ป่วย: นาย สมชาย ใจดี  HN: 12345678  วันที่: 4 เม.ย. 2569',16,90);
-  // drug name
-  x.fillStyle='#111';x.font='bold 24px sans-serif';x.fillText(d.n,16,130);
-  // instruction box
-  x.strokeStyle=d.c;x.lineWidth=3;x.strokeRect(14,148,572,90);
-  x.fillStyle=d.c;x.fillRect(14,148,4,90);
-  x.fillStyle='#111';x.font='bold 15px sans-serif';x.fillText(d.l1,26,172);
-  x.fillStyle=d.c;x.font='bold 16px sans-serif';x.fillText(d.l2,26,200);
-  // quantity
-  x.fillStyle='#1a5276';x.font='bold 14px sans-serif';
-  x.fillText('จำนวน: '+(ocr?.total_tablets||'—')+' '+(ocr?.dose_unit==='mL'?'mL':'เม็ด'),16,268);
-  // doctor
-  x.fillStyle='#555';x.font='13px sans-serif';
-  x.fillText('แพทย์: '+(ocr?.doctor_name||'นพ. วิชัย รักสุขภาพ'),16,294);
-  x.fillText('โรงพยาบาล: '+(ocr?.hospital_name||'รพ. รามาธิบดี'),16,316);
-  // warning
-  x.fillStyle='#fef9e7';x.fillRect(14,334,572,40);
-  x.strokeStyle='#c00';x.lineWidth=1;x.strokeRect(14,334,572,40);
-  x.fillStyle='#c00';x.font='bold 11px sans-serif';
-  const warn=ocr?.course_completion_warning||ocr?.special_instructions||'เก็บให้พ้นมือเด็ก ⚠ หมดอายุ: 03/2028';
-  x.fillText('⚠ '+warn.substring(0,70),20,358);
-
-  const dataUrl=cv.toDataURL('image/jpeg',.9);
-  pendingB64=dataUrl.split(',')[1];pendingMime='image/jpeg';
-
-  // แสดงรูปใน preview ให้ user เห็น แล้วกด "เพิ่มรูปนี้"
-  const szWrap = document.getElementById('szWrap');
-  szWrap.classList.add('on');
-  szWrap.style.display = 'block';
-
-  const prev = document.getElementById('prev');
-  prev.src = dataUrl;
-  document.getElementById('sz').classList.add('has');
-
-  setTimeout(()=>{
-    szWrap.scrollIntoView({behavior:'smooth', block:'nearest'});
-  }, 100);
-
-  toast('💊 ซอง '+d.n.split(' ')[0]+' — กด "เพิ่มรูปนี้" ครับ');
+  // REFACTOR: Demo mode disabled — ใช้ schema เก่า (flat fields) ที่ไม่ใช้แล้ว
+  // ถ้าต้องการ demo ใหม่ ต้อง refactor เป็น doses[] schema
+  alert('โหมด Demo ปิดใช้งานชั่วคราว — กรุณาถ่ายภาพซองยาจริง หรือใช้ OCR Test แทน');
+  return;
 }
 
 
@@ -1079,80 +1057,6 @@ function updateAnalyzeBtn(){
 /* ═══════════════════════════
    BATCH ANALYZE
 ═══════════════════════════ */
-const DEMO_OCR=[
-  // [0] PRN — Paracetamol กินเมื่อมีอาการ
-  {drug_name:'Paracetamol',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:3,
-   timing_type:'prn',meal_relation:'after',meal_anchor:'all',offset_minutes:15,
-   interval_hours:null,skip_days:0,timing_label:'เมื่อมีอาการ ทุก 4-6 ชม.',
-   total_tablets:15,total_days:5,special_instructions:'กินเมื่อมีไข้หรือปวด',
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.94,
-   drug_type:'prn',must_complete_course:false,is_continuous:false,is_prn:true,
-   prn_min_interval_hours:4,prn_max_per_day:4,first_dose_time:null,course_completion_warning:null},
-
-  // [1] Meal-based — Amlodipine วันละครั้ง
-  {drug_name:'Amlodipine',dose_mg:5,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
-   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
-   interval_hours:null,skip_days:0,timing_label:'หลังอาหารเช้า',
-   total_tablets:30,total_days:30,special_instructions:null,
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.96,
-   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
-   first_dose_time:'07:00',course_completion_warning:null},
-
-  // [2] Skip วันเว้นวัน — Prednisolone
-  {drug_name:'Prednisolone',dose_mg:5,dose_unit:'mg',tablets_per_dose:4,frequency_per_day:1,
-   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
-   interval_hours:null,skip_days:1,timing_label:'วันเว้นวัน ตอนเช้าหลังอาหาร',
-   total_tablets:60,total_days:35,special_instructions:'รับประทานวัน จ.พ.ศ. เท่านั้น ห้ามหยุดยาเองโดยไม่ปรึกษาแพทย์',
-   doctor_name:'นพ. อดิศร โลหิตดี',hospital_name:'รพ. รามาธิบดี',confidence:.95,
-   drug_type:'steroid',must_complete_course:false,is_continuous:true,is_prn:false,
-   first_dose_time:'07:15',course_completion_warning:'ห้ามหยุดยาสเตียรอยด์เองโดยไม่ปรึกษาแพทย์'},
-
-  // [3] Meal-based — Metformin วันละ 2 ครั้ง
-  {drug_name:'Metformin',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:2,
-   timing_type:'meal_based',meal_relation:'with',meal_anchor:'all',offset_minutes:0,
-   interval_hours:null,skip_days:0,timing_label:'พร้อมอาหาร เช้า-เย็น',
-   total_tablets:60,total_days:30,special_instructions:'กินพร้อมอาหารเท่านั้น',
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.91,
-   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
-   first_dose_time:'07:00',course_completion_warning:null},
-
-  // [4] Interval ทุก 4 ชม. — Ibuprofen PRN
-  {drug_name:'Ibuprofen',dose_mg:400,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:4,
-   timing_type:'interval',meal_relation:'after',meal_anchor:null,offset_minutes:null,
-   interval_hours:4,skip_days:0,timing_label:'ทุก 4 ชม. หลังอาหาร',
-   total_tablets:24,total_days:4,special_instructions:'กินพร้อมอาหารหรือนม ไม่เกินวันละ 6 ครั้ง',
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.93,
-   drug_type:'prn',must_complete_course:false,is_continuous:false,is_prn:false,
-   prn_min_interval_hours:4,prn_max_per_day:6,first_dose_time:'08:00',course_completion_warning:null},
-
-  // [5] Interval ทุก 8 ชม. + Must Complete — Amoxicillin
-  {drug_name:'Amoxicillin',dose_mg:500,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:3,
-   timing_type:'interval',meal_relation:null,meal_anchor:null,offset_minutes:null,
-   interval_hours:8,skip_days:0,timing_label:'ทุก 8 ชม.',
-   total_tablets:21,total_days:7,special_instructions:'กินให้ครบ 7 วัน',
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.93,
-   drug_type:'antibiotic',must_complete_course:true,
-   must_complete_reason:'ยาปฏิชีวนะต้องกินให้ครบคอร์ส',is_continuous:false,is_prn:false,
-   course_completion_warning:'กินให้ครบ 7 วัน ห้ามหยุดเองแม้อาการดีขึ้น',first_dose_time:'08:00'},
-
-  // [6] Skip ทุก 2 วัน — Fluconazole
-  {drug_name:'Fluconazole',dose_mg:150,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
-   timing_type:'meal_based',meal_relation:'after',meal_anchor:'breakfast',offset_minutes:15,
-   interval_hours:null,skip_days:2,timing_label:'ทุก 2 วัน ตอนเช้า',
-   total_tablets:7,total_days:14,special_instructions:'กินให้ครบ 14 วัน',
-   doctor_name:'พญ. วรรณา ผิวดี',hospital_name:'รพ. รามาธิบดี',confidence:.92,
-   drug_type:'antifungal',must_complete_course:true,is_continuous:false,is_prn:false,
-   course_completion_warning:'ยาต้านเชื้อรา กินให้ครบ 14 วัน',first_dose_time:'07:00'},
-
-  // [7] Omeprazole ก่อนอาหาร
-  {drug_name:'Omeprazole',dose_mg:20,dose_unit:'mg',tablets_per_dose:1,frequency_per_day:1,
-   timing_type:'meal_based',meal_relation:'before',meal_anchor:'breakfast',offset_minutes:-30,
-   interval_hours:null,skip_days:0,timing_label:'ก่อนอาหารเช้า 30 นาที',
-   total_tablets:30,total_days:30,special_instructions:null,
-   doctor_name:'นพ. วิชัย รักสุขภาพ',hospital_name:'รพ. รามาธิบดี',confidence:.89,
-   drug_type:'chronic',must_complete_course:false,is_continuous:true,is_prn:false,
-   first_dose_time:'06:30',course_completion_warning:null},
-];
 
 
 /* ── FIX TOTAL DAYS CALCULATION ── */
@@ -1238,6 +1142,234 @@ function escapeHtml(s) {
     ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+// ═══════════════════════════════════════════════════════════
+// REFACTOR — Multi-dose schema helpers
+// ═══════════════════════════════════════════════════════════
+
+// Map meal_anchor → Thai label
+const MEAL_ANCHOR_TH = {
+  breakfast: 'เช้า', lunch: 'กลางวัน', dinner: 'เย็น',
+  bedtime: 'ก่อนนอน', all: 'ทุกมื้อ', custom: 'เวลาเฉพาะ',
+  '': '—', null: '—'
+};
+function mealAnchorTH(anchor) { 
+  return MEAL_ANCHOR_TH[anchor] || anchor || '—'; 
+}
+const MEAL_REL_TH = {
+  before: 'ก่อนอาหาร', after: 'หลังอาหาร', with: 'พร้อมอาหาร', 
+  empty_stomach: 'ตอนท้องว่าง', '': '', null: ''
+};
+function mealRelTH(rel) { 
+  return MEAL_REL_TH[rel] !== undefined ? MEAL_REL_TH[rel] : (rel || ''); 
+}
+
+// Normalize AI response → ให้มี doses[] เสมอ (ถ้าไม่มี → สร้างจาก flat fields)
+function normalizeAIResponse(m) {
+  if (!m) return m;
+  // ถ้ามี doses[] แล้ว → ใช้เลย
+  if (Array.isArray(m.doses) && m.doses.length > 0) return m;
+  // ถ้าไม่มี → สร้าง doses[] จาก flat fields
+  m.doses = [{
+    slot_order: 1,
+    meal_anchor: m.meal_anchor || 'breakfast',
+    meal_relation: m.meal_relation || 'after',
+    tablets_per_dose: m.tablets_per_dose ?? 1,
+    ml_per_dose: m.ml_per_dose ?? null,
+    custom_time: m.custom_time === true,
+    time: m.time || null,
+    frequency_pattern: m.frequency_pattern || 'daily',
+    frequency_interval: m.frequency_interval || 1,
+    day_of_week: m.day_of_week ?? null,
+    day_of_month: m.day_of_month ?? null
+  }];
+  return m;
+}
+
+// สรุปข้อความ "วัน/ครั้ง" จาก doses[]
+function summarizeFreqText(doses) {
+  if (!Array.isArray(doses) || doses.length === 0) return '—';
+  const d0 = doses[0];
+  const pat = d0.frequency_pattern || 'daily';
+  if (pat === 'weekly') return 'สัปดาห์ละ ' + doses.length + ' ครั้ง';
+  if (pat === 'monthly') return 'เดือนละ ' + doses.length + ' ครั้ง';
+  if (pat === 'alternate') return 'วันเว้นวัน (' + doses.length + ' มื้อ)';
+  if (pat === 'every_n_days') return 'ทุก ' + (d0.frequency_interval || '?') + ' วัน';
+  return 'วันละ ' + doses.length + ' ครั้ง';
+}
+
+// สรุป "วิธีกิน" จาก doses[]
+// Single-dose: "หลังอาหารเช้า" / "ก่อนนอน" / "เวลา 21:00"
+// Multi-dose: "หลังอาหาร เช้า · เย็น"
+function summarizeTimingLabel(doses) {
+  if (!Array.isArray(doses) || doses.length === 0) return '—';
+  // ถ้า custom_time → แสดงเวลาเฉพาะ
+  const customTimes = doses.filter(d => d.custom_time && d.time).map(d => d.time);
+  if (customTimes.length > 0 && customTimes.length === doses.length) {
+    return 'เวลา ' + customTimes.join(', ') + ' น.';
+  }
+  // กลุ่ม meal_relation ถ้าเหมือนกันทุก dose
+  const rels = [...new Set(doses.map(d => d.meal_relation).filter(Boolean))];
+  const anchors = doses.map(d => mealAnchorTH(d.meal_anchor));
+  if (rels.length === 1) {
+    return mealRelTH(rels[0]) + ' ' + anchors.join(' · ');
+  }
+  // ต่าง relation → แสดงต่อ dose
+  return doses.map(d => mealRelTH(d.meal_relation) + mealAnchorTH(d.meal_anchor)).join(' · ');
+}
+
+// สรุป "เม็ด/มื้อ" จาก doses[]
+function summarizeTablets(doses) {
+  if (!Array.isArray(doses) || doses.length === 0) return '—';
+  const vals = doses.map(d => d.tablets_per_dose).filter(v => v !== null && v !== undefined);
+  if (vals.length === 0) return '—';
+  // ถ้าทุก dose เท่ากัน → แสดงตัวเดียว
+  if (vals.every(v => v === vals[0])) return vals[0] + ' เม็ด';
+  return vals.join(', ') + ' เม็ด';
+}
+
+// Check: เป็น single dose ไหม (ใช้ตัดสินใจว่า edit ได้หรือไม่)
+function isSingleDose(m) {
+  return Array.isArray(m.doses) && m.doses.length === 1;
+}
+function isMultiDose(m) {
+  return Array.isArray(m.doses) && m.doses.length > 1;
+}
+
+// Check ว่ายาเป็น non-daily หรือไม่
+function isNonDaily(m) {
+  if (!Array.isArray(m.doses) || m.doses.length === 0) return false;
+  const pat = m.doses[0].frequency_pattern || 'daily';
+  return pat !== 'daily';
+}
+
+// Derive flat compat fields จาก doses[0] (สำหรับ legacy code ที่ยังอ่าน m.xxx)
+function deriveFlatCompat(m) {
+  if (!m || !Array.isArray(m.doses) || m.doses.length === 0) return m;
+  const d0 = m.doses[0];
+  m.meal_anchor      = d0.meal_anchor;
+  m.meal_relation    = d0.meal_relation;
+  m.tablets_per_dose = d0.tablets_per_dose;
+  m.ml_per_dose      = d0.ml_per_dose;
+  m.custom_time      = d0.custom_time === true;
+  m.time             = d0.time;
+  m.frequency_per_day = m.doses.length;
+  m.timing_label     = summarizeTimingLabel(m.doses);
+  m.timing_type      = (d0.custom_time || d0.meal_anchor === 'bedtime' || d0.meal_anchor === 'custom') 
+                     ? 'fixed' : 'meal_based';
+  return m;
+}
+
+// ─── PATCH P8: Non-Daily Frequency Pattern Helpers ───
+const FREQ_PATTERN_LABEL_TH = {
+  daily:        'ทุกวัน',
+  alternate:    'วันเว้นวัน',
+  every_n_days: 'ทุก N วัน',
+  weekly:       'สัปดาห์ละ 1 ครั้ง',
+  monthly:      'เดือนละ 1 ครั้ง'
+};
+const DAY_OF_WEEK_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const MONTH_TH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function formatThaiDate(date) {
+  const d = (date instanceof Date) ? date : new Date(date);
+  const day = d.getDate();
+  const monthShort = MONTH_TH_SHORT[d.getMonth()];
+  const yearBE = d.getFullYear() + 543;
+  return `${day} ${monthShort} ${yearBE}`;
+}
+
+// คำนวณ 3 วันถัดไป (ครั้งถัดไป) สำหรับ frequency pattern ใดๆ
+function getNextDoseDates(startDate, pattern, interval, dayOfWeek, dayOfMonth, count = 3) {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const dates = [];
+  const maxLookahead = 365; // safety: stop after 1 year
+  
+  let cursor = new Date(start);
+  cursor.setDate(cursor.getDate() + 1); // start จาก "วันถัดไป" หลัง start_date
+  
+  for (let i = 0; i < maxLookahead && dates.length < count; i++) {
+    let isDue = false;
+    if (pattern === 'alternate') {
+      const diff = Math.round((cursor - start) / (24*60*60*1000));
+      isDue = diff > 0 && diff % 2 === 0;
+    } else if (pattern === 'every_n_days') {
+      const n = interval || 1;
+      const diff = Math.round((cursor - start) / (24*60*60*1000));
+      isDue = diff > 0 && diff % n === 0;
+    } else if (pattern === 'weekly') {
+      if (dayOfWeek !== null && dayOfWeek !== undefined) {
+        isDue = cursor.getDay() === dayOfWeek;
+      } else {
+        const diff = Math.round((cursor - start) / (24*60*60*1000));
+        isDue = diff > 0 && diff % 7 === 0;
+      }
+    } else if (pattern === 'monthly') {
+      if (dayOfMonth !== null && dayOfMonth !== undefined) {
+        isDue = cursor.getDate() === dayOfMonth;
+      } else {
+        // every 30 days from start
+        const diff = Math.round((cursor - start) / (24*60*60*1000));
+        isDue = diff > 0 && diff % 30 === 0;
+      }
+    }
+    if (isDue) dates.push(new Date(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return dates;
+}
+
+function showNonDailyConfirmModal(nonDailyMeds) {
+  const modal = document.getElementById('nonDailyModal');
+  if (!modal) return;
+  const listDiv = document.getElementById('nonDailyList');
+  const today = new Date();
+  
+  listDiv.innerHTML = nonDailyMeds.map(m => {
+    const dose = (m.doses && m.doses[0]) || m;
+    const pattern = dose.frequency_pattern || m.frequency_pattern || 'daily';
+    const interval = dose.frequency_interval || m.frequency_interval || 1;
+    const dayOfWeek = dose.day_of_week !== undefined ? dose.day_of_week : m.day_of_week;
+    const dayOfMonth = dose.day_of_month !== undefined ? dose.day_of_month : m.day_of_month;
+    
+    const patternLabel = FREQ_PATTERN_LABEL_TH[pattern] || pattern;
+    const drugName = m.drug_name || m.drug_name_en || '(ไม่ทราบชื่อยา)';
+    const dose_mg = m.dose_mg ? (m.dose_mg + ' ' + (m.dose_unit || 'mg')) : '';
+    
+    // ครั้งถัดไป (3 ครั้ง)
+    const nextDates = getNextDoseDates(today, pattern, interval, dayOfWeek, dayOfMonth, 3);
+    const nextDatesText = nextDates.length > 0 
+      ? nextDates.map(d => formatThaiDate(d)).join(', ')
+      : 'คำนวณไม่ได้';
+    
+    // เพิ่มเติมสำหรับ weekly + day_of_week
+    let detailLine = '';
+    if (pattern === 'weekly' && dayOfWeek !== null && dayOfWeek !== undefined) {
+      detailLine = `<div class="ndm-detail">📅 ทุกวัน${escapeHtml(DAY_OF_WEEK_TH[dayOfWeek])}</div>`;
+    } else if (pattern === 'monthly' && dayOfMonth !== null && dayOfMonth !== undefined) {
+      detailLine = `<div class="ndm-detail">📅 ทุกวันที่ ${dayOfMonth} ของเดือน</div>`;
+    }
+    
+    return `<div class="ndm-item">
+      <div class="ndm-drug">${escapeHtml(drugName)} ${escapeHtml(dose_mg)}</div>
+      <div class="ndm-pattern">⏰ ${escapeHtml(patternLabel)}</div>
+      ${detailLine}
+      <div class="ndm-start">🟢 เริ่มวันแรก: <b>วันนี้ (${formatThaiDate(today)})</b></div>
+      <div class="ndm-next">📍 ครั้งถัดไป: ${escapeHtml(nextDatesText)}</div>
+    </div>`;
+  }).join('');
+  
+  modal.classList.add('on');
+}
+function closeNonDailyModal() {
+  const modal = document.getElementById('nonDailyModal');
+  if (modal) modal.classList.remove('on');
+}
+function confirmNonDailySave() {
+  closeNonDailyModal();
+  proceedToSave();
+}
+
 async function analyzeAll(){
   if(!photoQueue.length)return;
   document.getElementById('btnAnalyze').disabled=true;
@@ -1261,6 +1393,9 @@ async function analyzeAll(){
       // callAPI มี internal timeout 45 sec + AbortController
       const result = await callAPI(photoQueue[i].base64,photoQueue[i].mime);
       photoQueue[i].result=result;photoQueue[i].status='done';
+      // REFACTOR: Normalize AI response → ensure doses[] + flat compat
+      normalizeAIResponse(result);
+      deriveFlatCompat(result);
       meds.push(fixTotalDays(result));
     }catch(e){
       console.error('[analyzeAll] error on photo',i,':',e.message);
@@ -1391,9 +1526,12 @@ function renderMedList(){
       : m.is_prn
       ? '<span style="background:#FFFBEB;color:#92400E;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">💊 เมื่อมีอาการ</span>'
       : '';
-    const sub=[ds,t('timesDay').replace('{n}',m.frequency_per_day),m.timing_label,m.total_days?m.total_days+' '+t('rfDays'):''].filter(Boolean).join(' · ');
+    // REFACTOR: derive freq+timing จาก doses[]
+    const freqText = summarizeFreqText(m.doses);
+    const timingText = summarizeTimingLabel(m.doses);
+    const sub=[ds, freqText, timingText, m.total_days?m.total_days+' '+t('rfDays'):''].filter(Boolean).join(' · ');
     const c=document.createElement('div');c.className='mchip';
-    c.innerHTML=`<div class="mcdot" style="background:var(--ac)"></div><div class="mcinfo"><div class="mcnm">${m.drug_name}${courseTag}</div><div class="mcsb">${sub}</div></div><button class="mcrem" onclick="removeMed(${i})">×</button>`;
+    c.innerHTML=`<div class="mcdot" style="background:var(--ac)"></div><div class="mcinfo"><div class="mcnm">${escapeHtml(m.drug_name||'')}${courseTag}</div><div class="mcsb">${escapeHtml(sub)}</div></div><button class="mcrem" onclick="removeMed(${i})">×</button>`;
     el.appendChild(c);
   });
 }
@@ -1412,14 +1550,72 @@ function renderDcards(){
     const ok=pct>=75;
     const unit=t('unit');
     const card=document.createElement('div');card.className='dcard'+(ok?' ok':' warn');
-    const bmap={meal_based:'Meal',interval:'Interval',fixed:'Fixed',special:'Special'};
-    const bdgKey='b'+(bmap[m.timing_type]||'Meal');
+    
+    // REFACTOR: derive จาก doses[]
+    const single = isSingleDose(m);
+    const multi = isMultiDose(m);
+    const nonDaily = isNonDaily(m);
+    const d0 = (m.doses && m.doses[0]) || {};
+    const freqText = summarizeFreqText(m.doses);
+    const timingText = summarizeTimingLabel(m.doses);
+    const tabletsText = summarizeTablets(m.doses);
+    
+    // Multi-dose detail (list ต่อ dose)
+    let multiDoseDetail = '';
+    if (multi) {
+      multiDoseDetail = `
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:8px 10px;margin:4px 0;font-size:12px;line-height:1.6">
+        <div style="font-weight:600;color:#1E40AF;margin-bottom:4px">📋 ตารางมื้อ (${m.doses.length} มื้อ — แก้ไขไม่ได้)</div>
+        ${m.doses.map((d, di) => {
+          const anchor = mealAnchorTH(d.meal_anchor);
+          const rel = mealRelTH(d.meal_relation);
+          const tabs = d.tablets_per_dose != null ? d.tablets_per_dose : '?';
+          const ml = d.ml_per_dose;
+          const amount = ml != null ? ml + ' มล.' : tabs + ' เม็ด';
+          const customT = d.custom_time && d.time ? ' (' + d.time + ' น.)' : '';
+          return `<div style="color:#1E40AF">• มื้อที่ ${di+1}: ${escapeHtml(rel)} ${escapeHtml(anchor)}${escapeHtml(customT)} — ${escapeHtml(amount)}</div>`;
+        }).join('')}
+      </div>`;
+    }
+    
+    // Pattern detail (non-daily)
+    let patternBadge = '';
+    if (nonDaily) {
+      const DAY_TH = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+      const pat = d0.frequency_pattern;
+      let patternText = '';
+      if (pat === 'weekly' && d0.day_of_week !== null && d0.day_of_week !== undefined) {
+        patternText = `ทุกวัน${DAY_TH[d0.day_of_week] || ''}`;
+      } else if (pat === 'monthly' && d0.day_of_month !== null && d0.day_of_month !== undefined) {
+        patternText = `ทุกวันที่ ${d0.day_of_month} ของเดือน`;
+      } else if (pat === 'alternate') {
+        patternText = 'วันเว้นวัน';
+      } else if (pat === 'every_n_days') {
+        patternText = `ทุก ${d0.frequency_interval || '?'} วัน`;
+      } else {
+        patternText = pat;
+      }
+      patternBadge = `
+      <div style="background:#F0F9FF;border:1px solid #7DD3FC;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#0369A1;line-height:1.5">
+        📅 <b>${escapeHtml(freqText)}</b>${patternText ? ' · ' + escapeHtml(patternText) : ''}
+      </div>`;
+    }
+    
+    // Edit fields — single-dose editable, multi-dose read-only
+    const editTabsInput = single 
+      ? `<input class="ied" value="${(d0.tablets_per_dose != null ? d0.tablets_per_dose : 1)} ${unit}" oninput="updateDoseField(${i},'tablets_per_dose',this.value)">`
+      : `<input class="ied" value="${escapeHtml(tabletsText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`;
+    const editFreqInput = single
+      ? `<input class="ied" value="${escapeHtml(freqText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`
+      : `<input class="ied" value="${escapeHtml(freqText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`;
+    const editTimingInput = `<input class="ied" value="${escapeHtml(timingText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`;
+    
     card.innerHTML=`
       <div class="dc-hd">
         ${q?`<img class="dc-thumb" src="${q.dataUrl}">`:'' }
         <div style="flex:1">
-          <div class="dc-nm">${m.drug_name||'—'}</div>
-        ${m.must_complete_course?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#DC2626;line-height:1.5"><b>⚠️ ต้องกินให้ครบคอร์ส ${m.total_days||''}  วัน</b><br>${m.course_completion_warning||'ห้ามหยุดยาเองแม้อาการดีขึ้นแล้ว'}</div>`:''}
+          <div class="dc-nm">${escapeHtml(m.drug_name||'—')}</div>
+        ${m.must_complete_course?`<div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#DC2626;line-height:1.5"><b>⚠️ ต้องกินให้ครบคอร์ส ${m.total_days||''}  วัน</b><br>${escapeHtml(m.course_completion_warning||'ห้ามหยุดยาเองแม้อาการดีขึ้นแล้ว')}</div>`:''}
         ${m.is_prn?`<div style="background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#92400E;line-height:1.5">💊 <b>กินเมื่อมีอาการ</b> · กินซ้ำได้ทุก ${m.prn_min_interval_hours||4} ชั่วโมง · ไม่เกิน ${m.prn_max_per_day||4} ครั้ง/วัน</div>`:''}
         ${m.is_continuous?`<div style="background:#E0FFF6;border:1px solid #6EE7B7;border-radius:8px;padding:6px 10px;margin:4px 0;font-size:11px;color:#065F46">🔄 <b>ยากินต่อเนื่อง</b> ห้ามหยุดยาเองโดยไม่ปรึกษาแพทย์</div>`:''}
           <div class="dc-ds">${m.dose_mg?m.dose_mg+' '+m.dose_unit:t('noImg')}</div>
@@ -1427,15 +1623,29 @@ function renderDcards(){
         <div class="dc-conf">${pct}%</div>
       </div>
       ${!ok?`<div class="wstrip" style="margin:0 10px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> ${t('warnTpl').replace('{p}',pct)}</div>`:''}
+      ${patternBadge}
+      ${multiDoseDetail}
       <div class="dc-bd">
-        <div class="ir"><div class="ii g">💊</div><div style="flex:1"><div class="ilbl">${t('lTabs')}</div><input class="ied" value="${m.tablets_per_dose||1} ${unit}" oninput="meds[${i}].tablets_per_dose=parseInt(this.value)||1;rebundleIfReady()"></div></div>
-        <div class="ir"><div class="ii g">🔄</div><div style="flex:1"><div class="ilbl">${t('lFreq')}</div><input class="ied" value="${t('timesDay').replace('{n}',m.frequency_per_day)}" oninput="meds[${i}].frequency_per_day=parseInt(this.value)||1;rebundleIfReady()"></div></div>
-        <div class="ir"><div class="ii w">🍽️</div><div style="flex:1"><div class="ilbl">${t('lTime')}</div><input class="ied" value="${m.timing_label||'—'}"><div class="ttbadge ${bmap[m.timing_type]?.toLowerCase()||'meal'}">${t(bdgKey)}</div></div></div>
-        <div class="ir"><div class="ii b">📦</div><div style="flex:1"><div class="ilbl">${t('lTotl')}</div><input class="ied" value="${[m.total_tablets?m.total_tablets+' '+unit:null,m.total_days?m.total_days+' '+t('rfDays'):null].filter(Boolean).join(' / ')||'—'}"></div></div>
-        ${m.special_instructions?`<div class="ir"><div class="ii p">⚠️</div><div style="flex:1"><div class="ilbl">${t('lSpec')}</div><input class="ied" value="${m.special_instructions}"></div></div>`:''}
+        <div class="ir"><div class="ii g">💊</div><div style="flex:1"><div class="ilbl">${t('lTabs')}</div>${editTabsInput}</div></div>
+        <div class="ir"><div class="ii g">🔄</div><div style="flex:1"><div class="ilbl">${t('lFreq')}</div>${editFreqInput}</div></div>
+        <div class="ir"><div class="ii w">🍽️</div><div style="flex:1"><div class="ilbl">${t('lTime')}</div>${editTimingInput}</div></div>
+        <div class="ir"><div class="ii b">📦</div><div style="flex:1"><div class="ilbl">${t('lTotl')}</div><input class="ied" value="${[m.total_tablets?m.total_tablets+' '+unit:null,m.total_days?m.total_days+' '+t('rfDays'):null].filter(Boolean).join(' / ')||'—'}" readonly style="background:#F3F4F6;cursor:not-allowed"></div></div>
+        ${m.special_instructions?`<div class="ir"><div class="ii p">⚠️</div><div style="flex:1"><div class="ilbl">${t('lSpec')}</div><input class="ied" value="${escapeHtml(m.special_instructions)}" readonly style="background:#F3F4F6;cursor:not-allowed"></div></div>`:''}
       </div>`;
     wrap.appendChild(card);
   });
+}
+
+// REFACTOR: Update dose field สำหรับ single-dose editing
+function updateDoseField(medIdx, field, value) {
+  const m = meds[medIdx];
+  if (!m || !m.doses || !m.doses[0]) return;
+  if (field === 'tablets_per_dose') {
+    const num = parseFloat(value) || 1;
+    m.doses[0].tablets_per_dose = num;
+    m.tablets_per_dose = num; // flat compat
+  }
+  rebundleIfReady();
 }
 
 /* ═══════════════════════════
@@ -1474,40 +1684,73 @@ function buildSchedule(medList,meals){
   const offMap={before:-30,after:15,with:0,empty_stomach:-60,bedtime:0};
 
   medList.forEach(med=>{
-    // PRN / เมื่อมีอาการ
+    // PRN / เมื่อมีอาการ (legacy flat — ไม่มี doses[])
     if(med.timing_type==='prn'||med.is_prn){prnMeds.push(med);return;}
     if(med.timing_type==='special'){prnMeds.push(med);return;}
 
-    // Interval (ทุก X ชั่วโมง)
+    // Interval (ทุก X ชั่วโมง) (legacy flat)
     if(med.timing_type==='interval'){ivMeds.push(med);return;}
 
-    // Fixed (ก่อนนอน)
-    if(med.timing_type==='fixed'||med.meal_relation==='bedtime'){
-      periods[3].drugs.push({drug:med,time:'21:00',cls:'fixed',lbl:t('tNight')});return;
+    // REFACTOR: ใช้ doses[] เป็น primary
+    const doses = Array.isArray(med.doses) && med.doses.length ? med.doses : [{
+      meal_anchor: med.meal_anchor || 'all',
+      meal_relation: med.meal_relation || 'after',
+      tablets_per_dose: med.tablets_per_dose || 1,
+      custom_time: med.custom_time === true,
+      time: med.time,
+      frequency_pattern: med.frequency_pattern || 'daily'
+    }];
+
+    // Non-daily (alternate/weekly/monthly) → skipMeds bucket
+    const d0 = doses[0];
+    const pat = d0.frequency_pattern || 'daily';
+    if (pat !== 'daily' && pat !== 'every_n_hours' && pat !== 'prn') {
+      skipMeds.push(med);
+      return;
     }
 
-    // วันเว้นวัน / ทุก N วัน (skip_days > 0)
-    const skipDays=parseInt(med.skip_days)||0;
-    if(skipDays>0){skipMeds.push(med);return;}
+    // Loop ผ่านทุก dose → สร้าง reminder ต่อ dose
+    doses.forEach(d => {
+      const rel = d.meal_relation || 'after';
+      const anch = d.meal_anchor || 'all';
+      const off = offMap[rel] ?? 15;
+      const cls = rel === 'before' ? 'before' : rel === 'with' ? 'with' : 'after';
+      const lbl = t('t' + ({before:'Before', after:'After', with:'With', empty_stomach:'Before'}[rel] || 'After'));
 
-    // meal_based ปกติ
-    const rel=med.meal_relation||'after';
-    const anch=med.meal_anchor||'all';
-    const off=parseInt(med.offset_minutes)||(offMap[rel]??15);
-    const cls=rel==='before'?'before':rel==='with'?'with':'after';
-    const lbl=t('t'+({before:'Before',after:'After',with:'With',empty_stomach:'Before'}[rel]||'After'));
-    const active=anch==='all'
-      ?(med.frequency_per_day>=3?mKeys:med.frequency_per_day===2?['breakfast','dinner']:['breakfast'])
-      :[anch];
-    active.forEach(mk=>{
-      // 🛡️ Validate meal key exists
-      let mealTime = meals[mk];
+      // Custom time priority → fixed period
+      if (d.custom_time === true && d.time) {
+        const hh = parseInt(d.time.split(':')[0]);
+        const periodIdx = hh < 12 ? 0 : hh < 17 ? 1 : hh < 21 ? 2 : 3;
+        periods[periodIdx].drugs.push({drug:med, time:d.time, cls:'fixed', lbl:'เวลาเฉพาะ'});
+        return;
+      }
+
+      // Bedtime
+      if (anch === 'bedtime' || rel === 'bedtime') {
+        periods[3].drugs.push({drug:med, time:'21:00', cls:'fixed', lbl:t('tNight')});
+        return;
+      }
+
+      // Custom anchor (Methotrexate weekly style — meal_anchor="custom" + custom_time)
+      if (anch === 'custom') {
+        if (d.time) {
+          const hh = parseInt(d.time.split(':')[0]);
+          const periodIdx = hh < 12 ? 0 : hh < 17 ? 1 : hh < 21 ? 2 : 3;
+          periods[periodIdx].drugs.push({drug:med, time:d.time, cls:'fixed', lbl:'เวลาเฉพาะ'});
+        }
+        return;
+      }
+
+      // meal_anchor=all → กระจายเป็น 1 มื้อ (breakfast default — single dose case)
+      // ถ้า multi-dose จะ loop ผ่าน doses[] อยู่แล้ว แต่ละ dose ระบุ anchor ชัด
+      const targetAnchor = anch === 'all' ? 'breakfast' : anch;
+      let mealTime = meals[targetAnchor];
       if (!mealTime) {
-        console.warn('[buildSchedule] Unknown meal_anchor:', mk, '— defaulting to breakfast');
+        console.warn('[buildSchedule] Unknown meal_anchor:', targetAnchor, '— defaulting to breakfast');
         mealTime = meals.breakfast || '07:00';
       }
       const time = addMin(mealTime, off);
-      const pi = mAnch[mk] ?? 0;
+      const pi = mAnch[targetAnchor] ?? 0;
       periods[pi].drugs.push({drug:med, time, cls, lbl});
     });
   });
@@ -1641,6 +1884,20 @@ function renderDoctor(){
 let currentPhotoMed='';
 function save(){
   if(!meds.length)return;
+  // PATCH P8: ตรวจสอบ non-daily medications (วันเว้นวัน/สัปดาห์/เดือน)
+  // ถ้ามี → แสดง popup ยืนยันก่อนบันทึก
+  const nonDailyMeds = meds.filter(m => {
+    const dose = (m.doses && m.doses[0]) || m;
+    const pattern = dose.frequency_pattern || m.frequency_pattern || 'daily';
+    return pattern !== 'daily';
+  });
+  if (nonDailyMeds.length > 0) {
+    showNonDailyConfirmModal(nonDailyMeds);
+    return; // wait for user confirm
+  }
+  proceedToSave();
+}
+function proceedToSave(){
   currentPhotoMed=meds[0]?.drug_name||'';
   buildPhotoGrid(currentPhotoMed);
   document.getElementById('photoBk').classList.add('on');
@@ -2471,46 +2728,65 @@ async function saveToBackend(medsList) {
   
   for (const m of medsList) {
     try {
-      // Map meal_anchor → meal time
-      const anchor = m.meal_anchor || 'breakfast';
-      const baseMealTime = userMeals[anchor] || '07:00';
-      
-      // Apply offset: before = negative, after = positive, with = 0
-      const relation = m.meal_relation || 'after';
-      let offsetMin = parseInt(m.offset_minutes) || 15;
-      if (relation === 'before') offsetMin = -Math.abs(offsetMin);
-      else if (relation === 'with') offsetMin = 0;
-      else offsetMin = Math.abs(offsetMin);
-      
-      // Calculate reminder_time
-      const [bh, bm] = baseMealTime.split(':').map(Number);
-      const totalMin = bh * 60 + bm + offsetMin;
-      const finalH = Math.floor((totalMin + 1440) % 1440 / 60);
-      const finalM = ((totalMin + 1440) % 1440) % 60;
-      const reminderTime = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
-      
-      // PATCH P7: ตรวจสอบ custom_time จาก AI response (Madopar-style "เวลา 21.00")
-      // ถ้า AI detect custom_time = true → ส่งเป็น override ของ meal_anchor calculation
-      // Backend calculateReminderTime จะใช้ time นี้แทนการคำนวณตาม meal_anchor
-      const aiDose = (m.doses && m.doses[0]) || {};
-      const aiCustomTime = aiDose.custom_time === true;
-      const aiTime = aiDose.time || m.time || null;
-      
-      // ถ้ามี custom_time → ใช้ AI's time, ไม่งั้น ใช้ reminderTime ที่คำนวณตาม meal
-      const finalReminderTime = (aiCustomTime && aiTime) ? aiTime : reminderTime;
-      console.log('[saveToBackend] ' + m.drug_name + ' → reminder_time=' + finalReminderTime + 
-                  (aiCustomTime ? ' (custom_time)' : ' (from meal_anchor)'));
-      
-      const schedules = [{
-        reminder_time: finalReminderTime,
-        meal_anchor: anchor,
-        meal_relation: relation,
-        tablets_per_dose: parseFloat(m.tablets_per_dose) || 1,
-        ml_per_dose: (m.ml_per_dose !== undefined && m.ml_per_dose !== null && m.ml_per_dose !== '')
-          ? parseFloat(m.ml_per_dose) : null,
-        custom_time: aiCustomTime,
-        time: aiTime
+      // REFACTOR: Build schedules array จาก doses[] (1 dose = 1 schedule)
+      const doses = Array.isArray(m.doses) && m.doses.length ? m.doses : [{
+        meal_anchor: m.meal_anchor || 'breakfast',
+        meal_relation: m.meal_relation || 'after',
+        tablets_per_dose: m.tablets_per_dose ?? 1,
+        ml_per_dose: m.ml_per_dose ?? null,
+        custom_time: m.custom_time === true,
+        time: m.time || null,
+        frequency_pattern: m.frequency_pattern || 'daily',
+        frequency_interval: m.frequency_interval || 1,
+        day_of_week: m.day_of_week ?? null,
+        day_of_month: m.day_of_month ?? null
       }];
+      
+      const schedules = doses.map((d, idx) => {
+        // Map meal_anchor → meal time (สำหรับ default reminder calc)
+        const anchor = d.meal_anchor || 'breakfast';
+        const safeAnchor = (anchor === 'all' || anchor === 'custom') ? 'breakfast' : anchor;
+        const baseMealTime = userMeals[safeAnchor] || userMeals.breakfast || '07:00';
+        
+        // Apply offset: before = -30, after = +15, with = 0
+        const relation = d.meal_relation || 'after';
+        let offsetMin = 15; // default after
+        if (relation === 'before') offsetMin = -30;
+        else if (relation === 'with') offsetMin = 0;
+        else if (relation === 'empty_stomach') offsetMin = -60;
+        
+        // Calculate reminder_time จาก meal anchor
+        const [bh, bm] = baseMealTime.split(':').map(Number);
+        const totalMin = bh * 60 + bm + offsetMin;
+        const finalH = Math.floor((totalMin + 1440) % 1440 / 60);
+        const finalM = ((totalMin + 1440) % 1440) % 60;
+        const reminderTimeFromMeal = String(finalH).padStart(2,'0') + ':' + String(finalM).padStart(2,'0');
+        
+        // PATCH P7: custom_time priority
+        const customTime = d.custom_time === true;
+        const explicitTime = d.time || null;
+        const finalReminderTime = (customTime && explicitTime) ? explicitTime : reminderTimeFromMeal;
+        
+        console.log(`[saveToBackend] ${m.drug_name} dose[${idx}] → anchor=${anchor} reminder=${finalReminderTime} ` +
+                    (customTime ? '(custom_time)' : '(from meal)') + 
+                    ' freq=' + (d.frequency_pattern || 'daily'));
+        
+        return {
+          reminder_time: finalReminderTime,
+          meal_anchor: anchor,
+          meal_relation: relation,
+          tablets_per_dose: (d.tablets_per_dose !== null && d.tablets_per_dose !== undefined) 
+            ? parseFloat(d.tablets_per_dose) : 1,
+          ml_per_dose: (d.ml_per_dose !== null && d.ml_per_dose !== undefined && d.ml_per_dose !== '')
+            ? parseFloat(d.ml_per_dose) : null,
+          custom_time: customTime,
+          time: explicitTime,
+          frequency_pattern: d.frequency_pattern || 'daily',
+          frequency_interval: parseInt(d.frequency_interval) || 1,
+          day_of_week: (d.day_of_week !== null && d.day_of_week !== undefined) ? parseInt(d.day_of_week) : null,
+          day_of_month: (d.day_of_month !== null && d.day_of_month !== undefined) ? parseInt(d.day_of_month) : null
+        };
+      });
       
       const body = {
         user_id: USER_ID,
