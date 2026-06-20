@@ -1218,13 +1218,26 @@ function summarizeTimingLabel(doses) {
 }
 
 // สรุป "เม็ด/มื้อ" จาก doses[]
+// ── Number Display Helpers (ตัด .00 เก็บทศนิยมจำเป็น) ──
+function fmtNum(n) {
+  if (n === null || n === undefined || n === '') return '';
+  const num = parseFloat(n);
+  if (isNaN(num)) return String(n);
+  return String(num);
+}
+function fmtDose(dose, unit) {
+  const d = fmtNum(dose);
+  if (!d) return '';
+  return d + ' ' + (unit || 'mg');
+}
+
 function summarizeTablets(doses) {
   if (!Array.isArray(doses) || doses.length === 0) return '—';
   const vals = doses.map(d => d.tablets_per_dose).filter(v => v !== null && v !== undefined);
   if (vals.length === 0) return '—';
   // ถ้าทุก dose เท่ากัน → แสดงตัวเดียว
-  if (vals.every(v => v === vals[0])) return vals[0] + ' เม็ด';
-  return vals.join(', ') + ' เม็ด';
+  if (vals.every(v => v === vals[0])) return fmtNum(vals[0]) + ' เม็ด';
+  return vals.map(v => fmtNum(v)).join(', ') + ' เม็ด';
 }
 
 // Check: เป็น single dose ไหม (ใช้ตัดสินใจว่า edit ได้หรือไม่)
@@ -1517,7 +1530,7 @@ function renderMedList(){
   const badge=document.getElementById('medBadge');
   badge.textContent=t('drugCount',meds.length);badge.className='med-badge'+(meds.length?' has':'');
   meds.forEach((m,i)=>{
-    const ds=m.dose_mg?`${m.dose_mg}${m.dose_unit}`:'';
+    const ds=m.dose_mg?fmtDose(m.dose_mg, m.dose_unit):'';
     // course completion warning badge
     const courseTag = m.must_complete_course
       ? '<span style="background:#FEF2F2;color:#DC2626;font-size:10px;font-weight:700;padding:1px 7px;border-radius:8px;margin-left:4px">⚠️ กินให้ครบ</span>'
@@ -1569,9 +1582,9 @@ function renderDcards(){
         ${m.doses.map((d, di) => {
           const anchor = mealAnchorTH(d.meal_anchor);
           const rel = mealRelTH(d.meal_relation);
-          const tabs = d.tablets_per_dose != null ? d.tablets_per_dose : '?';
+          const tabs = d.tablets_per_dose != null ? fmtNum(d.tablets_per_dose) : '?';
           const ml = d.ml_per_dose;
-          const amount = ml != null ? ml + ' มล.' : tabs + ' เม็ด';
+          const amount = ml != null ? fmtNum(ml) + ' มล.' : tabs + ' เม็ด';
           const customT = d.custom_time && d.time ? ' (' + d.time + ' น.)' : '';
           return `<div style="color:#1E40AF">• มื้อที่ ${di+1}: ${escapeHtml(rel)} ${escapeHtml(anchor)}${escapeHtml(customT)} — ${escapeHtml(amount)}</div>`;
         }).join('')}
@@ -1603,7 +1616,7 @@ function renderDcards(){
     
     // Edit fields — single-dose editable, multi-dose read-only
     const editTabsInput = single 
-      ? `<input class="ied" value="${(d0.tablets_per_dose != null ? d0.tablets_per_dose : 1)} ${unit}" oninput="updateDoseField(${i},'tablets_per_dose',this.value)">`
+      ? `<input class="ied" value="${fmtNum(d0.tablets_per_dose != null ? d0.tablets_per_dose : 1)} ${unit}" oninput="updateDoseField(${i},'tablets_per_dose',this.value)">`
       : `<input class="ied" value="${escapeHtml(tabletsText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`;
     const editFreqInput = single
       ? `<input class="ied" value="${escapeHtml(freqText)}" readonly style="background:#F3F4F6;cursor:not-allowed">`
@@ -1824,7 +1837,7 @@ function rebundleIfReady(){
     if(!p.drugs.length)return;totalAlerts++;
     const times=[...new Set(p.drugs.map(d=>d.time))].sort().join(' · ');
     const card=document.createElement('div');card.className=`pc ${pC[i]}`;
-    card.innerHTML=`<div class="pc-hd"><div class="pc-ic">${TL.pIcons[i]}</div><div><div class="pc-lb">${TL.periods[i]}</div><div class="pc-tm">${times}</div></div></div><div class="pc-dgs">${p.drugs.map(d=>`<div class="dpill ${d.cls}"><div class="dp-d"></div><div class="dp-i"><div class="dp-n">${d.drug.drug_name}</div><div class="dp-s">${d.lbl}${d.drug.dose_mg?' · '+d.drug.dose_mg+d.drug.dose_unit:''}</div></div><div class="dp-c">${d.drug.tablets_per_dose||1}</div></div>`).join('')}</div>`;
+    card.innerHTML=`<div class="pc-hd"><div class="pc-ic">${TL.pIcons[i]}</div><div><div class="pc-lb">${TL.periods[i]}</div><div class="pc-tm">${times}</div></div></div><div class="pc-dgs">${p.drugs.map(d=>`<div class="dpill ${d.cls}"><div class="dp-d"></div><div class="dp-i"><div class="dp-n">${d.drug.drug_name}</div><div class="dp-s">${d.lbl}${d.drug.dose_mg?' · '+fmtDose(d.drug.dose_mg, d.drug.dose_unit):''}</div></div><div class="dp-c">${fmtNum(d.drug.tablets_per_dose||1)}</div></div>`).join('')}</div>`;
     pg.appendChild(card);
   });
   const ivc=document.getElementById('ivcards');ivc.innerHTML='';
@@ -1834,7 +1847,7 @@ function rebundleIfReady(){
     for(let n=0;n<cnt;n++){const tot=stMin+n*ih*60;slots.push(`${String(Math.floor((tot%1440)/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);}
     totalAlerts+=slots.length;
     const card=document.createElement('div');card.className='iv-card';
-    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${med.drug_name}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${med.tablets_per_dose||1} ${t('ivUnit')}</div></div>`).join('')}</div>`;
+    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${med.drug_name}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${fmtNum(med.tablets_per_dose||1)} ${t('ivUnit')}</div></div>`).join('')}</div>`;
     ivc.appendChild(card);
   });
   const pc=document.getElementById('prncards');pc.innerHTML='';
