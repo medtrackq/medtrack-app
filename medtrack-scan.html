@@ -1236,13 +1236,34 @@ function fmtDose(dose, unit) {
   return d + ' ' + (unit || 'mg');
 }
 
+// แปลงทศนิยม → เศษส่วนแบบไทย (ครึ่งเม็ด, 3/4 เม็ด — ผู้สูงอายุเข้าใจง่าย)
+function fmtTabletsThai(n, suffix) {
+  const unit = suffix || 'เม็ด';
+  if (n === null || n === undefined || n === '') return '';
+  const num = parseFloat(n);
+  if (isNaN(num)) return String(n);
+  if (num === 0) return '0 ' + unit;
+  const whole = Math.floor(num);
+  const frac = +(num - whole).toFixed(2);
+  const fracMap = { 0.25: '1/4', 0.5: 'ครึ่ง', 0.75: '3/4' };
+  if (frac === 0) return whole + ' ' + unit;
+  if (fracMap[frac]) {
+    if (whole === 0) {
+      return frac === 0.5 ? 'ครึ่ง' + unit : fracMap[frac] + ' ' + unit;
+    } else {
+      return frac === 0.5 ? whole + ' ' + unit + 'ครึ่ง' : whole + ' ' + fracMap[frac] + ' ' + unit;
+    }
+  }
+  return num + ' ' + unit;
+}
+
 function summarizeTablets(doses) {
   if (!Array.isArray(doses) || doses.length === 0) return '—';
   const vals = doses.map(d => d.tablets_per_dose).filter(v => v !== null && v !== undefined);
   if (vals.length === 0) return '—';
   // ถ้าทุก dose เท่ากัน → แสดงตัวเดียว
-  if (vals.every(v => v === vals[0])) return fmtNum(vals[0]) + ' เม็ด';
-  return vals.map(v => fmtNum(v)).join(', ') + ' เม็ด';
+  if (vals.every(v => v === vals[0])) return fmtTabletsThai(vals[0]);
+  return vals.map(v => fmtTabletsThai(v, '')).join(', ') + ' เม็ด';
 }
 
 // Check: เป็น single dose ไหม (ใช้ตัดสินใจว่า edit ได้หรือไม่)
@@ -1614,7 +1635,7 @@ function renderDcards(){
           const rel = mealRelTH(d.meal_relation);
           const tabs = d.tablets_per_dose != null ? fmtNum(d.tablets_per_dose) : '?';
           const ml = d.ml_per_dose;
-          const amount = ml != null ? fmtNum(ml) + ' มล.' : tabs + ' เม็ด';
+          const amount = ml != null ? fmtNum(ml) + ' มล.' : fmtTabletsThai(d.tablets_per_dose != null ? d.tablets_per_dose : 0);
           const customT = d.custom_time && d.time ? ' (' + d.time + ' น.)' : '';
           return `<div style="color:#1E40AF">• มื้อที่ ${di+1}: ${escapeHtml(rel)} ${escapeHtml(anchor)}${escapeHtml(customT)} — ${escapeHtml(amount)}</div>`;
         }).join('')}
@@ -1880,7 +1901,7 @@ function rebundleIfReady(){
     for(let n=0;n<cnt;n++){const tot=stMin+n*ih*60;slots.push(`${String(Math.floor((tot%1440)/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);}
     totalAlerts+=slots.length;
     const card=document.createElement('div');card.className='iv-card';
-    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${escapeHtml(med.drug_name_raw||med.drug_name)}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${fmtNum(tabletsPerDose)} ${t('ivUnit')}</div></div>`).join('')}</div>`;
+    card.innerHTML=`<div class="iv-hd"><div class="iv-lb">⏱️ ${t('ivTitle').replace('{h}',ih)} — ${escapeHtml(med.drug_name_raw||med.drug_name)}</div><div class="iv-cnt">${slots.length} ${t('slAlerts')}</div></div><div class="iv-slots">${slots.map((s,n)=>`<div class="islot"><div class="islot-t">${s}</div><div class="islot-l">${t('ivDose')}${n+1}</div><div class="islot-c">${fmtTabletsThai(tabletsPerDose)}</div></div>`).join('')}</div>`;
     ivc.appendChild(card);
   });
   const pc=document.getElementById('prncards');pc.innerHTML='';
