@@ -1202,9 +1202,17 @@ async function openRunDetail(runId){
       return d0.frequency_pattern === 'every_n_hours' ? (d0.frequency_interval || null) : null;
     }],
     ['total_quantity','รวม'],
-    [null,'จำนวนมื้อ/วัน', () => doses.length || null],
+    [null,'จำนวนมื้อ/วัน', () => {
+      const d0 = doses[0] || {};
+      // interval (every_n_hours): จำนวนมื้อ = 24/interval (ไม่ใช่ doses.length=1)
+      if (d0.frequency_pattern === 'every_n_hours' && d0.frequency_interval) {
+        return Math.round(24 / d0.frequency_interval);
+      }
+      return doses.length || null;
+    }],
     ['is_high_alert','⚠️ High-alert'],['drug_class','กลุ่มยา'],
     ['special_instructions','คำเตือนพิเศษ'],
+    [null,'💊 ยากินคู่', () => Array.isArray(aiResp.pairing_drugs) && aiResp.pairing_drugs.length ? aiResp.pairing_drugs.join(', ') : null],
     ['indication','ข้อบ่งใช้'],['hospital_name','รพ.'],['confidence','Confidence'],
     ['_debug_label_text','🔍 AI อ่านจากซอง'],['_debug_timing_reasoning','🔍 เหตุผล timing'],
   ];
