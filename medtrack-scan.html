@@ -723,7 +723,7 @@ label.upbtn{cursor:pointer}
       <span>ยืนยันตารางการกิน</span>
     </h3>
     <p style="margin-top:8px;color:var(--t2);font-size:13px;line-height:1.6">
-      ยาด้านล่างไม่ได้กินทุกวัน — กรุณาตรวจสอบก่อนบันทึก
+      ยาด้านล่างมีตารางพิเศษ — กรุณาตรวจสอบเวลาก่อนบันทึก
     </p>
     <div id="nonDailyList" style="margin:14px 0;max-height:320px;overflow-y:auto"></div>
     <p style="font-size:11px;color:var(--t2);font-style:italic;margin-bottom:14px">
@@ -1269,6 +1269,10 @@ function deriveFlatCompat(m) {
   m.timing_label     = summarizeTimingLabel(m.doses);
   m.timing_type      = (d0.custom_time || d0.meal_anchor === 'bedtime' || d0.meal_anchor === 'custom') 
                      ? 'fixed' : 'meal_based';
+  // จำนวนเม็ดรวม: AI ส่ง total_quantity → map เป็น total_tablets (ถ้าอ่านได้)
+  if (m.total_tablets == null && m.total_quantity != null) {
+    m.total_tablets = m.total_quantity;
+  }
   return m;
 }
 
@@ -1346,10 +1350,31 @@ function showNonDailyConfirmModal(nonDailyMeds) {
     const dayOfMonth = dose.day_of_month !== undefined ? dose.day_of_month : m.day_of_month;
     
     const patternLabel = FREQ_PATTERN_LABEL_TH[pattern] || pattern;
-    const drugName = m.drug_name || m.drug_name_en || '(ไม่ทราบชื่อยา)';
+    const drugName = m.drug_name_raw || m.drug_name || m.drug_name_en || '(ไม่ทราบชื่อยา)';
     const dose_mg = m.dose_mg ? (m.dose_mg + ' ' + (m.dose_unit || 'mg')) : '';
     
-    // ครั้งถัดไป (3 ครั้ง)
+    // INTERVAL (every_n_hours): กินทุกวัน หลายครั้ง → แสดงเวลาในวัน
+    if (pattern === 'every_n_hours') {
+      const ih = interval || 8;
+      const ivStartEl = document.getElementById('ivStart');
+      const startTime = ivStartEl?.value || '06:00';
+      const [sh, sm] = startTime.split(':').map(Number);
+      const startMin = sh * 60 + sm;
+      const cnt = Math.round(24 / ih);
+      const slots = [];
+      for (let n = 0; n < cnt; n++) {
+        const tot = (startMin + n * ih * 60) % 1440;
+        slots.push(`${String(Math.floor(tot/60)).padStart(2,'0')}:${String(tot%60).padStart(2,'0')}`);
+      }
+      return `<div class="ndm-item">
+        <div class="ndm-drug">${escapeHtml(drugName)} ${escapeHtml(dose_mg)}</div>
+        <div class="ndm-pattern">⏰ กินทุก ${ih} ชม. (${cnt} ครั้ง/วัน)</div>
+        <div class="ndm-start">🟢 เริ่มวันนี้ (${formatThaiDate(today)})</div>
+        <div class="ndm-next">📍 เวลาเตือน: ${slots.join(', ')}</div>
+      </div>`;
+    }
+    
+    // ครั้งถัดไป (3 ครั้ง) — non-daily อื่นๆ
     const nextDates = getNextDoseDates(today, pattern, interval, dayOfWeek, dayOfMonth, 3);
     const nextDatesText = nextDates.length > 0 
       ? nextDates.map(d => formatThaiDate(d)).join(', ')
@@ -2931,7 +2956,7 @@ async function saveToBackend(medsList) {
         dose_mg: parseFloat(m.dose_mg) || 0,
         dose_unit: m.dose_unit || 'mg',
         timing_type: 'meal',
-        total_tablets: parseInt(m.total_tablets) || null,
+        total_tablets: (parseInt(m.total_quantity) || parseInt(m.total_tablets)) || null,
         total_days: parseInt(m.total_days) || null,
         special_instructions: m.special_instructions || null,
         is_high_alert: m.is_high_alert === true,
