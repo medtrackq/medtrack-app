@@ -1194,6 +1194,11 @@ function summarizeFreqText(doses) {
   if (pat === 'monthly') return 'เดือนละ ' + doses.length + ' ครั้ง';
   if (pat === 'alternate') return 'วันเว้นวัน (' + doses.length + ' มื้อ)';
   if (pat === 'every_n_days') return 'ทุก ' + (d0.frequency_interval || '?') + ' วัน';
+  if (pat === 'every_n_hours') {
+    const ih = d0.frequency_interval || 8;
+    const cnt = Math.round(24 / ih);
+    return `วันละ ${cnt} ครั้ง (ทุก ${ih} ชม.)`;
+  }
   return 'วันละ ' + doses.length + ' ครั้ง';
 }
 
@@ -1630,6 +1635,8 @@ function renderDcards(){
         patternText = 'วันเว้นวัน';
       } else if (pat === 'every_n_days') {
         patternText = `ทุก ${d0.frequency_interval || '?'} วัน`;
+      } else if (pat === 'every_n_hours') {
+        patternText = '';  // freqText แสดง "วันละ N ครั้ง (ทุก X ชม.)" แล้ว
       } else {
         patternText = pat;
       }
