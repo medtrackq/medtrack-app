@@ -1374,9 +1374,24 @@ function fmtDose(dose, unit) {
 }
 // แสดงจำนวนเม็ด เช่น "1 เม็ด", "0.5 เม็ด", "2.5 เม็ด"
 function fmtTablets(n, suffix) {
-  const v = fmtNum(n);
-  if (!v) return '';
-  return v + ' ' + (suffix || 'เม็ด');
+  // แปลงทศนิยม → เศษส่วนแบบไทย (ผู้สูงอายุเข้าใจง่าย: ครึ่งเม็ด, 3/4 เม็ด)
+  const unit = suffix || 'เม็ด';
+  if (n === null || n === undefined || n === '') return '';
+  const num = parseFloat(n);
+  if (isNaN(num)) return String(n);
+  if (num === 0) return '0 ' + unit;
+  const whole = Math.floor(num);
+  const frac = +(num - whole).toFixed(2);
+  const fracMap = { 0.25: '1/4', 0.5: 'ครึ่ง', 0.75: '3/4' };
+  if (frac === 0) return whole + ' ' + unit;
+  if (fracMap[frac]) {
+    if (whole === 0) {
+      return frac === 0.5 ? 'ครึ่ง' + unit : fracMap[frac] + ' ' + unit;
+    } else {
+      return frac === 0.5 ? whole + ' ' + unit + 'ครึ่ง' : whole + ' ' + fracMap[frac] + ' ' + unit;
+    }
+  }
+  return num + ' ' + unit;
 }
 
 // 🔐 AUTH GATE — verify session before showing app
