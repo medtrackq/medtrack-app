@@ -480,6 +480,63 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .order-step-label.active{color:#F59E0B;font-weight:700}
 .sim-btn{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--bd);background:#F9FAFB;cursor:pointer;font-family:inherit;color:var(--t2);margin-top:8px}
 .sim-btn:active{background:#E5E7EB}
+/* ═══ VIEW MODE TOGGLE ═══ */
+.view-toggle{display:flex;gap:6px;background:#fff;border-radius:12px;padding:4px;margin:10px 12px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.view-toggle button{flex:1;border:none;background:transparent;padding:9px 8px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;transition:all .15s}
+.view-toggle button.active{background:#00B900;color:#fff}
+
+/* ═══ ELDERLY MODE — ยาวันนี้แบบมื้อ ปุ่มใหญ่ ═══ */
+.eld-greeting{background:linear-gradient(135deg,#00B900,#008A00);border-radius:16px;padding:18px 20px;margin:10px 12px;color:#fff}
+.eld-greeting-date{font-size:13px;opacity:.9;margin-bottom:6px}
+.eld-greeting-text{font-size:20px;font-weight:700;line-height:1.4}
+.eld-greeting-sub{font-size:14px;opacity:.92;font-weight:400;margin-top:4px}
+
+.eld-meal-card{background:#fff;border-radius:16px;margin:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden;border-left:5px solid #cbd5e1}
+.eld-meal-card.m-breakfast{border-left-color:#F59E0B}
+.eld-meal-card.m-lunch{border-left-color:#0EA5E9}
+.eld-meal-card.m-dinner{border-left-color:#EA580C}
+.eld-meal-card.m-bedtime{border-left-color:#6366F1}
+.eld-meal-card.m-interval{border-left-color:#14B8A6}
+.eld-meal-card.m-breakfast .eld-meal-head{background:linear-gradient(90deg,#FEF3C7,#fff)}
+.eld-meal-card.m-lunch .eld-meal-head{background:linear-gradient(90deg,#E0F2FE,#fff)}
+.eld-meal-card.m-dinner .eld-meal-head{background:linear-gradient(90deg,#FFEDD5,#fff)}
+.eld-meal-card.m-bedtime .eld-meal-head{background:linear-gradient(90deg,#E0E7FF,#fff)}
+.eld-meal-card.m-interval .eld-meal-head{background:linear-gradient(90deg,#CCFBF1,#fff)}
+.eld-meal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #f1f5f9}
+.eld-meal-time{display:flex;align-items:center;gap:10px}
+.eld-meal-icon{font-size:26px}
+.eld-meal-label{font-size:17px;font-weight:700;color:#1A2840}
+.eld-meal-clock{font-size:13px;color:#64748b}
+.eld-meal-status{font-size:12px;font-weight:600;padding:5px 12px;border-radius:100px}
+.eld-meal-status.done{background:#DCFCE7;color:#166534}
+.eld-meal-status.wait{background:#FEF3C7;color:#92400e}
+
+.eld-med{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #f8fafc}
+.eld-med:last-child{border-bottom:none}
+.eld-med-pill{font-size:28px;flex-shrink:0}
+.eld-med-info{flex:1;min-width:0}
+.eld-med-name{font-size:18px;font-weight:700;color:#1A2840;line-height:1.3}
+.eld-med-detail{font-size:14px;color:#5A6A7A;margin-top:3px}
+.eld-med-tablets{font-size:17px;font-weight:700;color:#008A00}
+.eld-med-note{font-size:13px;color:#5A6A7A}
+.eld-med-btn{flex-shrink:0;width:52px;height:52px;border-radius:50%;border:2px solid #00B900;background:#fff;color:#00B900;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.eld-med-btn:active{transform:scale(.92)}
+.eld-med-done{flex-shrink:0;width:52px;height:52px;border-radius:50%;background:#DCFCE7;color:#16A34A;font-size:24px;display:flex;align-items:center;justify-content:center}
+.eld-empty{padding:20px;text-align:center;color:#94a3b8;font-size:14px}
+.eld-appt-btn{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #00B900;border-radius:14px;padding:14px 16px;margin:12px;cursor:pointer;transition:all .15s}
+.eld-appt-btn:active{transform:scale(.98);background:#F0FDF4}
+.eld-appt-btn-icon{font-size:28px}
+.eld-appt-btn-text{flex:1}
+.eld-appt-btn-title{font-size:16px;font-weight:700;color:#00B900}
+.eld-appt-btn-sub{font-size:13px;color:#64748b;margin-top:1px}
+.eld-appt-btn-arrow{font-size:20px;color:#00B900}
+.eld-appt-card{background:#fff;border-radius:16px;margin:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid #C8392F}
+.eld-appt-card-badge{display:inline-block;background:#FEE2E2;color:#C8392F;font-size:12px;font-weight:700;padding:4px 12px;border-radius:100px;margin-bottom:8px}
+.eld-appt-doctor{font-size:18px;font-weight:700;color:#1A2840;margin-bottom:4px}
+.eld-appt-when{font-size:15px;color:#C8392F;font-weight:600;margin-bottom:4px}
+.eld-appt-where{font-size:14px;color:#5A6A7A;line-height:1.5}
+.eld-appt-note{font-size:13px;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9}
+.eld-section-title{font-size:16px;font-weight:700;color:#1A2840;margin:16px 16px 4px;display:flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
@@ -544,6 +601,34 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="today-sub" id="todaySub">ยังไม่มียา</div>
     </div>
     <div class="today-badge" id="todayBadge">ยังไม่ได้กิน</div>
+  </div>
+
+  <!-- ═══ VIEW MODE TOGGLE ═══ -->
+  <div class="view-toggle" id="viewToggle" style="display:none">
+    <button id="vtStandard" onclick="setViewMode('standard')">📋 แบบมาตรฐาน</button>
+    <button id="vtElderly" onclick="setViewMode('elderly')">👵 แบบผู้สูงอายุ</button>
+  </div>
+
+  <!-- ═══ ELDERLY MODE container ═══ -->
+  <div id="elderlyView" style="display:none">
+    <div class="eld-greeting">
+      <div class="eld-greeting-date" id="eldDate"></div>
+      <div class="eld-greeting-text" id="eldGreet">สวัสดีครับ</div>
+      <div class="eld-greeting-sub" id="eldSub"></div>
+    </div>
+
+    <!-- ปุ่มสแกนใบนัด -->
+    <div class="eld-appt-btn" onclick="scanAppointmentElderly()">
+      <span class="eld-appt-btn-icon">📅</span>
+      <div class="eld-appt-btn-text">
+        <div class="eld-appt-btn-title">สแกนใบนัดหมอ</div>
+        <div class="eld-appt-btn-sub">ถ่ายรูปใบนัด ระบบบันทึกให้อัตโนมัติ</div>
+      </div>
+      <span class="eld-appt-btn-arrow">›</span>
+    </div>
+
+    <div id="eldMeals"><!-- populated by renderTodayDosesElderly() --></div>
+    <div id="eldAppt"><!-- populated by renderNextAppointmentElderly() --></div>
   </div>
 
   <!-- ════════════════════════════════════════ -->
@@ -2021,6 +2106,91 @@ function saveProfileFromBackend(user) {
 // Phase 3: Load today's doses from backend
 // Renders Today's Doses widget + Stats bar with real data
 // ────────────────────────────────────────────────────────
+// ─── View Mode (standard / elderly) ───
+let viewMode = localStorage.getItem('mt_view_mode') || 'standard';
+let _lastDoses = [];
+let _lastDate = '';
+
+function setViewMode(mode){
+  viewMode = mode;
+  localStorage.setItem('mt_view_mode', mode);
+  document.getElementById('vtStandard')?.classList.toggle('active', mode==='standard');
+  document.getElementById('vtElderly')?.classList.toggle('active', mode==='elderly');
+  applyViewMode();
+}
+
+function applyViewMode(){
+  const isElderly = viewMode === 'elderly';
+  // standard widget
+  const std = document.getElementById('todaysDoses');
+  const eld = document.getElementById('elderlyView');
+  const scroll = document.querySelector('.scroll');
+  if(std) std.style.display = isElderly ? 'none' : '';
+  if(eld) eld.style.display = isElderly ? '' : 'none';
+  // ซ่อน section อื่นใน elderly mode (โฟกัสยา) — Phase 1
+  if(scroll) scroll.style.display = isElderly ? 'none' : '';
+  // re-render ด้วยข้อมูลล่าสุด
+  if(isElderly){
+    renderTodayDosesElderly(_lastDoses, _lastDate);
+    loadNextAppointmentElderly();
+  } else {
+    renderTodayDoses(_lastDoses, _lastDate);
+  }
+}
+
+// โหลดนัดหมอครั้งต่อไป (backend จริง)
+async function loadNextAppointmentElderly(){
+  const el = document.getElementById('eldAppt');
+  if(!el) return;
+  try {
+    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+    const urlUid = parseInt(new URLSearchParams(location.search).get('user_id'));
+    const userId = profile?.user_id || profile?.id || urlUid;
+    if(!userId){ el.innerHTML=''; return; }
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/appointments?user_id=${userId}&future=true`);
+    const data = await r.json();
+    const next = (data.appointments||[])[0];
+    renderNextAppointmentElderly(next);
+  } catch(e){ console.warn('loadNextAppointment error:', e); el.innerHTML=''; }
+}
+
+function renderNextAppointmentElderly(appt){
+  const el = document.getElementById('eldAppt');
+  if(!el) return;
+  if(!appt){
+    el.innerHTML = `<div class="eld-section-title">📅 นัดหมอครั้งต่อไป</div>
+      <div class="eld-appt-card" style="border-left-color:#cbd5e1">
+        <div class="eld-appt-where" style="text-align:center;color:#94a3b8">ยังไม่มีนัดหมอ — สแกนใบนัดเพื่อเพิ่ม</div>
+      </div>`;
+    return;
+  }
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const dateStr = appt.appointment_date;
+  let whenStr = dateStr, daysUntil = '';
+  try {
+    const d = new Date(dateStr+'T00:00:00');
+    const t = (appt.appointment_time||'').substring(0,5);
+    whenStr = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}${t?' · '+t+' น.':''}`;
+    const diff = Math.ceil((d - new Date().setHours(0,0,0,0))/86400000);
+    if(diff>=0) daysUntil = `<div class="eld-appt-card-badge">⏰ อีก ${diff} วัน</div>`;
+  } catch(e){}
+  const doctor = appt.doctor_name || appt.department || 'นัดหมอ';
+  const where = [appt.hospital_name, appt.location].filter(Boolean).join(' · ');
+  el.innerHTML = `<div class="eld-section-title">📅 นัดหมอครั้งต่อไป</div>
+    <div class="eld-appt-card">
+      ${daysUntil}
+      <div class="eld-appt-doctor">${doctor}</div>
+      <div class="eld-appt-when">${whenStr}</div>
+      ${where ? `<div class="eld-appt-where">${where}</div>` : ''}
+      ${appt.notes ? `<div class="eld-appt-note">📝 ${appt.notes}</div>` : ''}
+    </div>`;
+}
+
+function scanAppointmentElderly(){
+  // ไปหน้าสแกน (production: scan ใบนัด)
+  window.location.href = 'medtrack-scan.html?type=appointment';
+}
+
 async function loadTodayDoses(userId){
   try {
     const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/today?user_id=${userId}`);
@@ -2031,7 +2201,10 @@ async function loadTodayDoses(userId){
       return;
     }
     
-    renderTodayDoses(data.doses, data.date);
+    _lastDoses = data.doses;
+    _lastDate = data.date;
+    document.getElementById('viewToggle').style.display = '';
+    setViewMode(viewMode);  // apply + render ตาม mode ปัจจุบัน
     renderStatsBar(data.doses);
   } catch(e) {
     console.warn('loadTodayDoses error:', e);
@@ -2106,8 +2279,106 @@ function renderTodayDoses(doses, date){
 }
 
 // ────────────────────────────────────────────────────────
-// Render Stats Bar (streak/points/adherence)
+// Render Today's Doses — ELDERLY MODE (จัดกลุ่มตามมื้อ ปุ่มใหญ่)
+// ใช้ logic เดิม: fmtTablets, fmtDose, confirmDose, drug_name_raw
 // ────────────────────────────────────────────────────────
+function renderTodayDosesElderly(doses, date){
+  const greet = document.getElementById('eldGreet');
+  const sub = document.getElementById('eldSub');
+  const dateEl = document.getElementById('eldDate');
+  const container = document.getElementById('eldMeals');
+  if(!container) return;
+
+  // greeting
+  const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
+  const name = profile?.name || profile?.display_name || '';
+  const hour = new Date().getHours();
+  const greetWord = hour<12 ? 'สวัสดีตอนเช้า' : hour<17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
+  if(greet) greet.textContent = `${greetWord}${name ? ' คุณ'+name : ''}`;
+  if(dateEl && date){
+    try {
+      const d = new Date(date+'T00:00:00');
+      const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+      dateEl.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+    } catch(e){}
+  }
+
+  if(!doses || doses.length === 0){
+    if(sub) sub.textContent = 'วันนี้ยังไม่มีตารางยา';
+    container.innerHTML = '<div class="eld-meal-card"><div class="eld-empty">ยังไม่มีตารางยาวันนี้ — สแกนซองยาเพิ่มได้เลย 📸</div></div>';
+    return;
+  }
+
+  // นับยาที่กินแล้ว
+  const taken = doses.filter(d=>d.status==='taken'||d.status==='late').length;
+  if(sub) sub.textContent = `วันนี้กินยาแล้ว ${taken}/${doses.length} ครั้ง`;
+
+  // จัดกลุ่มตามมื้อ (จาก meal_anchor หรือเวลา)
+  const meals = {
+    breakfast: { icon:'☀️', label:'มื้อเช้า', cls:'m-breakfast', items:[] },
+    lunch:     { icon:'🌞', label:'มื้อกลางวัน', cls:'m-lunch', items:[] },
+    dinner:    { icon:'🌆', label:'มื้อเย็น', cls:'m-dinner', items:[] },
+    bedtime:   { icon:'🌙', label:'ก่อนนอน', cls:'m-bedtime', items:[] },
+    interval:  { icon:'⏱️', label:'ยาทุกกี่ชั่วโมง', cls:'m-interval', items:[] },
+    other:     { icon:'💊', label:'เวลาอื่น', cls:'m-other', items:[] }
+  };
+  doses.forEach(d=>{
+    if(d.frequency_pattern === 'every_n_hours'){ meals.interval.items.push(d); return; }
+    const a = d.meal_anchor;
+    if(meals[a]) meals[a].items.push(d);
+    else meals.other.items.push(d);
+  });
+
+  const statusMap = {
+    taken:{emoji:'✓',cls:'done',label:'กินแล้ว'},
+    late:{emoji:'✓',cls:'done',label:'กินแล้ว'},
+    missed:{emoji:'✗',cls:'wait',label:'พลาด'},
+    skipped:{emoji:'⏭',cls:'wait',label:'ข้าม'},
+    pending:{emoji:'',cls:'wait',label:'รอกิน'}
+  };
+
+  let html = '';
+  for(const key of ['breakfast','lunch','dinner','bedtime','interval','other']){
+    const m = meals[key];
+    if(m.items.length === 0) continue;
+    // มื้อนี้กินครบไหม
+    const allDone = m.items.every(d=>d.status==='taken'||d.status==='late');
+    const clock = (m.items[0].scheduled_time||'').substring(0,5);
+    html += `<div class="eld-meal-card ${m.cls}">
+      <div class="eld-meal-head">
+        <div class="eld-meal-time">
+          <span class="eld-meal-icon">${m.icon}</span>
+          <div>
+            <div class="eld-meal-label">${m.label}</div>
+            <div class="eld-meal-clock">${clock ? clock+' น.' : ''}</div>
+          </div>
+        </div>
+        <span class="eld-meal-status ${allDone?'done':'wait'}">${allDone?'✓ กินครบ':'⏰ รอกิน'}</span>
+      </div>
+      ${m.items.map(d=>{
+        const s = statusMap[d.status] || statusMap.pending;
+        // ตัด dose (mg) ออก — ซ้ำกับชื่อยาที่มี mg อยู่แล้ว
+        const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
+        const alert = d.is_high_alert ? '<span style="color:#DC2626;font-size:12px;font-weight:700"> ⚠️ ยาเสี่ยงสูง</span>' : '';
+        const isPending = d.status === 'pending';
+        const btn = isPending
+          ? `<button class="eld-med-btn" onclick="confirmDose(${d.id})">✓</button>`
+          : `<div class="eld-med-done">${s.emoji}</div>`;
+        return `<div class="eld-med">
+          <div class="eld-med-pill">💊</div>
+          <div class="eld-med-info">
+            <div class="eld-med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}</div>
+            <div class="eld-med-detail"><span class="eld-med-tablets">${tablets || '—'}</span></div>
+          </div>
+          ${btn}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+
 function renderStatsBar(doses){
   const streakRow = document.getElementById('streakRow');
   const streakDays = document.getElementById('streakDays');
