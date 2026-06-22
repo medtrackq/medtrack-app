@@ -1566,17 +1566,14 @@ async function exportForPharmacist(){
       unique.push(r);
     }
 
-    // ดึงรูปแต่ละใบ (base64) แบบ parallel
+    // ดึงรูปแต่ละใบ (JSON base64) แบบ parallel — ใช้วิธีเดียวกับ frontend เดิม
     const withImages = await Promise.all(unique.map(async r => {
       try {
-        const res = await fetch(`${API_BASE}/api/ocr-test/runs/${r.id}/image`);
-        const blob = await res.blob();
-        const b64 = await new Promise(resolve => {
-          const fr = new FileReader();
-          fr.onload = () => resolve(fr.result);
-          fr.readAsDataURL(blob);
-        });
-        return { ...r, _imageDataUrl: b64 };
+        const imgData = await apiGet(`/api/ocr-test/runs/${r.id}/image`);
+        if (imgData && imgData.image_base64) {
+          return { ...r, _imageDataUrl: `data:${imgData.media_type||'image/jpeg'};base64,${imgData.image_base64}` };
+        }
+        return { ...r, _imageDataUrl: null };
       } catch(e){ return { ...r, _imageDataUrl: null }; }
     }));
 
