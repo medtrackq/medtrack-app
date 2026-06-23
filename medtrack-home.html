@@ -31,9 +31,11 @@
 
 <title>MedTrack</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
+  --brand:#0A9C7A;
   --bg:#F0F4F8;
   --card:#FFFFFF;
   --teal:#0A9C7A;
@@ -100,6 +102,14 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .td-date{font-size:12px;color:#94a3b8}
 .td-list{display:flex;flex-direction:column;gap:10px}
 .td-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;transition:all .2s}
+/* แถบสีมื้อ (เสริม — บอกมื้อ ไม่แทนสีสถานะ) */
+.td-meal-bar{width:5px;align-self:stretch;border-radius:100px;flex-shrink:0;background:#cbd5e1}
+.td-meal-bar.mb-breakfast{background:#F59E0B}
+.td-meal-bar.mb-lunch{background:#0EA5E9}
+.td-meal-bar.mb-dinner{background:#EA580C}
+.td-meal-bar.mb-bedtime{background:#6366F1}
+.td-meal-bar.mb-interval{background:#14B8A6}
+.td-meal-bar.mb-all{background:linear-gradient(#F59E0B,#0EA5E9,#EA580C)}
 .td-item.taken{background:#f0fdf4;border-color:#bbf7d0}
 .td-item.late{background:#fffbeb;border-color:#fde68a}
 .td-item.missed{background:#fef2f2;border-color:#fecaca}
@@ -537,6 +547,522 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .eld-appt-where{font-size:14px;color:#5A6A7A;line-height:1.5}
 .eld-appt-note{font-size:13px;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9}
 .eld-section-title{font-size:16px;font-weight:700;color:#1A2840;margin:16px 16px 4px;display:flex;align-items:center;gap:6px}
+
+/* ═══════ ELDERLY MOCK CSS (scoped #elderlyView) ═══════ */
+/* CSS variables ที่ mock ต้องการ (home ใช้ --teal ไม่มี --primary) */
+#elderlyView {
+  --primary:#00B900; --primary-dark:#008A00; --accent:#C8392F;
+  --warm:#F4A261; --teal:#2B7A7A; --green:#16A34A; --green-soft:#DCFCE7;
+  --yellow:#EAB308; --yellow-soft:#FEF3C7; --red:#DC2626; --red-soft:#FEE2E2;
+  --ink:#1A2840; --ink-light:#5A6A7A; --bg:#F5F6FA; --line:#E5E7EB;
+  --shadow:0 2px 8px rgba(0,0,0,0.08); --shadow-lg:0 4px 16px rgba(0,0,0,0.12);
+  font-family:'Sarabun',-apple-system,sans-serif;
+}
+/* HEADER (LINE OA style) */
+#elderlyView .header {
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+#elderlyView .header-back {
+  font-size: 20px;
+  cursor: pointer;
+}
+#elderlyView .oa-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+#elderlyView .oa-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+}
+#elderlyView .oa-status {
+  font-size: 11px;
+  opacity: 0.8;
+}
+#elderlyView .header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+  font-size: 18px;
+}
+
+/* APP CONTENT */
+#elderlyView .app-content {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+  padding-bottom: 70px;
+}
+
+/* GREETING */
+#elderlyView .greeting {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+#elderlyView .greeting::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+#elderlyView .greeting-time {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+}
+#elderlyView .greeting-text {
+  font-family: 'Bai Jamjuree';
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 12px;
+  position: relative;
+}
+#elderlyView .greeting-mascot {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+/* STREAK CARD */
+#elderlyView .streak-card {
+  background: white;
+  margin: -24px 16px 16px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+#elderlyView .streak-icon {
+  font-size: 32px;
+}
+.streak-info { flex: 1; }
+#elderlyView .streak-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  font-weight: 600;
+  margin-bottom: 2px;
+  font-family: 'Bai Jamjuree';
+}
+#elderlyView .streak-value {
+  font-family: 'Bai Jamjuree';
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+}
+#elderlyView .streak-points {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* TODAY'S MEDS */
+#elderlyView .section {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+#elderlyView .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+#elderlyView .section-header h2 {
+  font-size: 16px;
+  font-family: 'Bai Jamjuree';
+}
+#elderlyView .section-header .more {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+#elderlyView .meal-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border-left: 5px solid #cbd5e1;
+}
+/* สีตามมื้อ — ขอบ + พื้นการ์ดอ่อน 10% (จากสีขอบ) */
+#elderlyView .meal-card.m-breakfast{border-left-color:#F59E0B;background:#FEF5E7}
+#elderlyView .meal-card.m-lunch{border-left-color:#0EA5E9;background:#E7F6FD}
+#elderlyView .meal-card.m-dinner{border-left-color:#EA580C;background:#FDEEE7}
+#elderlyView .meal-card.m-bedtime{border-left-color:#6366F1;background:#EFF0FE}
+#elderlyView .meal-card.m-interval{border-left-color:#14B8A6;background:#E8F8F6}
+#elderlyView .meal-card.m-breakfast .meal-header{border-bottom-color:#FCD34D}
+#elderlyView .meal-card.m-lunch .meal-header{border-bottom-color:#7DD3FC}
+#elderlyView .meal-card.m-dinner .meal-header{border-bottom-color:#FDBA74}
+#elderlyView .meal-card.m-bedtime .meal-header{border-bottom-color:#A5B4FC}
+#elderlyView .meal-card.m-interval .meal-header{border-bottom-color:#5EEAD4}
+/* med-item พื้นขาวโปร่ง ให้อ่านชัดบนพื้นสี */
+#elderlyView .meal-card .med-item{background:rgba(255,255,255,0.55);border-radius:10px;margin-top:8px}
+#elderlyView .meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed var(--line);
+}
+#elderlyView .meal-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#elderlyView .meal-icon {
+  font-size: 22px;
+}
+#elderlyView .meal-label {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+}
+#elderlyView .meal-clock {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+#elderlyView .meal-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+#elderlyView .meal-status.confirmed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+#elderlyView .meal-status.pending {
+  background: var(--yellow-soft);
+  color: #92400E;
+}
+#elderlyView .meal-status.upcoming {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+#elderlyView .meal-status.missed {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+#elderlyView .med-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+#elderlyView .med-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+#elderlyView .med-info {
+  flex: 1;
+}
+#elderlyView .med-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 17px;
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+#elderlyView .med-detail {
+  font-size: 13px;
+  color: var(--ink-light);
+}
+#elderlyView .med-tablets {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+#elderlyView .med-note {
+  font-size: 13px;
+  color: var(--ink-light);
+}
+#elderlyView .med-action {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+#elderlyView .med-action.confirmed {
+  background: var(--green);
+  color: white;
+  border-color: var(--green);
+}
+.med-action.confirmed::after { content: '✓'; }
+
+#elderlyView .confirm-all-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+/* STATS GRID (Quick stats) */
+#elderlyView .quick-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+#elderlyView .qstat-card {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+#elderlyView .qstat-icon {
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+#elderlyView .qstat-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-family: 'Bai Jamjuree';
+}
+#elderlyView .qstat-value {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+}
+#elderlyView .qstat-extra {
+  font-size: 10px;
+  color: var(--green);
+  margin-top: 2px;
+  font-weight: 600;
+}
+
+/* QUICK ACTIONS */
+#elderlyView .quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+#elderlyView .qa-btn {
+  background: white;
+  padding: 12px 6px;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  border: none;
+  transition: transform 0.1s;
+}
+.qa-btn:active { transform: scale(0.95); }
+#elderlyView .qa-icon {
+  font-size: 28px;
+  margin-bottom: 4px;
+}
+#elderlyView .qa-label {
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+/* APPOINTMENT */
+#elderlyView .appt-card {
+  background: linear-gradient(135deg, #FFF7E5, #FFE5CC);
+  padding: 16px;
+  border-radius: 12px;
+  border-left: 4px solid var(--warm);
+  margin-bottom: 12px;
+}
+#elderlyView .appt-label {
+  font-size: 11px;
+  color: var(--warm);
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+#elderlyView .appt-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+#elderlyView .appt-detail {
+  font-size: 13px;
+  color: var(--ink);
+}
+.appt-detail strong { color: var(--accent); }
+
+/* CAREGIVER */
+#elderlyView .caregiver-card {
+  background: white;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#elderlyView .cg-avatars {
+  display: flex;
+  margin-right: 4px;
+}
+#elderlyView .cg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--teal);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'Bai Jamjuree';
+  border: 2px solid white;
+  margin-left: -8px;
+}
+.cg-avatar:first-child { margin-left: 0; }
+.cg-info { flex: 1; }
+#elderlyView .cg-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+#elderlyView .cg-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* BOTTOM NAV */
+#elderlyView .bottom-nav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+}
+#elderlyView .nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--ink-light);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: 'Bai Jamjuree';
+}
+.nav-item.active { color: var(--primary); }
+.nav-icon { font-size: 22px; }
+#elderlyView .nav-fab {
+  position: relative;
+  margin-top: -28px;
+}
+#elderlyView .nav-fab .nav-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-lg);
+}
+
+/* TOAST */
+#elderlyView .toast {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  display: none;
+  white-space: nowrap;
+  animation: slideDown 0.3s;
+}
+.toast.show { display: block; }
+.toast.success { background: var(--green); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+
 </style>
 </head>
 <body>
@@ -609,26 +1135,117 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <button id="vtElderly" onclick="setViewMode('elderly')">👵 แบบผู้สูงอายุ</button>
   </div>
 
-  <!-- ═══ ELDERLY MODE container ═══ -->
+  <!-- ═══ ELDERLY MODE container (mock-based) ═══ -->
   <div id="elderlyView" style="display:none">
-    <div class="eld-greeting">
-      <div class="eld-greeting-date" id="eldDate"></div>
-      <div class="eld-greeting-text" id="eldGreet">สวัสดีครับ</div>
-      <div class="eld-greeting-sub" id="eldSub"></div>
+    <!-- GREETING -->
+    <div class="greeting">
+      <div class="greeting-time" id="eldGreetTime"></div>
+      <div class="greeting-text" id="eldGreetText">สวัสดีครับ</div>
+      <div class="greeting-mascot">👨‍⚕️</div>
     </div>
 
-    <!-- ปุ่มสแกนใบนัด -->
-    <div class="eld-appt-btn" onclick="scanAppointmentElderly()">
-      <span class="eld-appt-btn-icon">📅</span>
-      <div class="eld-appt-btn-text">
-        <div class="eld-appt-btn-title">สแกนใบนัดหมอ</div>
-        <div class="eld-appt-btn-sub">ถ่ายรูปใบนัด ระบบบันทึกให้อัตโนมัติ</div>
+    <!-- STREAK (mock) -->
+    <div class="streak-card">
+      <div class="streak-icon">🔥</div>
+      <div class="streak-info">
+        <div class="streak-label">Streak</div>
+        <div class="streak-value" id="eldStreak">14 วันติดต่อกัน</div>
       </div>
-      <span class="eld-appt-btn-arrow">›</span>
+      <div class="streak-points" id="eldPoints">⭐ 280 คะแนน</div>
     </div>
 
-    <div id="eldMeals"><!-- populated by renderTodayDosesElderly() --></div>
-    <div id="eldAppt"><!-- populated by renderNextAppointmentElderly() --></div>
+    <!-- QUICK STATS (mock + adherence จริงทีหลัง) -->
+    <div class="section" style="margin-top:4px">
+      <div class="quick-stats">
+        <div class="qstat-card">
+          <div class="qstat-icon">📊</div>
+          <div class="qstat-label">เดือนนี้</div>
+          <div class="qstat-value" id="eldAdherence">95<span style="font-size:14px;color:var(--ink-light)">%</span></div>
+          <div class="qstat-extra">↗ ดีกว่าเดือนก่อน</div>
+        </div>
+        <div class="qstat-card">
+          <div class="qstat-icon">💊</div>
+          <div class="qstat-label">ยาวันนี้</div>
+          <div class="qstat-value" id="eldTodayCount">0<span style="font-size:14px;color:var(--ink-light)">/0</span></div>
+          <div class="qstat-extra" id="eldTodayExtra" style="color:var(--warm)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="section">
+      <div class="quick-actions">
+        <button class="qa-btn" onclick="location.href='medtrack-scan.html'">
+          <div class="qa-icon">📷</div>
+          <div class="qa-label">สแกนยา</div>
+        </button>
+        <button class="qa-btn" onclick="eldToast('💊 ดูตู้ยา...')">
+          <div class="qa-icon">💊</div>
+          <div class="qa-label">ตู้ยา</div>
+        </button>
+        <button class="qa-btn" onclick="scanAppointmentElderly()">
+          <div class="qa-icon">📅</div>
+          <div class="qa-label">นัดหมอ</div>
+        </button>
+        <button class="qa-btn" onclick="eldToast('👨‍👩‍👧 คนดูแล...')">
+          <div class="qa-icon">👨‍👩‍👧</div>
+          <div class="qa-label">คนดูแล</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- TODAY'S MEDS (backend จริง) -->
+    <div class="section">
+      <div class="section-header"><h2>💊 ยาวันนี้</h2></div>
+      <div id="eldMeals"><!-- renderTodayDosesElderly() --></div>
+    </div>
+
+    <!-- APPOINTMENT (backend จริง) -->
+    <div class="section">
+      <div class="section-header"><h2>📅 นัดหมอครั้งหน้า</h2></div>
+      <div id="eldAppt"><!-- renderNextAppointmentElderly() --></div>
+    </div>
+
+    <!-- CAREGIVERS (mock) -->
+    <div class="section">
+      <div class="section-header"><h2>👨‍👩‍👧 คนดูแลของคุณ</h2><span class="more">จัดการ →</span></div>
+      <div class="caregiver-card">
+        <div class="cg-avatars">
+          <div class="cg-avatar" style="background:var(--accent)">ลส</div>
+          <div class="cg-avatar" style="background:var(--teal)">สม</div>
+        </div>
+        <div class="cg-info">
+          <div class="cg-label">ดูแลโดย</div>
+          <div class="cg-text">ลูกสาว, สามี (2 คน)</div>
+        </div>
+        <span style="font-size:18px">›</span>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENT (mock) -->
+    <div class="section">
+      <div style="background:linear-gradient(135deg,#FFD700,#FFA500);padding:16px;border-radius:12px;color:#fff;box-shadow:var(--shadow)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="font-size:36px">🏆</div>
+          <div>
+            <div style="font-family:'Bai Jamjuree';font-weight:700;font-size:16px">รางวัลใหม่!</div>
+            <div style="font-size:13px;opacity:.95">"นักกินยาตัวยง" — 14 วันติดต่อกัน</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HEALTH TIP (static) -->
+    <div class="section">
+      <div style="background:#fff;padding:16px;border-radius:12px;box-shadow:var(--shadow);border-left:4px solid var(--teal)">
+        <div style="font-family:'Bai Jamjuree';font-weight:700;font-size:13px;color:var(--teal);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">💡 เคล็ดลับวันนี้</div>
+        <div style="font-size:14px;line-height:1.6">
+          ผู้ป่วย stroke ที่กินยาตรงเวลา จะลด<strong> ความเสี่ยง stroke ซ้ำได้ 26%</strong><br/>
+          <span style="font-size:12px;color:var(--ink-light);margin-top:4px;display:block">— Aga Khan University Study, 2024</span>
+        </div>
+      </div>
+    </div>
+    <div style="height:16px"></div>
   </div>
 
   <!-- ════════════════════════════════════════ -->
@@ -2121,14 +2738,18 @@ function setViewMode(mode){
 
 function applyViewMode(){
   const isElderly = viewMode === 'elderly';
-  // standard widget
   const std = document.getElementById('todaysDoses');
   const eld = document.getElementById('elderlyView');
   const scroll = document.querySelector('.scroll');
+  // ซ่อน element home เดิมตอน elderly (mock มี layout เต็มของตัวเอง)
+  const hideInElderly = ['.header', '.banner-wrap', '.today-banner', '.stats-bar', '#streakRow'];
+  hideInElderly.forEach(sel=>{
+    const el = document.querySelector(sel);
+    if(el) el.style.display = isElderly ? 'none' : '';
+  });
   if(std) std.style.display = isElderly ? 'none' : '';
-  if(eld) eld.style.display = isElderly ? '' : 'none';
-  // ซ่อน section อื่นใน elderly mode (โฟกัสยา) — Phase 1
   if(scroll) scroll.style.display = isElderly ? 'none' : '';
+  if(eld) eld.style.display = isElderly ? '' : 'none';
   // re-render ด้วยข้อมูลล่าสุด
   if(isElderly){
     renderTodayDosesElderly(_lastDoses, _lastDate);
@@ -2256,6 +2877,8 @@ function renderTodayDoses(doses, date){
     const dose = d.dose_mg ? fmtDose(d.dose_mg, d.dose_unit) : '';
     const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
     const meta = [dose, tablets].filter(x=>x).join(' · ');
+    // แถบสีมื้อ (เสริม — ไม่แทนสีสถานะ)
+    const mealClass = d.frequency_pattern === 'every_n_hours' ? 'mb-interval' : ('mb-' + (d.meal_anchor||'other'));
     
     let actionBtn = '';
     if(d.status === 'pending'){
@@ -2267,6 +2890,7 @@ function renderTodayDoses(doses, date){
     
     return `
       <div class="td-item ${s.cls}">
+        <span class="td-meal-bar ${mealClass}"></span>
         <div class="td-time">${time}</div>
         <div class="td-info">
           <div class="td-drug">${d.drug_name_raw || d.drug_name || 'ยา'}</div>
@@ -2283,40 +2907,50 @@ function renderTodayDoses(doses, date){
 // ใช้ logic เดิม: fmtTablets, fmtDose, confirmDose, drug_name_raw
 // ────────────────────────────────────────────────────────
 function renderTodayDosesElderly(doses, date){
-  const greet = document.getElementById('eldGreet');
-  const sub = document.getElementById('eldSub');
-  const dateEl = document.getElementById('eldDate');
   const container = document.getElementById('eldMeals');
   if(!container) return;
 
-  // greeting
+  // greeting (mock layout)
   const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
   const name = profile?.name || profile?.display_name || '';
   const hour = new Date().getHours();
   const greetWord = hour<12 ? 'สวัสดีตอนเช้า' : hour<17 ? 'สวัสดีตอนบ่าย' : 'สวัสดีตอนเย็น';
-  if(greet) greet.textContent = `${greetWord}${name ? ' คุณ'+name : ''}`;
-  if(dateEl && date){
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const greetTimeEl = document.getElementById('eldGreetTime');
+  const greetTextEl = document.getElementById('eldGreetText');
+  if(greetTimeEl && date){
     try {
       const d = new Date(date+'T00:00:00');
-      const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-      dateEl.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543}`;
+      const hh = String(new Date().getHours()).padStart(2,'0');
+      const mm = String(new Date().getMinutes()).padStart(2,'0');
+      greetTimeEl.textContent = `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()+543} · ${hh}:${mm}`;
     } catch(e){}
   }
 
+  const taken = (doses||[]).filter(d=>d.status==='taken'||d.status==='late').length;
+  const total = (doses||[]).length;
+  if(greetTextEl){
+    greetTextEl.innerHTML = `${greetWord}${name ? ' คุณ'+name : ''}<br><span style="font-size:14px;opacity:.9;font-weight:400">วันนี้กินยาแล้ว ${taken}/${total} ครั้ง 👏</span>`;
+  }
+
+  // อัปเดต quick stats (ยาวันนี้ จริง)
+  const cntEl = document.getElementById('eldTodayCount');
+  const extraEl = document.getElementById('eldTodayExtra');
+  if(cntEl) cntEl.innerHTML = `${taken}<span style="font-size:14px;color:var(--ink-light)">/${total}</span>`;
+  if(extraEl){
+    const left = total - taken;
+    extraEl.textContent = left>0 ? `⏳ เหลือ ${left} ครั้ง` : '✓ ครบแล้ว';
+  }
+
   if(!doses || doses.length === 0){
-    if(sub) sub.textContent = 'วันนี้ยังไม่มีตารางยา';
-    container.innerHTML = '<div class="eld-meal-card"><div class="eld-empty">ยังไม่มีตารางยาวันนี้ — สแกนซองยาเพิ่มได้เลย 📸</div></div>';
+    container.innerHTML = '<div class="meal-card"><div style="padding:16px;text-align:center;color:var(--ink-light);font-size:13px">ยังไม่มีตารางยาวันนี้ — สแกนซองยาเพิ่มได้เลย 📸</div></div>';
     return;
   }
 
-  // นับยาที่กินแล้ว
-  const taken = doses.filter(d=>d.status==='taken'||d.status==='late').length;
-  if(sub) sub.textContent = `วันนี้กินยาแล้ว ${taken}/${doses.length} ครั้ง`;
-
-  // จัดกลุ่มตามมื้อ (จาก meal_anchor หรือเวลา)
+  // จัดกลุ่มตามมื้อ
   const meals = {
     breakfast: { icon:'☀️', label:'มื้อเช้า', cls:'m-breakfast', items:[] },
-    lunch:     { icon:'🌞', label:'มื้อกลางวัน', cls:'m-lunch', items:[] },
+    lunch:     { icon:'🌞', label:'มื้อเที่ยง', cls:'m-lunch', items:[] },
     dinner:    { icon:'🌆', label:'มื้อเย็น', cls:'m-dinner', items:[] },
     bedtime:   { icon:'🌙', label:'ก่อนนอน', cls:'m-bedtime', items:[] },
     interval:  { icon:'⏱️', label:'ยาทุกกี่ชั่วโมง', cls:'m-interval', items:[] },
@@ -2329,53 +2963,51 @@ function renderTodayDosesElderly(doses, date){
     else meals.other.items.push(d);
   });
 
-  const statusMap = {
-    taken:{emoji:'✓',cls:'done',label:'กินแล้ว'},
-    late:{emoji:'✓',cls:'done',label:'กินแล้ว'},
-    missed:{emoji:'✗',cls:'wait',label:'พลาด'},
-    skipped:{emoji:'⏭',cls:'wait',label:'ข้าม'},
-    pending:{emoji:'',cls:'wait',label:'รอกิน'}
-  };
-
   let html = '';
   for(const key of ['breakfast','lunch','dinner','bedtime','interval','other']){
     const m = meals[key];
     if(m.items.length === 0) continue;
-    // มื้อนี้กินครบไหม
     const allDone = m.items.every(d=>d.status==='taken'||d.status==='late');
     const clock = (m.items[0].scheduled_time||'').substring(0,5);
-    html += `<div class="eld-meal-card ${m.cls}">
-      <div class="eld-meal-head">
-        <div class="eld-meal-time">
-          <span class="eld-meal-icon">${m.icon}</span>
+    const statusBadge = allDone
+      ? '<span class="meal-status confirmed">✓ กินครบ</span>'
+      : '<span class="meal-status pending">⏳ รอกิน</span>';
+    html += `<div class="meal-card ${m.cls}">
+      <div class="meal-header">
+        <div class="meal-time">
+          <span class="meal-icon">${m.icon}</span>
           <div>
-            <div class="eld-meal-label">${m.label}</div>
-            <div class="eld-meal-clock">${clock ? clock+' น.' : ''}</div>
+            <div class="meal-label">${m.label}</div>
+            <div class="meal-clock">${clock ? clock+' น.' : ''}</div>
           </div>
         </div>
-        <span class="eld-meal-status ${allDone?'done':'wait'}">${allDone?'✓ กินครบ':'⏰ รอกิน'}</span>
+        ${statusBadge}
       </div>
       ${m.items.map(d=>{
-        const s = statusMap[d.status] || statusMap.pending;
-        // ตัด dose (mg) ออก — ซ้ำกับชื่อยาที่มี mg อยู่แล้ว
         const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
         const alert = d.is_high_alert ? '<span style="color:#DC2626;font-size:12px;font-weight:700"> ⚠️ ยาเสี่ยงสูง</span>' : '';
-        const isPending = d.status === 'pending';
-        const btn = isPending
-          ? `<button class="eld-med-btn" onclick="confirmDose(${d.id})">✓</button>`
-          : `<div class="eld-med-done">${s.emoji}</div>`;
-        return `<div class="eld-med">
-          <div class="eld-med-pill">💊</div>
-          <div class="eld-med-info">
-            <div class="eld-med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}</div>
-            <div class="eld-med-detail"><span class="eld-med-tablets">${tablets || '—'}</span></div>
+        const done = d.status==='taken' || d.status==='late';
+        const action = done
+          ? '<div class="med-action confirmed"></div>'
+          : `<button class="med-action" onclick="confirmDose(${d.id})"></button>`;
+        return `<div class="med-item">
+          <div class="med-pill">💊</div>
+          <div class="med-info">
+            <div class="med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}</div>
+            <div class="med-detail"><span class="med-tablets">${tablets || '—'}</span></div>
           </div>
-          ${btn}
+          ${action}
         </div>`;
       }).join('')}
     </div>`;
   }
   container.innerHTML = html;
+}
+
+// toast สำหรับ elderly mock buttons
+function eldToast(msg){
+  if(typeof toast === 'function'){ toast(msg); return; }
+  alert(msg);
 }
 
 
