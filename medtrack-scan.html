@@ -1460,6 +1460,9 @@ async function analyzeAll(){
       // REFACTOR: Normalize AI response → ensure doses[] + flat compat
       normalizeAIResponse(result);
       deriveFlatCompat(result);
+      // ผูกรูปซองยา (base64) เข้ากับยา — ใช้ตอน save high-alert → R2
+      result._imageBase64 = photoQueue[i].base64;
+      result._imageMime = photoQueue[i].mime;
       meds.push(fixTotalDays(result));
     }catch(e){
       console.error('[analyzeAll] error on photo',i,':',e.message);
@@ -2994,6 +2997,11 @@ async function saveToBackend(medsList) {
         dispense_date: m.dispense_date || null,
         schedules: expandedSchedules
       };
+      // ส่งรูปซองยาเฉพาะ high-alert → backend upload R2 (ประหยัด bandwidth)
+      if (m.is_high_alert === true && m._imageBase64) {
+        body.image_base64 = m._imageBase64;
+        body.media_type = m._imageMime || 'image/jpeg';
+      }
       
       // Track first hospital/doctor for scan_history
       if (m.hospital_name && !firstHospital) firstHospital = m.hospital_name;
