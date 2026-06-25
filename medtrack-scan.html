@@ -2083,7 +2083,7 @@ function buildPhotoGrid(drugName){
 }
 function rebuildPhotoGrid(){if(document.getElementById('photoBk').classList.contains('on'))buildPhotoGrid(currentPhotoMed);}
 
-function showSuccessScreen(){
+async function showSuccessScreen(){
   const meals=getMeals();
   const{periods,ivMeds}=buildSchedule(meds,meals);
   const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
@@ -2107,19 +2107,46 @@ function showSuccessScreen(){
   settings.meals = {breakfast:meals.breakfast, lunch:meals.lunch, dinner:meals.dinner, bedtime:meals.bedtime||'21:00'};
   localStorage.setItem('mt_settings', JSON.stringify(settings));
 
-  // ── 🆕 SAVE TO BACKEND (Session 5) ──
-  // Send each medication to Railway backend so the scheduler
-  // can send LINE push reminders. MVP: hardcoded user_id=2.
-  if (typeof saveToBackend === 'function') saveToBackend(meds);
-
+  // ── 🆕 SAVE TO BACKEND — รอผลก่อน เพื่อแสดงสรุปถูกต้อง (บันทึกใหม่ vs ซ้ำ) ──
+  let saveResult = null;
+  // แสดงหน้า succ พร้อม spinner ชั่วคราว ระหว่างรอ backend
   document.getElementById('mainCnt').style.display='none';
   document.getElementById('succ').classList.add('on');
   document.getElementById('succ').style.display='flex';
   document.getElementById('succ').style.pointerEvents='auto';
-  document.getElementById('mainCnt').style.display='none';
   document.getElementById('mainCnt').style.pointerEvents='none';
-  document.getElementById('succT').textContent=t('succT');
-  document.getElementById('succMsg').innerHTML=t('succMsgTpl',{bags:photoQueue.length,drugs:meds.length,days:maxDays,alerts})+'<br><span style="font-size:11px;color:var(--t3)">'+(meds.map(m=>m.drug_name).join(', '))+'</span>';
+  document.getElementById('succT').textContent='กำลังบันทึก...';
+  document.getElementById('succMsg').innerHTML='<span style="font-size:13px;color:var(--t3)">กำลังบันทึกยาลงระบบ...</span>';
+
+  if (typeof saveToBackend === 'function') {
+    try { saveResult = await saveToBackend(meds); }
+    catch(e){ console.error('[showSuccessScreen] saveToBackend error:', e); }
+  }
+
+  // แสดงผลจริงตาม dedup
+  const newCount = saveResult ? saveResult.newCount : meds.length;
+  const dedupCount = saveResult ? saveResult.dedupCount : 0;
+  const errCount = saveResult ? saveResult.errorCount : 0;
+  const dedupNames = saveResult ? saveResult.dedupNames : [];
+
+  // หัวข้อ + ข้อความตามผล
+  let titleTxt, msgHtml;
+  if (dedupCount > 0 && newCount > 0) {
+    titleTxt = '✅ บันทึกแล้ว ' + newCount + ' ตัว';
+    msgHtml = '<span style="color:#E8920C;font-size:13px">⏭️ ยาซ้ำ ' + dedupCount + ' ตัว (ใช้ของเดิม): ' + dedupNames.join(', ') + '</span>';
+  } else if (dedupCount > 0 && newCount === 0) {
+    titleTxt = '⏭️ ยานี้มีอยู่แล้ว';
+    msgHtml = '<span style="color:#E8920C;font-size:13px">ยา ' + dedupCount + ' ตัวมีอยู่ในระบบแล้ว (' + dedupNames.join(', ') + ')<br>ไม่ได้เพิ่มซ้ำ</span>';
+  } else {
+    titleTxt = t('succT');
+    msgHtml = t('succMsgTpl',{bags:photoQueue.length,drugs:newCount,days:maxDays,alerts})+'<br><span style="font-size:11px;color:var(--t3)">'+(meds.map(m=>m.drug_name).join(', '))+'</span>';
+  }
+  if (errCount > 0) {
+    msgHtml += '<br><span style="color:#D94040;font-size:12px">⚠️ บันทึกไม่สำเร็จ ' + errCount + ' ตัว</span>';
+  }
+
+  document.getElementById('succT').textContent = titleTxt;
+  document.getElementById('succMsg').innerHTML = msgHtml;
   document.getElementById('btnDone').textContent=t('btnDone');
   const rfMeds=meds.filter(m=>m.total_days);
   if(rfMeds.length){
@@ -3078,8 +3105,7 @@ async function saveToBackend(medsList) {
   console.log('[saveToBackend] Done. Saved ' + savedMedIds.length + '/' + medsList.length 
     + ' (new=' + newMeds.length + ', dedup=' + dedupedMeds.length + ')');
   
-  // 🍞 Show toast notification with save summary
-  showSaveToast(newMeds, dedupedMeds, saveErrors);
+  // หมายเหตุ: ไม่เรียก showSaveToast แล้ว — showSuccessScreen แสดงผล dedup เองหลัง await
   
   // ── 🆕 Phase 5+: SAVE TO scan_history (Session 10) ──
   if (savedMedIds.length > 0) {
@@ -3129,6 +3155,15 @@ async function saveToBackend(medsList) {
       alert(`⚠️ บันทึกไม่ครบ\nสำเร็จ: ${savedMedIds.length}/${medsList.length} ตัว\nลองใหม่อีกครั้งภายหลัง`);
     }, 500);
   }
+
+  // คืนผลให้ showSuccessScreen แสดงสรุปถูกต้อง (บันทึกใหม่กี่ตัว · ซ้ำกี่ตัว)
+  return {
+    newCount: newMeds.length,
+    dedupCount: dedupedMeds.length,
+    errorCount: saveErrors,
+    newNames: newMeds.map(m => m.drug_name),
+    dedupNames: dedupedMeds.map(m => m.drug_name_en || m.drug_name)
+  };
 }
 
 // 🆔 Resolve user_id from URL or localStorage
