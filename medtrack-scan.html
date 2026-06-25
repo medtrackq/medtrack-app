@@ -2103,24 +2103,35 @@ async function showSuccessScreen(){
   const{periods,ivMeds}=buildSchedule(meds,meals);
   const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
   const maxDays=Math.max(...meds.map(m=>parseInt(m.total_days)||0),0);
-  const payload={patient_id:'demo',start_date:new Date().toISOString().split('T')[0],meal_times:meals,medications:meds,bag_count:photoQueue.length,photos:medPhotos};
 
   // ── บันทึกยาลง localStorage ให้ Home อ่านได้ ──
+  // ⚠️ strip รูป base64 (_imageBase64/_imageMime) + photos ออก — กัน localStorage quota เต็ม
+  //    (LINE in-app browser localStorage เล็ก · รูป high-alert ~300-500KB ทำให้ quota exceeded)
+  //    รูปจริงเก็บที่ R2 แล้ว (ผ่าน backend) — localStorage แค่ cache แสดงผล ไม่ต้องมีรูป
   const savedMeds = JSON.parse(localStorage.getItem('mt_medications')||'[]');
-  const newMeds = meds.map(m=>({
-    ...m,
-    id: 'med_'+Date.now()+'_'+Math.random().toString(36).substr(2,5),
-    savedAt: new Date().toISOString(),
-    meals: meals,
-    is_active: true,
-  }));
+  const newMeds = meds.map(m=>{
+    const { _imageBase64, _imageMime, ...mClean } = m; // ตัดรูปออก
+    return {
+      ...mClean,
+      id: 'med_'+Date.now()+'_'+Math.random().toString(36).substr(2,5),
+      savedAt: new Date().toISOString(),
+      meals: meals,
+      is_active: true,
+    };
+  });
   // รวมกับยาเดิม (ถ้ามี) ไม่ลบยาเก่า
   const allMeds = [...newMeds, ...savedMeds];
-  localStorage.setItem('mt_medications', JSON.stringify(allMeds));
+  try {
+    localStorage.setItem('mt_medications', JSON.stringify(allMeds));
+  } catch(e) {
+    // ถ้า quota เต็ม → เก็บแค่ยาใหม่ (ตัดยาเก่าทิ้ง) · ไม่ให้ throw ขัด flow
+    console.warn('[scan] localStorage quota — เก็บเฉพาะยาใหม่:', e.message);
+    try { localStorage.setItem('mt_medications', JSON.stringify(newMeds)); } catch(e2){}
+  }
   // sync เวลาอาหารไปด้วย
   const settings = JSON.parse(localStorage.getItem('mt_settings')||'{}');
   settings.meals = {breakfast:meals.breakfast, lunch:meals.lunch, dinner:meals.dinner, bedtime:meals.bedtime||'21:00'};
-  localStorage.setItem('mt_settings', JSON.stringify(settings));
+  try { localStorage.setItem('mt_settings', JSON.stringify(settings)); } catch(e){}
 
   // ── 🆕 SAVE TO BACKEND — รอผลก่อน เพื่อแสดงสรุปถูกต้อง (บันทึกใหม่ vs ซ้ำ) ──
   let saveResult = null;
