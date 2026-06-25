@@ -477,6 +477,14 @@ label.upbtn{cursor:pointer}
 </style>
 </head>
 <body>
+<!-- 🐛 DEBUG ชั่วคราว (ดู save flow mobile) -->
+<div id="dbgBoxScan" style="position:fixed;top:0;left:0;right:0;max-height:40vh;overflow:auto;background:#100;color:#fa0;font:11px monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-all"></div>
+<script>
+window.__dbg=function(m){var b=document.getElementById('dbgBoxScan');if(b)b.textContent+=m+'\n';console.log(m);};
+window.onerror=function(m,s,l){__dbg('❌ ERROR: '+m+' @line'+l);return false;};
+window.addEventListener('unhandledrejection',function(e){__dbg('❌ PROMISE REJECT: '+(e.reason&&e.reason.message||e.reason));});
+__dbg('[scan] page loaded');
+</script>
 <div class="app">
 
   <!-- Header -->
@@ -2048,26 +2056,28 @@ function renderDoctor(){
 ═══════════════════════════ */
 let currentPhotoMed='';
 function save(){
-  if(!meds.length){return;}
-  // PATCH P8: ตรวจสอบ non-daily medications (วันเว้นวัน/สัปดาห์/เดือน)
-  // ถ้ามี → แสดง popup ยืนยันก่อนบันทึก
+  __dbg('[scan] 🔘 กดบันทึก · meds='+meds.length);
+  if(!meds.length){__dbg('[scan] ไม่มี meds → return');return;}
   const nonDailyMeds = meds.filter(m => {
     const dose = (m.doses && m.doses[0]) || m;
     const pattern = dose.frequency_pattern || m.frequency_pattern || 'daily';
     return pattern !== 'daily';
   });
   if (nonDailyMeds.length > 0) {
+    __dbg('[scan] non-daily '+nonDailyMeds.length+' → modal');
     showNonDailyConfirmModal(nonDailyMeds);
-    return; // wait for user confirm
+    return;
   }
+  __dbg('[scan] daily → proceedToSave');
   proceedToSave();
 }
 function proceedToSave(){
+  __dbg('[scan] proceedToSave → เปิดหน้าถ่ายรูป (photoBk)');
   currentPhotoMed=meds[0]?.drug_name||'';
   buildPhotoGrid(currentPhotoMed);
   document.getElementById('photoBk').classList.add('on');
 }
-function skipPhoto(){document.getElementById('photoBk').classList.remove('on');showSuccessScreen();}
+function skipPhoto(){__dbg('[scan] skipPhoto → showSuccessScreen');document.getElementById('photoBk').classList.remove('on');showSuccessScreen();}
 document.getElementById('photoBk').addEventListener('click',e=>{if(e.target===document.getElementById('photoBk'))skipPhoto();});
 
 function buildPhotoGrid(drugName){
@@ -2084,6 +2094,7 @@ function buildPhotoGrid(drugName){
 function rebuildPhotoGrid(){if(document.getElementById('photoBk').classList.contains('on'))buildPhotoGrid(currentPhotoMed);}
 
 async function showSuccessScreen(){
+  __dbg('[scan] showSuccessScreen เริ่ม (async)');
   const meals=getMeals();
   const{periods,ivMeds}=buildSchedule(meds,meals);
   const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
@@ -2119,8 +2130,9 @@ async function showSuccessScreen(){
   document.getElementById('succMsg').innerHTML='<span style="font-size:13px;color:var(--t3)">กำลังบันทึกยาลงระบบ...</span>';
 
   if (typeof saveToBackend === 'function') {
-    try { saveResult = await saveToBackend(meds); }
-    catch(e){ console.error('[showSuccessScreen] saveToBackend error:', e); }
+    __dbg('[scan] เรียก await saveToBackend...');
+    try { saveResult = await saveToBackend(meds); __dbg('[scan] saveToBackend เสร็จ · new='+(saveResult?saveResult.newCount:'?')+' dedup='+(saveResult?saveResult.dedupCount:'?')); }
+    catch(e){ __dbg('[scan] ❌ saveToBackend error: '+e.message); console.error('[showSuccessScreen] saveToBackend error:', e); }
   }
 
   // แสดงผลจริงตาม dedup
@@ -2880,11 +2892,14 @@ function showSaveToast(newMeds, dedupedMeds, errorCount){
 
 async function saveToBackend(medsList) {
   const BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
+  __dbg('[scan] saveToBackend เริ่ม · meds='+medsList.length);
   
   // 🆔 Resolve user_id dynamically (not hardcoded!)
   const USER_ID = await resolveUserId();
+  __dbg('[scan] resolveUserId = '+USER_ID+(USER_ID?'':' ❌NULL'));
   
   if (!USER_ID) {
+    __dbg('[scan] ❌ ไม่มี user_id → return (ไม่ POST)');
     console.error('[saveToBackend] No user_id found — cannot save');
     alert('❌ ไม่พบบัญชีผู้ใช้\nกรุณาเข้าหน้าหลักก่อน');
     return;
@@ -3061,16 +3076,19 @@ async function saveToBackend(medsList) {
       if (m.dispense_date && !firstDispenseDate) firstDispenseDate = m.dispense_date;
       
       // 30 sec timeout per medication save
+      __dbg('[scan] POST /api/medications · '+m.drug_name+' (high_alert='+(m.is_high_alert===true)+', img='+(!!body.image_base64)+')');
       const res = await fetchWithTimeout(BACKEND + '/api/medications', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(body)
       }, 30000);
+      __dbg('[scan] POST response · status='+res.status);
       
       if (res.ok) {
         const data = await res.json();
         const medId = data.medication && data.medication.id;
         const isDeduped = data.deduplicated === true;
+        __dbg('[scan] '+(isDeduped?'⏭️ ซ้ำ':'✅ ใหม่')+' '+m.drug_name+' id='+medId);
         
         if (isDeduped) {
           console.log('[saveToBackend] ⏭️ ' + m.drug_name + ' ซ้ำ → ใช้ id=' + medId);
