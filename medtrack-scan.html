@@ -477,13 +477,6 @@ label.upbtn{cursor:pointer}
 </style>
 </head>
 <body>
-<!-- 🐛 DEBUG BOX ชั่วคราว (ลบเมื่อแก้เสร็จ) -->
-<div id="dbgBoxScan" style="position:fixed;top:0;left:0;right:0;max-height:38vh;overflow:auto;background:#100;color:#fa0;font:11px monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-all"></div>
-<script>
-window.__dbg=function(m){var b=document.getElementById('dbgBoxScan');if(b)b.textContent+=m+'\n';console.log(m);};
-window.onerror=function(m,s,l){__dbg('❌ ERROR: '+m+' @line'+l);};
-__dbg('[scan] page loaded · url='+location.search);
-</script>
 <div class="app">
 
   <!-- Header -->
@@ -2055,8 +2048,7 @@ function renderDoctor(){
 ═══════════════════════════ */
 let currentPhotoMed='';
 function save(){
-  __dbg('[scan] 🔘 กดบันทึก save() · meds='+meds.length);
-  if(!meds.length){__dbg('[scan] ❌ ไม่มี meds → return');return;}
+  if(!meds.length){return;}
   // PATCH P8: ตรวจสอบ non-daily medications (วันเว้นวัน/สัปดาห์/เดือน)
   // ถ้ามี → แสดง popup ยืนยันก่อนบันทึก
   const nonDailyMeds = meds.filter(m => {
@@ -2065,20 +2057,17 @@ function save(){
     return pattern !== 'daily';
   });
   if (nonDailyMeds.length > 0) {
-    __dbg('[scan] มี non-daily '+nonDailyMeds.length+' → เปิด modal ยืนยัน');
     showNonDailyConfirmModal(nonDailyMeds);
     return; // wait for user confirm
   }
-  __dbg('[scan] daily ทั้งหมด → proceedToSave()');
   proceedToSave();
 }
 function proceedToSave(){
-  __dbg('[scan] proceedToSave() → เปิดหน้าถ่ายรูป');
   currentPhotoMed=meds[0]?.drug_name||'';
   buildPhotoGrid(currentPhotoMed);
   document.getElementById('photoBk').classList.add('on');
 }
-function skipPhoto(){__dbg('[scan] skipPhoto() → showSuccessScreen');document.getElementById('photoBk').classList.remove('on');showSuccessScreen();}
+function skipPhoto(){document.getElementById('photoBk').classList.remove('on');showSuccessScreen();}
 document.getElementById('photoBk').addEventListener('click',e=>{if(e.target===document.getElementById('photoBk'))skipPhoto();});
 
 function buildPhotoGrid(drugName){
@@ -2095,7 +2084,6 @@ function buildPhotoGrid(drugName){
 function rebuildPhotoGrid(){if(document.getElementById('photoBk').classList.contains('on'))buildPhotoGrid(currentPhotoMed);}
 
 function showSuccessScreen(){
-  __dbg('[scan] showSuccessScreen() เริ่ม');
   const meals=getMeals();
   const{periods,ivMeds}=buildSchedule(meds,meals);
   const alerts=periods.filter(p=>p.drugs.length).length+ivMeds.reduce((s,m)=>s+Math.round(24/(m.interval_hours||8)),0);
@@ -2865,20 +2853,15 @@ function showSaveToast(newMeds, dedupedMeds, errorCount){
 
 async function saveToBackend(medsList) {
   const BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
-  __dbg('[scan] saveToBackend() เรียกแล้ว · meds='+medsList.length);
   
   // 🆔 Resolve user_id dynamically (not hardcoded!)
   const USER_ID = await resolveUserId();
-  __dbg('[scan] resolveUserId() = '+USER_ID+(USER_ID?' ✅':' ❌ NULL!'));
   
   if (!USER_ID) {
-    __dbg('[scan] ❌❌ ไม่มี user_id → STOP (ไม่ POST medications!)');
     console.error('[saveToBackend] No user_id found — cannot save');
     alert('❌ ไม่พบบัญชีผู้ใช้\nกรุณาเข้าหน้าหลักก่อน');
     return;
   }
-  
-  __dbg('[scan] มี user_id='+USER_ID+' → เริ่ม POST medications ('+medsList.length+' ตัว)');
   console.log('[saveToBackend] Saving ' + medsList.length + ' medications for user ' + USER_ID + '...');
   
   // Get user meal times to compute reminder_time
@@ -3153,29 +3136,26 @@ async function resolveUserId() {
   // 1. URL param ?user_id=X (highest priority)
   const params = new URLSearchParams(window.location.search);
   const urlUid = parseInt(params.get('user_id'));
-  if (urlUid) { __dbg('[scan] resolveUserId: เจอใน URL ?user_id='+urlUid); return urlUid; }
-  __dbg('[scan] resolveUserId: URL ไม่มี user_id → ลอง localStorage');
+  if (urlUid) { return urlUid; }
   
   // 2. localStorage profile
   try {
     const raw = localStorage.getItem('mt_user_profile');
-    __dbg('[scan] resolveUserId: localStorage mt_user_profile = '+(raw?raw.substring(0,60):'NULL'));
     const profile = JSON.parse(raw || '{}');
-    if (profile.user_id || profile.id) { __dbg('[scan] resolveUserId: เจอใน localStorage = '+(profile.user_id||profile.id)); return profile.user_id || profile.id; }
+    if (profile.user_id || profile.id) { return profile.user_id || profile.id; }
     
     // 3. line_user_id → backend lookup
     if (profile.line_user_id) {
-      __dbg('[scan] resolveUserId: ลอง lookup by line_user_id');
       const res = await fetchWithTimeout(
         'https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/' + profile.line_user_id,
         {}, 10000
       );
       if (res.ok) {
         const data = await res.json();
-        if (data.user?.id) { __dbg('[scan] resolveUserId: lookup เจอ = '+data.user.id); return data.user.id; }
+        if (data.user?.id) { return data.user.id; }
       }
     }
-  } catch(e) { __dbg('[scan] resolveUserId: localStorage error '+e.message); }
+  } catch(e) { }
   
   // 4. URL ?lineUserId=...
   const lineUid = params.get('lineUserId');

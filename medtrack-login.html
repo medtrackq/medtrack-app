@@ -309,8 +309,8 @@ async function loginWithLINE() {
       throw new Error('ตอบกลับไม่ถูกต้อง');
     }
     
-    // Save state for callback
-    sessionStorage.setItem('mt_login_state', data.state);
+    // Save state for callback — ใช้ localStorage (sessionStorage หายตอน redirect ใน LINE in-app browser!)
+    localStorage.setItem('mt_login_state', data.state);
     
     // Step 2: Redirect to LINE OAuth
     window.location.href = data.auth_url;

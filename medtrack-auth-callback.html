@@ -2,7 +2,6 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <title>กำลังเข้าสู่ระบบ...</title>
@@ -79,17 +78,6 @@ h1{
 </style>
 </head>
 <body>
-<!-- 🐛 DEBUG BOX ชั่วคราว (ลบเมื่อแก้เสร็จ) -->
-<div id="dbgBox" style="position:fixed;top:0;left:0;right:0;max-height:45vh;overflow:auto;background:#000;color:#0f0;font:11px monospace;padding:8px;z-index:99999;white-space:pre-wrap;word-break:break-all"></div>
-<script>
-window.__dbg = function(msg){
-  var b=document.getElementById('dbgBox');
-  if(b){ b.textContent += msg+'\n'; }
-  console.log(msg);
-};
-window.onerror=function(m,s,l){ __dbg('❌ ERROR: '+m+' @'+l); };
-__dbg('[callback] page loaded · '+location.href.substring(0,80));
-</script>
 
 <div class="box" id="box">
   <div class="icon">⏳</div>
@@ -123,9 +111,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   
   // Verify state matches what we saved (localStorage รอดข้าม redirect ใน LINE in-app browser)
   const savedState = localStorage.getItem('mt_login_state') || sessionStorage.getItem('mt_login_state');
-  __dbg('[callback] state · saved='+savedState+' url='+state+' match='+(savedState===state));
   if (savedState !== state) {
-    __dbg('[callback] ⚠️ state mismatch (backend verify เอง)');
   }
   
   try {
@@ -158,8 +144,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     }));
     // verify token เพิ่งบันทึก อ่านกลับได้จริงไหม (debug in-app browser)
     const savedToken = localStorage.getItem('mt_session_token');
-    __dbg('[callback] token saved · ok='+(!!savedToken)+' len='+(savedToken?savedToken.length:0));
-    __dbg('[callback] user='+data.user.name+' id='+data.user.id+' is_new='+data.user.is_new+' age='+data.user.age+' gender='+data.user.gender);
 
     localStorage.removeItem('mt_login_state');
     sessionStorage.removeItem('mt_login_state');
@@ -183,8 +167,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       // ส่ง token + user_id ผ่าน URL — กัน localStorage หายใน LINE in-app browser (iOS)
       // หน้าปลายทางจะอ่านจาก URL แล้ว save ใหม่ + ใช้งานได้แม้ localStorage ไม่ข้ามหน้า
       const target = base + '?token=' + encodeURIComponent(data.session_token) + '&uid=' + u.id;
-      __dbg('[callback] ➡️ redirect: '+base+' (แนบ token ใน URL)');
-      setTimeout(()=>{ window.location.href = target; }, 6000);
+      window.location.href = target;
     }, 1500);
     
   } catch(e) {
