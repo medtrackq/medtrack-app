@@ -8,6 +8,7 @@
   
 <head>
 <meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script><script>eruda.init();</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <!-- ============ ICON FOR ALL PLATFORMS ============ -->
 
@@ -2098,19 +2099,23 @@ function fmtTablets(n, suffix) {
 
 // 🔐 AUTH GATE — verify session before showing app
 (async function authGate() {
+  function __dbg(m){ var b=document.getElementById('dbgBoxHome'); if(!b){b=document.createElement('div');b.id='dbgBoxHome';b.style.cssText='position:fixed;top:0;left:0;right:0;max-height:40vh;overflow:auto;background:#001;color:#0ff;font:11px monospace;padding:8px;z-index:99999;white-space:pre-wrap';document.body&&document.body.appendChild(b);} if(b)b.textContent+=m+'\n'; console.log(m); }
+  window.__dbgHome=__dbg;
+  __dbg('[home] authGate start');
   // Bypass for debug user_id parameter (test mode)
   const params = new URLSearchParams(window.location.search);
   if (params.has('user_id')) {
-    console.log('[auth] debug mode — user_id param present, skip auth');
+    __dbg('[home] debug mode — user_id param, skip auth');
     return;
   }
   
   const token = localStorage.getItem('mt_session_token');
+  __dbg('[home] token in localStorage · ok='+(!!token)+' len='+(token?token.length:0));
   
   // No token → go to login
   if (!token) {
-    console.log('[auth] no token, redirecting to login');
-    window.location.replace('/medtrack-app/medtrack-login.html');
+    __dbg('[home] ❌ no token → redirect login ใน 6 วิ');
+    setTimeout(()=>window.location.replace('/medtrack-app/medtrack-login.html'), 6000);
     return;
   }
   
@@ -2121,11 +2126,12 @@ function fmtTablets(n, suffix) {
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({session_token: token})
     });
+    __dbg('[home] verify response · status='+res.status);
     
     if (!res.ok) {
-      console.log('[auth] token invalid, clearing and redirecting');
+      __dbg('[home] ❌ token invalid → redirect login ใน 6 วิ');
       localStorage.removeItem('mt_session_token');
-      window.location.replace('/medtrack-app/medtrack-login.html');
+      setTimeout(()=>window.location.replace('/medtrack-app/medtrack-login.html'), 6000);
       return;
     }
     
@@ -2149,11 +2155,10 @@ function fmtTablets(n, suffix) {
         push_lead_minutes: data.user.push_lead_minutes
       };
       localStorage.setItem('mt_user_profile', JSON.stringify(merged));
-      console.log('[auth] ✅ verified user_id=' + data.user.id);
+      __dbg('[home] ✅ verified user_id='+data.user.id+' — เข้า home สำเร็จ (ไม่ควรวน!)');
     }
   } catch(e) {
-    // Network error — allow continue with cached profile
-    console.warn('[auth] verify failed (network?), continuing:', e);
+    __dbg('[home] verify network error: '+e.message+' — ใช้ cache ต่อ');
   }
 })();
 
