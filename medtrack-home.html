@@ -2102,8 +2102,20 @@ function fmtTablets(n, suffix) {
   function __dbg(m){ var b=document.getElementById('dbgBoxHome'); if(!b){b=document.createElement('div');b.id='dbgBoxHome';b.style.cssText='position:fixed;top:0;left:0;right:0;max-height:40vh;overflow:auto;background:#001;color:#0ff;font:11px monospace;padding:8px;z-index:99999;white-space:pre-wrap';document.body&&document.body.appendChild(b);} if(b)b.textContent+=m+'\n'; console.log(m); }
   window.__dbgHome=__dbg;
   __dbg('[home] authGate start');
-  // Bypass for debug user_id parameter (test mode)
   const params = new URLSearchParams(window.location.search);
+
+  // ✅ token จาก URL (callback แนบมา) — กัน localStorage หายใน LINE in-app browser
+  const urlToken = params.get('token');
+  if (urlToken) {
+    localStorage.setItem('mt_session_token', urlToken);
+    __dbg('[home] ✅ token จาก URL · len='+urlToken.length+' → saved + ทำความสะอาด URL');
+    // ลบ token ออกจาก URL (กัน token ค้างใน history/แชร์หลุด)
+    const uid = params.get('uid');
+    const cleanUrl = window.location.pathname + (uid ? ('?user_id='+uid) : '');
+    window.history.replaceState({}, '', cleanUrl);
+  }
+
+  // Bypass for debug user_id parameter (test mode)
   if (params.has('user_id')) {
     __dbg('[home] debug mode — user_id param, skip auth');
     return;
@@ -2502,6 +2514,20 @@ function closeSheet() {
 
 function navTo(url){
   closeSheet();
+  // แนบ user_id ไปด้วย — กัน localStorage หายใน LINE in-app browser (หน้าปลายทางจะรู้ว่าใคร)
+  try {
+    const prof = JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
+    const uid = prof.user_id || prof.id;
+    if (uid && !url.includes('user_id=')) {
+      const sep = url.includes('?') ? '&' : (url.includes('#') ? '' : '?');
+      if (url.includes('#')) {
+        // แทรกก่อน hash
+        url = url.replace('#', '?user_id='+uid+'#');
+      } else {
+        url = url + sep + 'user_id=' + uid;
+      }
+    }
+  } catch(e){}
   setTimeout(()=>{ window.location.href = url; }, 150);
 }
 

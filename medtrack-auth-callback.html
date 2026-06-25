@@ -177,10 +177,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     setTimeout(() => {
       const u = data.user;
       const isCompleted = u.age && u.gender;
-      const target = (data.user.is_new || !isCompleted)
+      const base = (data.user.is_new || !isCompleted)
         ? '/medtrack-app/medtrack-onboard.html' 
         : '/medtrack-app/medtrack-home.html';
-      __dbg('[callback] ➡️ redirect: '+target+' (จะเด้งใน 6 วิ — อ่าน log ก่อน)');
+      // ส่ง token + user_id ผ่าน URL — กัน localStorage หายใน LINE in-app browser (iOS)
+      // หน้าปลายทางจะอ่านจาก URL แล้ว save ใหม่ + ใช้งานได้แม้ localStorage ไม่ข้ามหน้า
+      const target = base + '?token=' + encodeURIComponent(data.session_token) + '&uid=' + u.id;
+      __dbg('[callback] ➡️ redirect: '+base+' (แนบ token ใน URL)');
       setTimeout(()=>{ window.location.href = target; }, 6000);
     }, 1500);
     
