@@ -1454,7 +1454,7 @@ async function analyzeAll(){
     renderQueue();renderProgItems();
     updateProgBar(i,photoQueue.length);
     try{
-      // callAPI มี internal timeout 45 sec + AbortController
+      // callAPI มี internal timeout 90 sec + AbortController (เผื่อเน็ตช้า)
       const result = await callAPI(photoQueue[i].base64,photoQueue[i].mime);
       photoQueue[i].result=result;photoQueue[i].status='done';
       // REFACTOR: Normalize AI response → ensure doses[] + flat compat
@@ -1468,7 +1468,7 @@ async function analyzeAll(){
       console.error('[analyzeAll] error on photo',i,':',e.message);
       photoQueue[i].status='error';
       photoQueue[i].errorMsg = e.message === 'timeout' 
-        ? 'หมดเวลา (45 วินาที) — ลองใหม่' 
+        ? 'หมดเวลา (เน็ตช้า) — ลองใหม่ หรือเปลี่ยนเป็นเน็ตมือถือ' 
         : e.message;
       photoQueue[i].result=null;
     }
@@ -1548,7 +1548,7 @@ async function callAPI(b64,mime){
   // ส่งรูปไปให้ backend วิเคราะห์ — backend มี prompt ของตัวเองสำหรับซองยา
   // ใช้ AbortController เพื่อ cancel fetch ถ้า timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 sec timeout per slot
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 sec — เผื่อเน็ตช้า (รพ./3G) AI ~20-25s
   
   try {
     const res = await fetch(MEDTRACK_BACKEND + '/api/scan-medicine', {
