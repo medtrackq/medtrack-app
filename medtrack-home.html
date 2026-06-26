@@ -1522,8 +1522,23 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="sheet-item-arrow" style="color:#DC2626">›</div>
     </div>
+
+    <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
+    <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
+      <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.06.27</span></div>
+      <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 This AI &amp; Solution Group</div>
+    </div>
   </div>
 </div>
+<script>
+// sync เวอร์ชันในหน้าตั้งค่า จาก badge มุมจอ (แก้เวอร์ชันที่ badge ที่เดียว ที่นี่ตามอัตโนมัติ)
+(function(){
+  var b=document.getElementById('mt-version');
+  var s=document.getElementById('settings-version');
+  if(b&&s) s.textContent=b.textContent.trim();
+})();
+</script>
 
 <!-- ── MEDICINE SHEET ── -->
 <div class="sheet" id="sheet-medicine">
