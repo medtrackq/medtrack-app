@@ -1210,7 +1210,8 @@ function normalizeAIResponse(m) {
     frequency_pattern: m.frequency_pattern || 'daily',
     frequency_interval: m.frequency_interval || 1,
     day_of_week: m.day_of_week ?? null,
-    day_of_month: m.day_of_month ?? null
+    day_of_month: m.day_of_month ?? null,
+    active_days: (Array.isArray(m.active_days) && m.active_days.length > 0) ? m.active_days : null
   }];
   return m;
 }
@@ -3012,7 +3013,13 @@ async function saveToBackend(medsList) {
           frequency_pattern: pat,
           frequency_interval: parseInt(d.frequency_interval) || 1,
           day_of_week: (d.day_of_week !== null && d.day_of_week !== undefined) ? parseInt(d.day_of_week) : null,
-          day_of_month: (d.day_of_month !== null && d.day_of_month !== undefined) ? parseInt(d.day_of_month) : null
+          day_of_month: (d.day_of_month !== null && d.day_of_month !== undefined) ? parseInt(d.day_of_month) : null,
+          // 🗓️ active_days: เฉพาะวัน (เช่น [1,2,3,4,5]=จันทร์-ศุกร์) — ส่งต่อจาก AI
+          active_days: (Array.isArray(d.active_days) && d.active_days.length > 0)
+            ? d.active_days.map(x => parseInt(x)).filter(x => x >= 0 && x <= 6)
+            : ((Array.isArray(m.active_days) && m.active_days.length > 0)
+                ? m.active_days.map(x => parseInt(x)).filter(x => x >= 0 && x <= 6)
+                : null)
         };
       });
       
