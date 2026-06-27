@@ -746,6 +746,21 @@ label.upbtn{cursor:pointer}
 #nonDailyModal .ndm-detail{color:#0369A1;font-size:12px}
 #nonDailyModal .ndm-start{color:#16A34A;margin-top:4px}
 #nonDailyModal .ndm-next{color:var(--t2);font-size:12px;margin-top:2px}
+/* Day picker (weekly) */
+#nonDailyModal .ndm-daypick{margin-top:10px;padding-top:10px;border-top:1px dashed #BAE6FD}
+#nonDailyModal .ndm-daypick-label{font-size:12px;color:#075985;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+#nonDailyModal .ndm-days{display:flex;gap:5px;flex-wrap:wrap}
+#nonDailyModal .ndm-day{flex:1;min-width:38px;padding:8px 4px;border-radius:8px;border:2px solid #E2E8F0;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;color:#64748B;user-select:none}
+#nonDailyModal .ndm-day:hover{border-color:#CBD5E1;transform:translateY(-1px)}
+#nonDailyModal .ndm-day.sel{color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+/* สีตามวันไทย */
+#nonDailyModal .ndm-day.sel[data-d="0"]{background:#EF4444}/* อาทิตย์ แดง */
+#nonDailyModal .ndm-day.sel[data-d="1"]{background:#FBBF24;color:#78350F}/* จันทร์ เหลือง */
+#nonDailyModal .ndm-day.sel[data-d="2"]{background:#EC4899}/* อังคาร ชมพู */
+#nonDailyModal .ndm-day.sel[data-d="3"]{background:#10B981}/* พุธ เขียว */
+#nonDailyModal .ndm-day.sel[data-d="4"]{background:#F97316}/* พฤหัส ส้ม */
+#nonDailyModal .ndm-day.sel[data-d="5"]{background:#3B82F6}/* ศุกร์ ฟ้า */
+#nonDailyModal .ndm-day.sel[data-d="6"]{background:#8B5CF6}/* เสาร์ ม่วง */
 </style>
 
 <div class="toast" id="toast"></div>
@@ -1398,8 +1413,10 @@ function showNonDailyConfirmModal(nonDailyMeds) {
   if (!modal) return;
   const listDiv = document.getElementById('nonDailyList');
   const today = new Date();
-  
-  listDiv.innerHTML = nonDailyMeds.map(m => {
+  // state เก็บวันที่เลือกของแต่ละ weekly med (default = วันนี้/วันที่สแกน)
+  window._weeklyDayPick = {};
+
+  listDiv.innerHTML = nonDailyMeds.map((m, medIdx) => {
     const dose = (m.doses && m.doses[0]) || m;
     const pattern = dose.frequency_pattern || m.frequency_pattern || 'daily';
     const interval = dose.frequency_interval || m.frequency_interval || 1;
@@ -1439,8 +1456,28 @@ function showNonDailyConfirmModal(nonDailyMeds) {
     
     // เพิ่มเติมสำหรับ weekly + day_of_week
     let detailLine = '';
-    if (pattern === 'weekly' && dayOfWeek !== null && dayOfWeek !== undefined) {
-      detailLine = `<div class="ndm-detail">📅 ทุกวัน${escapeHtml(DAY_OF_WEEK_TH[dayOfWeek])}</div>`;
+    let dayPickerHtml = '';
+    if (pattern === 'weekly') {
+      // หาวัน default: ถ้า AI มี active_days/day_of_week → ใช้, ไม่งั้น = วันที่สแกน (วันนี้)
+      let defaultDay;
+      if (Array.isArray(dose.active_days) && dose.active_days.length > 0) {
+        defaultDay = dose.active_days[0];
+      } else if (dayOfWeek !== null && dayOfWeek !== undefined) {
+        defaultDay = dayOfWeek;
+      } else {
+        defaultDay = today.getDay(); // วันที่สแกน
+      }
+      window._weeklyDayPick[medIdx] = defaultDay;
+
+      const DAY_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+      const dayBtns = DAY_SHORT.map((lbl, di) =>
+        `<div class="ndm-day${di === defaultDay ? ' sel' : ''}" data-d="${di}" data-med="${medIdx}" onclick="pickWeeklyDay(${medIdx},${di})">${lbl}</div>`
+      ).join('');
+      dayPickerHtml = `
+        <div class="ndm-daypick">
+          <div class="ndm-daypick-label">🗓️ เลือกวันที่ต้องการกินยา (กดเลือก):</div>
+          <div class="ndm-days" id="ndmDays-${medIdx}">${dayBtns}</div>
+        </div>`;
     } else if (pattern === 'monthly' && dayOfMonth !== null && dayOfMonth !== undefined) {
       detailLine = `<div class="ndm-detail">📅 ทุกวันที่ ${dayOfMonth} ของเดือน</div>`;
     }
@@ -1449,18 +1486,50 @@ function showNonDailyConfirmModal(nonDailyMeds) {
       <div class="ndm-drug">${escapeHtml(drugName)} ${escapeHtml(dose_mg)}</div>
       <div class="ndm-pattern">⏰ ${escapeHtml(patternLabel)}</div>
       ${detailLine}
-      <div class="ndm-start">🟢 เริ่มวันแรก: <b>วันนี้ (${formatThaiDate(today)})</b></div>
-      <div class="ndm-next">📍 ครั้งถัดไป: ${escapeHtml(nextDatesText)}</div>
+      ${pattern !== 'weekly' ? `<div class="ndm-start">🟢 เริ่มวันแรก: <b>วันนี้ (${formatThaiDate(today)})</b></div>` : ''}
+      ${pattern !== 'weekly' ? `<div class="ndm-next">📍 ครั้งถัดไป: ${escapeHtml(nextDatesText)}</div>` : ''}
+      ${dayPickerHtml}
     </div>`;
   }).join('');
   
+  window._nonDailyMeds = nonDailyMeds;
   modal.classList.add('on');
 }
+
+// กดเลือกวัน (weekly day picker) — เลือกได้ทีละ 1 วัน
+function pickWeeklyDay(medIdx, dayIdx) {
+  window._weeklyDayPick = window._weeklyDayPick || {};
+  window._weeklyDayPick[medIdx] = dayIdx;
+  // อัปเดต UI: clear sel ใน group นี้ แล้ว set ตัวที่เลือก
+  const group = document.getElementById('ndmDays-' + medIdx);
+  if (!group) return;
+  group.querySelectorAll('.ndm-day').forEach(el => el.classList.remove('sel'));
+  const picked = group.querySelector('.ndm-day[data-d="' + dayIdx + '"]');
+  if (picked) picked.classList.add('sel');
+}
+
 function closeNonDailyModal() {
   const modal = document.getElementById('nonDailyModal');
   if (modal) modal.classList.remove('on');
 }
 function confirmNonDailySave() {
+  // ใส่วันที่เลือกกลับเข้า meds (weekly → active_days + day_of_week)
+  const meds = window._nonDailyMeds || [];
+  const picks = window._weeklyDayPick || {};
+  meds.forEach((m, medIdx) => {
+    const dose = (m.doses && m.doses[0]) || null;
+    const pattern = (dose && dose.frequency_pattern) || m.frequency_pattern;
+    if (pattern === 'weekly' && picks[medIdx] !== undefined) {
+      const chosen = picks[medIdx];
+      // set ทั้ง active_days (กรองวัน) และ day_of_week (clean) ให้ตรงกัน
+      if (dose) {
+        dose.active_days = [chosen];
+        dose.day_of_week = chosen;
+      }
+      m.active_days = [chosen];
+      m.day_of_week = chosen;
+    }
+  });
   closeNonDailyModal();
   proceedToSave();
 }
