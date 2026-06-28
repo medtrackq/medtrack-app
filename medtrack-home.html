@@ -69,14 +69,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 /* ── PHONE SHELL ── */
 .phone{max-width:390px;margin:0 auto;min-height:100vh;background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden}
 
-/* ── STATUS BAR ── */
-.status{background:var(--navy);padding:10px 20px 6px;display:flex;justify-content:space-between;align-items:center}
-.status-time{color:#fff;font-size:15px;font-weight:600;letter-spacing:.02em}
-.status-icons{display:flex;gap:5px;align-items:center}
-.status-icons span{color:#fff;font-size:12px}
-
 /* ── HEADER ── */
-.header{background:var(--navy);padding:4px 20px 18px;position:relative;overflow:hidden}
+.header{background:var(--navy);padding:calc(env(safe-area-inset-top, 12px) + 12px) 20px 18px;position:relative;overflow:hidden}
 .header::after{content:'';position:absolute;bottom:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(10,156,122,.2);pointer-events:none}
 .header::before{content:'';position:absolute;top:-20px;left:40%;width:180px;height:180px;border-radius:50%;background:rgba(37,99,235,.1);pointer-events:none}
 .hdr-row{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
@@ -566,7 +560,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 #elderlyView .header {
   background: var(--primary);
   color: white;
-  padding: 12px 16px;
+  padding: calc(env(safe-area-inset-top, 12px) + 12px) 16px 12px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1071,14 +1065,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 </head>
 <body>
 <div class="phone">
-
-  <!-- Status Bar -->
-  <div class="status">
-    <span class="status-time">9:41</span>
-    <div class="status-icons">
-      <span>●●●</span><span>WiFi</span><span>🔋</span>
-    </div>
-  </div>
 
   <!-- Header -->
   <div class="header">
