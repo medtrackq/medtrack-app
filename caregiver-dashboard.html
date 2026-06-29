@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MedTrack — แดชบอร์ดผู้ดูแล</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+<style>
+:root {
+  --ink-deep: #0F1A2E;
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --paper: #FAFAF7;
+  --paper-warm: #F4EDE0;
+  --bg: #F5F6FA;
+  --card: #FFFFFF;
+  --accent: #C8392F;
+  --accent-soft: #E76F5A;
+  --teal: #2B7A7A;
+  --gold: #B8893A;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #E5E7EB;
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: 'Bai Jamjuree', sans-serif;
+  font-weight: 700;
+}
+
+/* TOPBAR */
+.topbar {
+  background: var(--ink-deep);
+  color: var(--paper);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.brand h1 {
+  font-size: 20px;
+  color: var(--paper);
+}
+.brand h1 .accent { color: var(--accent-soft); }
+.brand .label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.role-switcher {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.1);
+  padding: 4px;
+  border-radius: 100px;
+}
+.role-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  font-size: 12px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  border-radius: 100px;
+  transition: all 0.15s;
+}
+.role-btn.active {
+  background: white;
+  color: var(--ink-deep);
+}
+
+/* CONTAINER */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+/* DEMO BANNER */
+.demo-banner {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFE8B0 100%);
+  border-left: 4px solid var(--gold);
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.demo-banner strong { color: var(--gold); font-family: 'Bai Jamjuree', sans-serif; }
+
+/* GREETING CARD */
+.greeting-card {
+  background: linear-gradient(135deg, #2B7A7A 0%, #15494A 100%);
+  color: white;
+  padding: 24px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.greeting-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 200px;
+  height: 200px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+}
+.greeting-emoji {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  font-size: 48px;
+  opacity: 0.3;
+}
+.greeting-text {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  position: relative;
+}
+.greeting-name {
+  font-family: 'Bai Jamjuree';
+  font-size: 24px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  position: relative;
+}
+.greeting-care {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+.greeting-care strong {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* HERO MESSAGE */
+.hero-msg {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.hero-msg-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+}
+.hero-msg-title {
+  font-family: 'Bai Jamjuree';
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 6px;
+}
+.hero-msg-title.warn { color: var(--yellow); }
+.hero-msg-title.bad { color: var(--red); }
+.hero-msg-detail {
+  color: var(--ink-light);
+  font-size: 14px;
+}
+
+/* QUICK STATS */
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.qstat {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.qstat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-light);
+  margin-bottom: 8px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+}
+.qstat-value {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--ink-deep);
+  margin-bottom: 4px;
+}
+.qstat-value .unit { font-size: 16px; color: var(--ink-light); }
+.qstat-value.green { color: var(--green); }
+.qstat-value.yellow { color: var(--yellow); }
+.qstat-extra {
+  font-size: 11px;
+  color: var(--ink-light);
+}
+
+/* SECTION */
+.section {
+  margin-bottom: 24px;
+}
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+.section-title h2 {
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .meta {
+  font-size: 12px;
+  color: var(--ink-light);
+}
+
+/* TODAY MEALS */
+.meal-list {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.meal-row {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.meal-row:last-child { border-bottom: none; }
+.meal-icon-big {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+.meal-info { flex: 1; }
+.meal-name {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+.meal-time {
+  font-size: 12px;
+  color: var(--ink-light);
+  margin-bottom: 4px;
+}
+.meal-meds {
+  font-size: 13px;
+  color: var(--ink);
+}
+.meal-status {
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.meal-status.confirmed {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.meal-status.pending {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+.meal-status.missed {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+/* WEEK CARDS */
+.week-cards {
+  display: grid;
+  gap: 12px;
+}
+.week-card {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--green);
+}
+.week-card.current { border-left-color: var(--accent); }
+.week-card.warn { border-left-color: var(--yellow); }
+.week-card.bad { border-left-color: var(--red); }
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.week-label {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink-deep);
+}
+.week-label .badge {
+  background: var(--accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 10px;
+  margin-left: 8px;
+  letter-spacing: 0.05em;
+}
+.week-percent {
+  font-family: 'Bai Jamjuree';
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--green);
+}
+.week-percent.warn { color: var(--yellow); }
+.week-percent.bad { color: var(--red); }
+
+.week-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.day-pill {
+  aspect-ratio: 1;
+  background: var(--line);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+  position: relative;
+}
+.day-pill.full { background: var(--green); }
+.day-pill.partial { background: var(--yellow); color: var(--ink-deep); }
+.day-pill.missed { background: var(--red); }
+.day-pill.today {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.day-pill.future {
+  background: var(--bg);
+  color: var(--ink-light);
+  border: 1px dashed var(--line);
+}
+
+.week-summary {
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.week-summary strong { color: var(--ink); }
+
+/* INSIGHTS */
+.insight-card {
+  background: var(--paper-warm);
+  border-left: 4px solid var(--gold);
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.insight-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+.insight-title {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--gold);
+}
+.insight-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* TREND */
+.trend-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+.trend-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 120px;
+  margin: 16px 0 12px;
+}
+.trend-bar {
+  flex: 1;
+  background: linear-gradient(180deg, #2B7A7A 0%, #16A34A 100%);
+  border-radius: 6px 6px 0 0;
+  position: relative;
+  min-height: 12px;
+}
+.trend-bar.current {
+  background: linear-gradient(180deg, #E76F5A 0%, #C8392F 100%);
+}
+.trend-bar-value {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--ink-deep);
+}
+.trend-labels {
+  display: flex;
+  gap: 8px;
+}
+.trend-label {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-light);
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+}
+
+/* QUICK ACTIONS */
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.action-btn {
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: var(--shadow);
+  font-family: 'Sarabun';
+  transition: transform 0.1s;
+}
+.action-btn:active { transform: scale(0.97); }
+.action-btn:hover { box-shadow: var(--shadow-lg); }
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.action-text {
+  font-family: 'Bai Jamjuree';
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-deep);
+}
+
+/* APPOINTMENT */
+.appt-card {
+  background: linear-gradient(135deg, #FFF7E5, #FFE5CC);
+  padding: 16px 20px;
+  border-radius: 12px;
+  border-left: 4px solid var(--gold);
+  margin-bottom: 12px;
+}
+.appt-tag {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.appt-doctor {
+  font-family: 'Bai Jamjuree';
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.appt-detail { font-size: 13px; }
+.appt-detail strong { color: var(--accent); }
+
+/* SECONDARY VIEW */
+.simple-view { display: none; }
+.simple-view.active { display: block; }
+.detailed-view.hidden { display: none; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .greeting-name { font-size: 20px; }
+  .quick-stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .qstat { padding: 12px 8px; }
+  .qstat-value { font-size: 22px; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .meal-row { padding: 12px 16px; gap: 12px; }
+  .meal-icon-big { font-size: 28px; }
+  .day-pill { font-size: 11px; }
+}
+/* === เพิ่มเติมสำหรับ production === */
+.meal-status.late { background: var(--yellow-soft); color: #B45309; }
+.dose-time-badge {
+  font-family: 'Bai Jamjuree'; font-weight: 800; font-size: 15px;
+  color: var(--ink-deep); min-width: 56px; text-align: center;
+}
+.loading-screen, .error-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 70vh; text-align: center; padding: 40px 24px; gap: 16px;
+}
+.spinner {
+  width: 44px; height: 44px; border: 4px solid var(--line);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-screen .emoji { font-size: 48px; }
+.error-screen h2 { font-size: 20px; color: var(--ink); }
+.error-screen p { color: var(--ink-light); font-size: 14px; max-width: 320px; }
+.hidden { display: none !important; }
+.dose-pill-mini {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font-size: 11px; font-family: 'Bai Jamjuree'; font-weight: 700;
+}
+</style>
+</head>
+<body>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="brand">
+      <h1>หมอ<span class="accent">น้อย</span></h1>
+      <div class="label">แดชบอร์ดผู้ดูแล</div>
+    </div>
+    <div id="tierBadge" class="role-switcher" style="display:none;">
+      <span class="role-btn active" id="tierLabel">ผู้ดูแลหลัก</span>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div style="color:var(--ink-light);font-size:14px;">กำลังโหลดข้อมูล...</div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-screen hidden" id="errorScreen">
+    <div class="emoji">😕</div>
+    <h2 id="errorTitle">ไม่สามารถโหลดข้อมูลได้</h2>
+    <p id="errorMsg">กรุณาลองใหม่อีกครั้ง</p>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="container hidden" id="mainContent">
+
+    <!-- GREETING -->
+    <div class="greeting-card">
+      <div class="greeting-emoji">💚</div>
+      <div class="greeting-text" id="greetDate">—</div>
+      <div class="greeting-name" id="greetName">สวัสดี</div>
+      <div class="greeting-care" id="greetCare">กำลังดูแล <strong>—</strong></div>
+    </div>
+
+    <!-- HERO MESSAGE -->
+    <div class="hero-msg" id="heroMsg">
+      <div class="hero-msg-icon" id="heroIcon">📊</div>
+      <div>
+        <div class="hero-msg-title" id="heroTitle">—</div>
+        <div class="hero-msg-detail" id="heroDetail">—</div>
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="quick-stats">
+      <div class="qstat">
+        <div class="qstat-label">วันนี้</div>
+        <div class="qstat-value" id="statToday">—</div>
+        <div class="qstat-extra" id="statTodayExtra">มื้อยา</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">สัปดาห์นี้</div>
+        <div class="qstat-value" id="statWeek">—<span class="unit">%</span></div>
+        <div class="qstat-extra">กินตรงเวลา</div>
+      </div>
+      <div class="qstat">
+        <div class="qstat-label">ต่อเนื่อง</div>
+        <div class="qstat-value" id="statStreak">—</div>
+        <div class="qstat-extra">วัน 🔥</div>
+      </div>
+    </div>
+
+    <!-- TODAY DOSES -->
+    <div class="section">
+      <div class="section-title">
+        <h2>💊 ยาวันนี้</h2>
+        <span class="meta" id="todayMeta">—</span>
+      </div>
+      <div class="meal-list" id="todayList"></div>
+    </div>
+
+    <!-- WEEK TREND (primary only) -->
+    <div class="section" id="trendSection">
+      <div class="section-title"><h2>📈 แนวโน้มการกินยา</h2></div>
+      <div class="trend-card">
+        <div class="trend-chart" id="trendChart"></div>
+        <div class="trend-labels" id="trendLabels"></div>
+      </div>
+    </div>
+
+    <!-- APPOINTMENT -->
+    <div class="section" id="apptSection">
+      <div class="section-title"><h2>📅 นัดหมายครั้งถัดไป</h2></div>
+      <div class="appt-card" id="apptCard"></div>
+    </div>
+
+  </div>
+
+<script>
+const API_BASE = 'https://api.medtrackq.com';
+const LIFF_ID = '';  // TODO: ใส่ LIFF ID หลังสร้างใน LINE Console
+
+const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function showError(title, msg) {
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('mainContent').classList.add('hidden');
+  const e = document.getElementById('errorScreen');
+  e.classList.remove('hidden');
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').textContent = msg;
+}
+
+// หา line_user_id — จาก LIFF (จริง) หรือ query param (เทส)
+async function resolveLineUserId() {
+  const params = new URLSearchParams(location.search);
+  const qpLine = params.get('line_user_id');
+  const qpToken = params.get('token');
+  if (qpLine) return { line_user_id: qpLine };
+  if (qpToken) return { token: qpToken };
+
+  if (LIFF_ID) {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return null; }
+      const profile = await liff.getProfile();
+      return { line_user_id: profile.userId };
+    } catch (e) {
+      console.error('LIFF error', e);
+      showError('เชื่อมต่อ LINE ไม่สำเร็จ', 'กรุณาเปิดหน้านี้ผ่าน LINE');
+      return null;
+    }
+  }
+  showError('ไม่พบข้อมูลผู้ใช้', 'กรุณาเปิดหน้านี้ผ่านลิงก์ใน LINE');
+  return null;
+}
+
+async function loadDashboard() {
+  const auth = await resolveLineUserId();
+  if (!auth) return;
+
+  const qs = auth.line_user_id ? `line_user_id=${encodeURIComponent(auth.line_user_id)}`
+                                : `token=${encodeURIComponent(auth.token)}`;
+  try {
+    const res = await fetch(`${API_BASE}/api/caregivers/dashboard?${qs}`);
+    const data = await res.json();
+    if (!data.ok) {
+      showError('ไม่พบข้อมูล', data.message || 'ไม่สามารถโหลดข้อมูลได้');
+      return;
+    }
+    render(data);
+  } catch (e) {
+    console.error(e);
+    showError('เกิดข้อผิดพลาด', 'กรุณาลองใหม่อีกครั้ง');
+  }
+}
+
+function render(d) {
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('mainContent').classList.remove('hidden');
+
+  // tier badge
+  const tierBadge = document.getElementById('tierBadge');
+  tierBadge.style.display = 'flex';
+  document.getElementById('tierLabel').textContent =
+    d.tier === 'secondary' ? 'ผู้ดูแลรอง' : 'ผู้ดูแลหลัก';
+
+  // greeting
+  const now = new Date();
+  const dateStr = `${now.getDate()} ${TH_MONTHS[now.getMonth()]} ${now.getFullYear()+543} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('greetDate').textContent = dateStr;
+  document.getElementById('greetName').textContent = `สวัสดี คุณ${d.caregiver.name}`;
+  document.getElementById('greetCare').innerHTML =
+    `กำลังดูแล <strong>${d.patient.name}</strong>` + (d.patient.age ? ` (${d.patient.age} ปี)` : '');
+
+  // stats
+  const s = d.stats;
+  document.getElementById('statToday').innerHTML = `${s.today_taken}<span class="unit">/${s.today_total}</span>`;
+  const statWeek = document.getElementById('statWeek');
+  statWeek.innerHTML = `${s.week_adherence}<span class="unit">%</span>`;
+  statWeek.className = 'qstat-value ' + (s.week_adherence >= 80 ? 'green' : s.week_adherence >= 50 ? 'yellow' : '');
+  document.getElementById('statStreak').textContent = s.streak;
+
+  // hero message
+  const hero = document.getElementById('heroTitle');
+  const heroDetail = document.getElementById('heroDetail');
+  const heroIcon = document.getElementById('heroIcon');
+  if (s.week_adherence >= 80) {
+    heroIcon.textContent = '🎉'; hero.textContent = 'ดูแลได้ดีมาก'; hero.className = 'hero-msg-title';
+    heroDetail.textContent = `${d.patient.name} กินยาสม่ำเสมอ สัปดาห์นี้ ${s.week_adherence}%`;
+  } else if (s.week_adherence >= 50) {
+    heroIcon.textContent = '👀'; hero.textContent = 'ควรติดตามเพิ่ม'; hero.className = 'hero-msg-title warn';
+    heroDetail.textContent = `สัปดาห์นี้กินยา ${s.week_adherence}% — มีบางมื้อที่ลืม`;
+  } else {
+    heroIcon.textContent = '⚠️'; hero.textContent = 'ต้องช่วยดูแลใกล้ชิด'; hero.className = 'hero-msg-title bad';
+    heroDetail.textContent = `สัปดาห์นี้กินยาเพียง ${s.week_adherence}% — ควรโทรหา ${d.patient.name}`;
+  }
+
+  // today doses
+  renderTodayDoses(d.today_doses);
+  document.getElementById('todayMeta').textContent =
+    `${s.today_taken} กินแล้ว · ${s.today_pending} รอ · ${s.today_missed} ขาด`;
+
+  // trend (primary only)
+  if (d.tier === 'secondary' || !d.weeks || d.weeks.length === 0) {
+    document.getElementById('trendSection').style.display = 'none';
+  } else {
+    renderTrend(d.weeks);
+  }
+
+  // appointment
+  renderAppointment(d.appointment);
+}
+
+const STATUS_MAP = {
+  taken:   { cls:'confirmed', label:'กินแล้ว' },
+  late:    { cls:'late',      label:'กินช้า' },
+  missed:  { cls:'missed',    label:'ขาด' },
+  pending: { cls:'pending',   label:'รอ' },
+};
+
+function renderTodayDoses(doses) {
+  const list = document.getElementById('todayList');
+  list.innerHTML = '';
+  if (!doses || doses.length === 0) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-light);">ไม่มียาวันนี้</div>';
+    return;
+  }
+  doses.forEach(dose => {
+    const st = STATUS_MAP[dose.status] || STATUS_MAP.pending;
+    const time = (dose.scheduled_time || '').slice(0,5);
+    const tablets = parseFloat(dose.tablets_per_dose || 0);
+    const tabStr = tablets ? `${tablets % 1 === 0 ? tablets : tablets} เม็ด` : '';
+    const row = document.createElement('div');
+    row.className = 'meal-row';
+    row.innerHTML = `
+      <div class="dose-time-badge">${time}</div>
+      <div class="meal-info">
+        <div class="meal-name">${dose.drug_name || dose.drug_name_en || 'ยา'}</div>
+        <div class="meal-meds">${dose.dose_mg||''} ${dose.dose_unit||''} ${tabStr ? '· '+tabStr : ''}</div>
+      </div>
+      <div class="meal-status ${st.cls}">${st.label}</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function renderTrend(weeks) {
+  const chart = document.getElementById('trendChart');
+  const labels = document.getElementById('trendLabels');
+  chart.innerHTML = ''; labels.innerHTML = '';
+  // weeks: [{weeks_ago, pct}] — weeks_ago 0=ปัจจุบัน, เรียงกลับให้เก่า→ใหม่
+  const sorted = [...weeks].sort((a,b) => b.weeks_ago - a.weeks_ago);
+  sorted.forEach(w => {
+    const pct = parseInt(w.pct) || 0;
+    const bar = document.createElement('div');
+    bar.className = 'trend-bar' + (w.weeks_ago === 0 ? ' current' : '');
+    // height px จาก 120px chart (min 12px ให้เห็นแท่งเสมอ)
+    const h = Math.max(Math.round(pct / 100 * 108) + 12, 12);
+    bar.style.height = h + 'px';
+    bar.innerHTML = `<span class="trend-bar-value">${pct}%</span>`;
+    chart.appendChild(bar);
+    const lbl = document.createElement('div');
+    lbl.className = 'trend-label';
+    lbl.textContent = w.weeks_ago === 0 ? 'สัปดาห์นี้' : `${w.weeks_ago} สัปดาห์ก่อน`;
+    labels.appendChild(lbl);
+  });
+}
+
+function renderAppointment(appt) {
+  const section = document.getElementById('apptSection');
+  if (!appt) { section.style.display = 'none'; return; }
+  const card = document.getElementById('apptCard');
+  const d = new Date(appt.appointment_date);
+  const dateStr = `${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+  const daysUntil = appt.days_until;
+  const dayTag = daysUntil === 0 ? 'วันนี้' : daysUntil === 1 ? 'พรุ่งนี้' : `อีก ${daysUntil} วัน`;
+  card.innerHTML = `
+    <div class="appt-tag">📅 ${dayTag}</div>
+    <div class="appt-doctor">${appt.doctor_name || 'พบแพทย์'}</div>
+    <div class="appt-detail">
+      <strong>${dateStr}</strong> ${appt.appointment_time||''}<br>
+      ${appt.hospital_name||''} ${appt.department ? '· '+appt.department : ''}
+      ${appt.purpose ? '<br>นัดเพื่อ: '+appt.purpose : ''}
+    </div>
+  `;
+}
+
+loadDashboard();
+</script>
+</body>
+</html>
