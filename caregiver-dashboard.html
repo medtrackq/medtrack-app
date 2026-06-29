@@ -858,32 +858,82 @@ function renderActions(patient) {
   });
 }
 
-const STATUS_MAP = {
-  taken:   { cls:'confirmed', label:'กินแล้ว' },
-  late:    { cls:'late',      label:'กินช้า' },
-  missed:  { cls:'missed',    label:'ขาด' },
-  pending: { cls:'pending',   label:'รอ' },
-};
+// นิยามมื้อ — เรียงตามลำดับเวลา (เวลา hardcode ตาม demo)
+const MEAL_SLOTS = [
+  { key:'breakfast', icon:'🌅', name:'มื้อเช้า',  time:'7:00 น.',  hour:7  },
+  { key:'lunch',     icon:'🌞', name:'มื้อเที่ยง', time:'12:00 น.', hour:12 },
+  { key:'dinner',    icon:'🌆', name:'มื้อเย็น',   time:'18:00 น.', hour:18 },
+  { key:'bedtime',   icon:'🌙', name:'ก่อนนอน',   time:'21:00 น.', hour:21 },
+];
+
+// จัด dose ที่ meal_anchor ว่าง/all/null เข้ามื้อตาม scheduled_time
+function inferMealKey(dose) {
+  const a = (dose.meal_anchor || '').toLowerCase();
+  if (a === 'breakfast' || a === 'lunch' || a === 'dinner' || a === 'bedtime') return a;
+  // fallback: ใช้ชั่วโมงจาก scheduled_time หาว่ามื้อไหนใกล้สุด
+  const h = parseInt((dose.scheduled_time || '00:00').slice(0,2), 10);
+  if (h < 10) return 'breakfast';
+  if (h < 15) return 'lunch';
+  if (h < 20) return 'dinner';
+  return 'bedtime';
+}
+
+// สรุป status ของทั้งมื้อจาก dose หลายตัว
+// taken/late = กินแล้ว · pending = รอ · missed = ขาด
+function summarizeMealStatus(meds, slotHour) {
+  if (meds.length === 0) return { cls:'confirmed', label:'✓ เช็คแล้ว' };
+  const isTaken = d => d.status === 'taken' || d.status === 'late';
+  if (meds.every(isTaken)) {
+    return { cls:'confirmed', label:`✓ ครบ ${meds.length} ตัว` };
+  }
+  if (meds.some(d => d.status === 'missed')) {
+    const n = meds.filter(d => d.status === 'missed').length;
+    return { cls:'missed', label:`⚠️ ขาด ${n} ตัว` };
+  }
+  // ยังมี pending → นับ "อีก X ชม." จากเวลามื้อ (hardcode hour) เทียบเวลาปัจจุบัน
+  const now = new Date();
+  const hoursLeft = slotHour - now.getHours() - (now.getMinutes() / 60);
+  if (hoursLeft > 0) {
+    return { cls:'pending', label:`⏰ อีก ${Math.ceil(hoursLeft)} ชม.` };
+  }
+  // เลยเวลาแล้วแต่ยัง pending (ยังไม่ถึงรอบ missed)
+  return { cls:'pending', label:'⏰ ถึงเวลาแล้ว' };
+}
 
 function renderTodayDoses(doses) {
   const list = document.getElementById('todayList');
   list.innerHTML = '';
-  if (!doses || doses.length === 0) {
-    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-light);">ไม่มียาวันนี้</div>';
-    return;
-  }
-  doses.forEach(dose => {
-    const st = STATUS_MAP[dose.status] || STATUS_MAP.pending;
-    const time = (dose.scheduled_time || '').slice(0,5);
-    const tablets = parseFloat(dose.tablets_per_dose || 0);
-    const tabStr = tablets ? `${tablets % 1 === 0 ? tablets : tablets} เม็ด` : '';
+
+  // group dose เข้ามื้อ
+  const byMeal = { breakfast:[], lunch:[], dinner:[], bedtime:[] };
+  (doses || []).forEach(d => { byMeal[inferMealKey(d)].push(d); });
+
+  // render ทุกมื้อ (แสดงครบ 4 มื้อแม้ไม่มียา — เหมือน demo)
+  MEAL_SLOTS.forEach(slot => {
+    const meds = byMeal[slot.key];
+    const st = summarizeMealStatus(meds, slot.hour);
+
+    // ชื่อยารวมในมื้อ
+    let medsHtml;
+    if (meds.length === 0) {
+      medsHtml = '<div class="meal-meds" style="color:var(--ink-light);font-style:italic;">ไม่มียาในมื้อนี้</div>';
+    } else {
+      const names = meds.map(d => {
+        const tablets = parseFloat(d.tablets_per_dose || 0);
+        const tabStr = tablets ? ` (${tablets % 1 === 0 ? tablets : tablets} เม็ด)` : '';
+        return `${d.drug_name || d.drug_name_en || 'ยา'}${tabStr}`;
+      }).join(', ');
+      medsHtml = `<div class="meal-meds">${names}</div>`;
+    }
+
     const row = document.createElement('div');
     row.className = 'meal-row';
     row.innerHTML = `
-      <div class="dose-time-badge">${time}</div>
+      <div class="meal-icon-big">${slot.icon}</div>
       <div class="meal-info">
-        <div class="meal-name">${dose.drug_name || dose.drug_name_en || 'ยา'}</div>
-        <div class="meal-meds">${dose.dose_mg||''} ${dose.dose_unit||''} ${tabStr ? '· '+tabStr : ''}</div>
+        <div class="meal-name">${slot.name}</div>
+        <div class="meal-time">${slot.time}</div>
+        ${medsHtml}
       </div>
       <div class="meal-status ${st.cls}">${st.label}</div>
     `;
