@@ -315,6 +315,81 @@ h1, h2, h3 {
   color: var(--red);
 }
 
+/* === MEAL CARD (แยกรายมื้อ + รายเม็ด) === */
+.meal-list {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.meal-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.meal-card-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.meal-card .meal-icon-big { font-size: 30px; }
+.dose-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dose-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+.dose-item.missed { background: var(--red-soft); }
+.dose-item.late   { background: var(--yellow-soft); }
+.dose-check {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+  color: white;
+}
+.dose-check.taken   { background: var(--green); }
+.dose-check.late    { background: var(--yellow); }
+.dose-check.missed  { background: var(--red); }
+.dose-check.pending {
+  background: transparent;
+  border: 1.5px solid var(--line);
+  color: var(--ink-light);
+}
+.dose-name {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink);
+}
+.dose-item.missed .dose-name { color: var(--red); }
+.dose-item.late .dose-name   { color: #B45309; }
+.dose-qty {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-light);
+  white-space: nowrap;
+}
+.dose-item.missed .dose-qty { color: var(--red); }
+.dose-item.late .dose-qty   { color: #B45309; }
+.dose-empty {
+  font-size: 13px;
+  color: var(--ink-light);
+  font-style: italic;
+  padding: 4px 2px;
+}
+
 /* WEEK CARDS */
 .week-cards {
   display: grid;
@@ -900,6 +975,19 @@ function summarizeMealStatus(meds, slotHour) {
   return { cls:'pending', label:'⏰ ถึงเวลาแล้ว' };
 }
 
+// status รายเม็ด → ไอคอน + class แถว
+const DOSE_STATUS = {
+  taken:   { cls:'taken',   icon:'✓', label:'กินแล้ว' },
+  late:    { cls:'late',    icon:'⏱', label:'กินช้า' },
+  missed:  { cls:'missed',  icon:'✕', label:'ขาด' },
+  pending: { cls:'pending', icon:'—', label:'รอ' },
+};
+
+function tabletStr(d) {
+  const t = parseFloat(d.tablets_per_dose || 0);
+  return t ? `${t % 1 === 0 ? t : t} เม็ด` : '';
+}
+
 function renderTodayDoses(doses) {
   const list = document.getElementById('todayList');
   list.innerHTML = '';
@@ -908,36 +996,44 @@ function renderTodayDoses(doses) {
   const byMeal = { breakfast:[], lunch:[], dinner:[], bedtime:[] };
   (doses || []).forEach(d => { byMeal[inferMealKey(d)].push(d); });
 
-  // render ทุกมื้อ (แสดงครบ 4 มื้อแม้ไม่มียา — เหมือน demo)
+  // render ทุกมื้อเป็น card แยก (แสดงครบ 4 มื้อแม้ไม่มียา)
   MEAL_SLOTS.forEach(slot => {
     const meds = byMeal[slot.key];
     const st = summarizeMealStatus(meds, slot.hour);
 
-    // ชื่อยารวมในมื้อ
-    let medsHtml;
+    // รายการยาแยกแถว — ชื่อซ้าย / จำนวนขวา + ไอคอน status
+    let itemsHtml;
     if (meds.length === 0) {
-      medsHtml = '<div class="meal-meds" style="color:var(--ink-light);font-style:italic;">ไม่มียาในมื้อนี้</div>';
+      itemsHtml = '<div class="dose-empty">ไม่มียาในมื้อนี้</div>';
     } else {
-      const names = meds.map(d => {
-        const tablets = parseFloat(d.tablets_per_dose || 0);
-        const tabStr = tablets ? ` (${tablets % 1 === 0 ? tablets : tablets} เม็ด)` : '';
-        return `${d.drug_name || d.drug_name_en || 'ยา'}${tabStr}`;
-      }).join(', ');
-      medsHtml = `<div class="meal-meds">${names}</div>`;
+      itemsHtml = meds.map(d => {
+        const ds = DOSE_STATUS[d.status] || DOSE_STATUS.pending;
+        const name = d.drug_name || d.drug_name_en || 'ยา';
+        const tab = tabletStr(d);
+        return `
+          <div class="dose-item ${ds.cls}">
+            <span class="dose-check ${ds.cls}">${ds.icon}</span>
+            <span class="dose-name">${name}</span>
+            <span class="dose-qty">${tab}</span>
+          </div>`;
+      }).join('');
     }
 
-    const row = document.createElement('div');
-    row.className = 'meal-row';
-    row.innerHTML = `
-      <div class="meal-icon-big">${slot.icon}</div>
-      <div class="meal-info">
-        <div class="meal-name">${slot.name}</div>
-        <div class="meal-time">${slot.time}</div>
-        ${medsHtml}
+    const countStr = meds.length ? ` · ${meds.length} รายการ` : '';
+    const card = document.createElement('div');
+    card.className = 'meal-card';
+    card.innerHTML = `
+      <div class="meal-card-head">
+        <div class="meal-icon-big">${slot.icon}</div>
+        <div class="meal-info">
+          <div class="meal-name">${slot.name}</div>
+          <div class="meal-time">${slot.time}${countStr}</div>
+        </div>
+        <div class="meal-status ${st.cls}">${st.label}</div>
       </div>
-      <div class="meal-status ${st.cls}">${st.label}</div>
+      <div class="dose-items">${itemsHtml}</div>
     `;
-    list.appendChild(row);
+    list.appendChild(card);
   });
 }
 
