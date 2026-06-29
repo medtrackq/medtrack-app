@@ -661,10 +661,22 @@ h1, h2, h3 {
       </div>
     </div>
 
+    <!-- INSIGHTS (primary only) -->
+    <div class="section hidden" id="insightsSection">
+      <div class="section-title"><h2>💡 สิ่งที่ควรรู้</h2></div>
+      <div id="insightsList"></div>
+    </div>
+
     <!-- APPOINTMENT -->
     <div class="section" id="apptSection">
       <div class="section-title"><h2>📅 นัดหมายครั้งถัดไป</h2></div>
       <div class="appt-card" id="apptCard"></div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="section" id="actionsSection">
+      <div class="section-title"><h2>⚡ การกระทำ</h2></div>
+      <div class="quick-actions" id="actionsList"></div>
     </div>
 
   </div>
@@ -781,8 +793,69 @@ function render(d) {
     renderTrend(d.weeks);
   }
 
+  // insights (primary only)
+  renderInsights(d.insights, d.tier);
+
   // appointment
   renderAppointment(d.appointment);
+
+  // quick actions
+  renderActions(d.patient);
+}
+
+function renderInsights(insights, tier) {
+  const section = document.getElementById('insightsSection');
+  const list = document.getElementById('insightsList');
+  if (tier === 'secondary' || !insights || insights.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+  section.classList.remove('hidden');
+  list.innerHTML = '';
+  insights.forEach(ins => {
+    const card = document.createElement('div');
+    card.className = 'insight-card';
+    // type good = เขียว, warn = เหลือง/ทอง (default insight-card สีทอง)
+    if (ins.type === 'good') {
+      card.style.borderLeftColor = 'var(--green)';
+    }
+    let body = ins.detail || '';
+    if (ins.suggestion) body += `<br><span style="color:var(--ink-light);">${ins.suggestion}</span>`;
+    card.innerHTML = `
+      <div class="insight-icon">${ins.icon || '💡'}</div>
+      <div class="insight-title"${ins.type === 'good' ? ' style="color:var(--green)"' : ''}>${ins.title}</div>
+      <div class="insight-body">${body}</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function renderActions(patient) {
+  const list = document.getElementById('actionsList');
+  list.innerHTML = '';
+  const name = patient.name || 'คนไข้';
+  const actions = [];
+
+  // โทร (ถ้ามีเบอร์)
+  if (patient.phone) {
+    actions.push({ icon:'📞', text:`โทรหา${name}`, onclick:`window.location.href='tel:${patient.phone}'` });
+  }
+  // ส่ง LINE (ถ้ามี line_user_id — เปิด LINE)
+  if (patient.line_user_id) {
+    actions.push({ icon:'💬', text:'ส่ง LINE', onclick:`window.open('https://line.me/R/','_blank')` });
+  }
+  // ดูประวัติเต็ม
+  actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
+  // นัดหมอทั้งหมด
+  actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
+
+  actions.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn';
+    btn.setAttribute('onclick', a.onclick);
+    btn.innerHTML = `<div class="action-icon">${a.icon}</div><div class="action-text">${a.text}</div>`;
+    list.appendChild(btn);
+  });
 }
 
 const STATUS_MAP = {
