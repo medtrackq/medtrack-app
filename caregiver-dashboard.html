@@ -15,7 +15,7 @@
   --ink-light: #5A6A7A;
   --paper: #FAFAF7;
   --paper-warm: #F4EDE0;
-  --bg: #F5F6FA;
+  --bg: #EEF1F6;
   --card: #FFFFFF;
   --accent: #C8392F;
   --accent-soft: #E76F5A;
@@ -28,11 +28,17 @@
   --red: #DC2626;
   --red-soft: #FEE2E2;
   --line: #E5E7EB;
-  --shadow: 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
+  --card-border: 1px solid #E3E8EF;
+  --shadow: 0 1px 4px rgba(16,40,64,0.10);
+  --shadow-lg: 0 4px 16px rgba(16,40,64,0.14);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* แบบ B: การ์ดขาวทุกอันมีขอบบาง + เงานุ่ม ให้เด้งจากพื้นเทา */
+.hero-msg, .qstat, .week-card, .trend-card, .insight-card, .appt-card, .action-btn {
+  border: var(--card-border);
+}
 html, body {
   font-family: 'Sarabun', sans-serif;
   background: var(--bg);
@@ -327,6 +333,7 @@ h1, h2, h3 {
 }
 .meal-card {
   background: white;
+  border: var(--card-border);
   border-radius: 16px;
   box-shadow: var(--shadow);
   padding: 16px;
