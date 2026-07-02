@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack Team Building Roadmap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Sarabun", sans-serif;
+    background: #EEF1F6;
+    padding: 20px 16px;
+    color: #1a2332;
+    line-height: 1.6;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(20, 40, 80, 0.06);
+  }
+  h1 { font-size: 20px; color: #0a1929; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b7a90; margin-bottom: 12px; }
+
+  .card {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(20, 40, 80, 0.06);
+  }
+
+  h2 {
+    font-size: 16px;
+    color: #0a1929;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eef1f6;
+  }
+
+  .warning {
+    background: #FFEBEE;
+    border-left: 3px solid #C62828;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #6a1414;
+    margin-bottom: 16px;
+  }
+  .warning strong { color: #C62828; }
+
+  .self-assessment {
+    background: #FFF8E1;
+    border-left: 3px solid #F9A825;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #5c4a1a;
+    margin: 12px 0;
+  }
+
+  /* Priority Matrix */
+  .matrix {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  @media (max-width: 500px) {
+    .matrix { grid-template-columns: 1fr; }
+  }
+  .quad {
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    border: 1px solid;
+  }
+  .quad h3 { font-size: 13px; margin-bottom: 6px; }
+  .quad ul { list-style: none; padding: 0; }
+  .quad li { padding: 3px 0 3px 16px; position: relative; }
+  .quad li:before { content: "•"; position: absolute; left: 4px; }
+
+  .q-hire { background: #E8F5E9; border-color: #81C784; color: #1b5e20; }
+  .q-consider { background: #E3F2FD; border-color: #90CAF9; color: #0d47a1; }
+  .q-later { background: #FFF3E0; border-color: #FFB74D; color: #e65100; }
+  .q-avoid { background: #FFEBEE; border-color: #EF9A9A; color: #b71c1c; }
+
+  /* Role cards */
+  .role {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .role-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .role-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0a1929;
+  }
+  .role-subtitle {
+    font-size: 11px;
+    color: #6b7a90;
+    margin-top: 2px;
+  }
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .b-phase { background: #E8F4FD; color: #1565C0; }
+  .b-type-ft { background: #E1F5E1; color: #2E7D32; }
+  .b-type-contract { background: #FFF3E0; color: #E65100; }
+  .b-type-advisor { background: #F3E5F5; color: #6A1B9A; }
+  .b-type-cofounder { background: #FFEBEE; color: #C62828; }
+  .b-priority-1 { background: #FFCDD2; color: #B71C1C; }
+  .b-priority-2 { background: #FFE0B2; color: #E65100; }
+  .b-priority-3 { background: #C8E6C9; color: #1B5E20; }
+
+  .role-section { margin: 8px 0; font-size: 12px; }
+  .role-label { color: #6b7a90; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .role-value { color: #2a3a50; margin-top: 3px; line-height: 1.5; }
+
+  .cost {
+    background: #f5f7fa;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .cost strong { color: #0a1929; }
+
+  /* Comparison table */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 8px 0;
+  }
+  .compare-table th, .compare-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #eef1f6;
+    vertical-align: top;
+  }
+  .compare-table th {
+    background: #f5f7fa;
+    color: #4a5a70;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .anti-pattern {
+    background: #FCE4EC;
+    border-left: 3px solid #C2185B;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: #6d1a3d;
+  }
+  .anti-pattern strong { color: #C2185B; }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: #6b7a90;
+    padding: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>👥 MedTrack Team Building Roadmap</h1>
+  <div class="subtitle">Solo founder → Team scaling · เมื่อไหร่ควรจ้างใคร ทำอะไร</div>
+
+  <div class="warning">
+    <strong>Reality check ก่อนอ่าน:</strong> พี่ทำงาน 14+ ชม./วัน คนเดียว เป็นสัญญาณ burnout ชัดเจน
+    การจ้างคนไม่ใช่ luxury แต่คือ survival ของบริษัท
+    แต่ก็ต้องระวังจ้างเร็วเกินไปเพราะจะเผาเงินหมดก่อนถึง product-market fit
+  </div>
+</header>
+
+<!-- Self Assessment -->
+<div class="card">
+  <h2>🪞 Self-Assessment: จุดแข็ง–จุดอ่อนของพี่</h2>
+
+  <table class="compare-table">
+    <tr>
+      <th style="width: 50%">✓ จุดแข็ง (ทำเองต่อ)</th>
+      <th style="width: 50%">✗ จุดอ่อน (ต้องหาคนช่วย)</th>
+    </tr>
+    <tr>
+      <td>
+        <strong>AI/OCR engineering</strong><br>
+        <small>Sonnet 4.5, prompt engineering, safety net logic — ที่พี่ทำได้จริง</small>
+      </td>
+      <td>
+        <strong>UX/UI design</strong><br>
+        <small>MedTrack UI iterate หลายครั้ง (finalize Style B) — ควรมี designer จริงจัง</small>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Backend architecture</strong><br>
+        <small>Node.js + Postgres 8 tables + 5 cron — ยังจัดการเองไหว</small>
+      </td>
+      <td>
+        <strong>Frontend polish + accessibility</strong><br>
+        <small>ต้องปรับใหญ่โดยเฉพาะสำหรับผู้สูงอายุ (target user)</small>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>B2B hospital sales</strong><br>
+        <small>ประสบการณ์ขายเครื่องมือแพทย์ให้ รพ.รัฐ — น้อยคนมี</small>
+      </td>
+      <td>
+        <strong>B2C marketing / LINE community</strong><br>
+        <small>ยังไม่มีเลย — ต้องเริ่มสร้างชุมชนผู้ใช้</small>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Pharmacy domain knowledge</strong><br>
+        <small>เภสัชกรใบประกอบ — credibility กับ รพ. + patients</small>
+      </td>
+      <td>
+        <strong>Clinical validation (แพทย์)</strong><br>
+        <small>ต้องมีแพทย์ endorse ระบบ reminder สำหรับ HCP audience</small>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <strong>Product vision + AI product sense</strong><br>
+        <small>OCR pattern recognition ข้าม 5 products — เห็น pattern จริง</small>
+      </td>
+      <td>
+        <strong>Legal/Regulatory (medical device, PDPA)</strong><br>
+        <small>MedTrack อาจถูกจัดเป็น SaMD ที่ต้องขึ้นทะเบียน อย.</small>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- Priority Matrix -->
+<div class="card">
+  <h2>🎯 Priority Matrix: จ้างอะไรก่อน–หลัง</h2>
+
+  <div class="matrix">
+    <div class="quad q-hire">
+      <h3>🔥 จ้าง/หาเลยตอนนี้ (Phase 0–1)</h3>
+      <ul>
+        <li>Clinical Advisor (แพทย์) — equity/advisor</li>
+        <li>UX Designer — contractor per project</li>
+        <li>Business/BD Co-founder — equity</li>
+      </ul>
+    </div>
+    <div class="quad q-consider">
+      <h3>💭 พิจารณาช่วง Phase 2 (100–1k users)</h3>
+      <ul>
+        <li>Full-time Full-stack Developer</li>
+        <li>Customer Success (part-time)</li>
+        <li>Content/Community Manager</li>
+      </ul>
+    </div>
+    <div class="quad q-later">
+      <h3>⏳ ค่อยจ้างที่ Phase 3+ (1k+ users)</h3>
+      <ul>
+        <li>Senior Backend Engineer</li>
+        <li>Data Analyst / RWE Specialist</li>
+        <li>Sales Lead (B2B รพ.)</li>
+      </ul>
+    </div>
+    <div class="quad q-avoid">
+      <h3>⛔ อย่าเพิ่งจ้าง (Anti-patterns)</h3>
+      <ul>
+        <li>DevOps engineer (Railway จัดการให้)</li>
+        <li>CFO (ใช้บัญชี freelance พอ)</li>
+        <li>Marketing agency (product ยังไม่พร้อม)</li>
+        <li>Junior devs หลายคน (จัดการยาก)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 1 Roles -->
+<div class="card">
+  <h2>Phase 0–1 (ตอนนี้–6 เดือน): 3 บทบาทที่ต้องหาก่อน</h2>
+
+  <!-- Clinical Advisor -->
+  <div class="role" style="border-left: 4px solid #6A1B9A;">
+    <div class="role-header">
+      <div>
+        <div class="role-title">1. Clinical Advisor (แพทย์)</div>
+        <div class="role-subtitle">แพทย์อายุรกรรม หรือ แพทย์เวชศาสตร์ครอบครัว</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-priority-1">P1</span>
+        <span class="badge b-type-advisor">Advisor</span>
+        <span class="badge b-phase">Phase 0–1</span>
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">หน้าที่</div>
+      <div class="role-value">
+        • Validate clinical logic ของระบบ reminder (drug interactions, timing rules)<br>
+        • Review OCR safety nets (Warfarin, Depakine, Florinef edge cases ที่พี่ทำอยู่)<br>
+        • Endorse ระบบให้ credibility กับ รพ./ผู้ป่วย<br>
+        • Connect เข้าเครือข่ายแพทย์ + รพ.
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">ทำไมสำคัญ</div>
+      <div class="role-value">
+        พี่เป็นเภสัชกร มี credibility ระดับหนึ่ง แต่การมีแพทย์ร่วมทีมจะเปิดประตูเข้า รพ.
+        และลดความเสี่ยงถ้าโดนถามเรื่อง medical accuracy
+      </div>
+    </div>
+
+    <div class="cost">
+      <strong>Cost:</strong> 0.5–1% equity เป็น advisor / หรือ 5–15k/mo retainer part-time /
+      หรือ co-founder 5–15% equity ถ้าเป็น clinical co-founder เต็มตัว
+    </div>
+
+    <div class="self-assessment">
+      <strong>How to find:</strong> เริ่มจากเครือข่ายเภสัชกร รพ.รัฐ ที่พี่มี ขอ intro
+      หา residents หรือ fellows ที่สนใจ health tech (มีเยอะขึ้นในไทย)
+    </div>
+  </div>
+
+  <!-- UX Designer -->
+  <div class="role" style="border-left: 4px solid #F57C00;">
+    <div class="role-header">
+      <div>
+        <div class="role-title">2. UX/UI Designer</div>
+        <div class="role-subtitle">Designer ที่เข้าใจ senior users + LINE ecosystem</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-priority-1">P1</span>
+        <span class="badge b-type-contract">Contract</span>
+        <span class="badge b-phase">Phase 0–1</span>
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">หน้าที่</div>
+      <div class="role-value">
+        • Redesign frontend ทุกหน้า ให้เข้าถึงผู้สูงอายุได้จริง (font ใหญ่, contrast, tap targets)<br>
+        • Design system ให้ต่อยอดได้ (พี่เริ่ม Style B แล้ว — ต้อง formalize)<br>
+        • LIFF UX สำหรับ caregiver dashboard<br>
+        • Onboarding flow (จุดที่ retention มักตาย)
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">ทำไมสำคัญ</div>
+      <div class="role-value">
+        พี่ iterate UI หลายครั้ง (Style A → B, mockup ก่อน code) เพราะรู้ตัวว่าไม่ใช่ designer
+        การจ้าง designer 1 project (~40–60 ชม.) จะประหยัดเวลาพี่ 100+ ชม.
+      </div>
+    </div>
+
+    <div class="cost">
+      <strong>Cost:</strong> 40k–80k บาท ต่อ project (redesign หลัก) /
+      หรือ 800–1,500 บาท/ชม. contractor
+    </div>
+
+    <div class="self-assessment">
+      <strong>How to find:</strong> Dribbble, Behance, หรือ Thai design community
+      (เช่น Design Thailand, PIXER) — ขอ portfolio ที่มี health/senior focus
+    </div>
+  </div>
+
+  <!-- Business Co-founder -->
+  <div class="role" style="border-left: 4px solid #C62828;">
+    <div class="role-header">
+      <div>
+        <div class="role-title">3. Business/BD Co-founder</div>
+        <div class="role-subtitle">คนที่เอา MedTrack ไปขาย + สร้าง partnership</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-priority-2">P2</span>
+        <span class="badge b-type-cofounder">Co-founder</span>
+        <span class="badge b-phase">Phase 1–2</span>
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">หน้าที่</div>
+      <div class="role-value">
+        • เอา MedTrack ขายให้ รพ. + ประกัน (พี่มี domain แต่ไม่มีเวลา)<br>
+        • หา pilot partners + user acquisition<br>
+        • Grant applications (NIA, Depa, etc.) — พี่ทำเองอยู่ตอนนี้<br>
+        • Investor relations + fundraising<br>
+        • Business development + partnerships
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">ทำไมสำคัญ</div>
+      <div class="role-value">
+        Solo founder ที่ทำทั้ง engineering + business = ไม่มีใครทำงานได้ดี
+        พี่มี technical skills แข็ง → หา business partner ที่มี hospital sales experience
+        (นี่คือ pattern ของ Thai health tech ที่ประสบความสำเร็จ: technical + medical/business duo)
+      </div>
+    </div>
+
+    <div class="cost">
+      <strong>Cost:</strong> 15–35% equity (ขึ้นกับ commitment และ track record)<br>
+      <strong>Vesting:</strong> 4 ปี พร้อม 1 ปี cliff (มาตรฐาน)
+    </div>
+
+    <div class="anti-pattern">
+      <strong>Anti-pattern:</strong> จ้าง sales เป็น employee ที่ Phase นี้ — ไม่มี product-market fit ยัง
+      sales จะไม่รู้จะขายอะไรและ burnout เร็ว co-founder ที่มี skin in the game จะยอมทน iteration
+    </div>
+
+    <div class="self-assessment">
+      <strong>How to find:</strong> เครือข่าย ex-medical rep, pharma marketing, health startup community,
+      Techsauce/Techstars alumni ที่ pivot จาก corporate
+    </div>
+  </div>
+</div>
+
+<!-- Phase 2 Roles -->
+<div class="card">
+  <h2>Phase 2 (100–1,000 users): เริ่มสร้างทีมจริง</h2>
+
+  <div class="role" style="border-left: 4px solid #388E3C;">
+    <div class="role-header">
+      <div>
+        <div class="role-title">4. Full-stack Developer</div>
+        <div class="role-subtitle">Mid-level ที่ทำงาน Node.js + Postgres + LIFF ได้</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-priority-1">P1</span>
+        <span class="badge b-type-ft">Full-time</span>
+        <span class="badge b-phase">Phase 2</span>
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">หน้าที่</div>
+      <div class="role-value">
+        • รับงาน frontend/backend maintenance ทั่วไป<br>
+        • Feature development ตาม roadmap (Layer 8, Reports, etc.)<br>
+        • Bug fixing + user support technical<br>
+        • QA + testing (พี่ไม่มี test coverage เลยตอนนี้)<br>
+        • ปลดปล่อยพี่ให้โฟกัส AI/OCR + strategy
+      </div>
+    </div>
+
+    <div class="cost">
+      <strong>Cost:</strong> 60k–100k บาท/เดือน (Mid Bangkok) + BOI/สปส.<br>
+      <strong>Annual total:</strong> ~900k–1.4M บาท/ปี รวมสวัสดิการ
+    </div>
+
+    <div class="self-assessment">
+      <strong>เกณฑ์เลือก:</strong> ทำ Node.js + Postgres ได้ครบวงจร มีประสบการณ์ debug production issues
+      สำคัญกว่า framework knowledge = "ownership mindset"
+    </div>
+  </div>
+
+  <div class="role" style="border-left: 4px solid #1976D2;">
+    <div class="role-header">
+      <div>
+        <div class="role-title">5. Customer Success / Community</div>
+        <div class="role-subtitle">Part-time หรือ full-time ตามจำนวน users</div>
+      </div>
+      <div class="badges">
+        <span class="badge b-priority-2">P2</span>
+        <span class="badge b-type-ft">Part-time</span>
+        <span class="badge b-phase">Phase 2</span>
+      </div>
+    </div>
+
+    <div class="role-section">
+      <div class="role-label">หน้าที่</div>
+      <div class="role-value">
+        • ตอบ LINE OA @785gznlp เอง (ตอนนี้พี่ตอบเอง)<br>
+        • Onboarding user ใหม่ + สร้าง tutorial content<br>
+        • Collect feedback + bug reports<br>
+        • สร้าง community ผู้ป่วย/caregiver บน LINE OpenChat หรือ Facebook Group<br>
+        • Content marketing (บทความดูแลผู้ป่วย NCD)
+      </div>
+    </div>
+
+    <div class="cost">
+      <strong>Cost:</strong> 20k–35k/mo (part-time เภสัชกร/พยาบาลจบใหม่) —
+      คุ้มมากถ้าเลือกคนที่มี medical background
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3+ Roles -->
+<div class="card">
+  <h2>Phase 3+ (1,000+ users): Scale team</h2>
+
+  <table class="compare-table">
+    <tr>
+      <th>Role</th>
+      <th>เมื่อไหร่</th>
+      <th>Cost/mo</th>
+    </tr>
+    <tr>
+      <td><strong>Senior Backend Engineer</strong><br><small>Scale infra, optimize AI cost, migrate DB</small></td>
+      <td>Phase 3</td>
+      <td>120k–180k</td>
+    </tr>
+    <tr>
+      <td><strong>Data Analyst / RWE Specialist</strong><br><small>สร้าง dashboard วิเคราะห์ adherence data, RWE reports</small></td>
+      <td>Phase 3</td>
+      <td>60k–100k</td>
+    </tr>
+    <tr>
+      <td><strong>Sales Lead (B2B รพ./ประกัน)</strong><br><small>ปิด enterprise deals</small></td>
+      <td>Phase 3</td>
+      <td>50k–80k + commission</td>
+    </tr>
+    <tr>
+      <td><strong>Regulatory/Compliance</strong><br><small>PDPA, อย. SaMD, ISO 27001</small></td>
+      <td>Phase 4</td>
+      <td>80k–150k</td>
+    </tr>
+    <tr>
+      <td><strong>DevOps Engineer</strong><br><small>เมื่อย้ายจาก Railway → AWS/GCP</small></td>
+      <td>Phase 4–5</td>
+      <td>100k–160k</td>
+    </tr>
+    <tr>
+      <td><strong>Head of Product</strong><br><small>Own product roadmap + team</small></td>
+      <td>Phase 4–5</td>
+      <td>150k–250k</td>
+    </tr>
+    <tr>
+      <td><strong>CFO / Finance Lead</strong><br><small>เมื่อ Series A+</small></td>
+      <td>Phase 5</td>
+      <td>150k–250k</td>
+    </tr>
+  </table>
+</div>
+
+<!-- Realistic Options -->
+<div class="card">
+  <h2>💡 ทางเลือกก่อนจ้าง full-time (สำคัญ)</h2>
+
+  <div class="role" style="border-left: 4px solid #1976D2;">
+    <div class="role-title">Option A: Contractor Model</div>
+    <div class="role-value" style="margin-top: 8px; font-size: 12px;">
+      จ้าง freelance/agency เป็น project-based สำหรับ UX, mobile testing, content creation<br>
+      <strong>ข้อดี:</strong> ไม่มี fixed cost, ยืดหยุ่น<br>
+      <strong>ข้อเสีย:</strong> ไม่มี long-term commitment, quality ต่างกันมาก
+    </div>
+  </div>
+
+  <div class="role" style="border-left: 4px solid #6A1B9A;">
+    <div class="role-title">Option B: Advisor + Equity Model</div>
+    <div class="role-value" style="margin-top: 8px; font-size: 12px;">
+      หา 2–4 advisors ที่มี expertise ต่างกัน (clinical, business, technical, regulatory) — ให้ 0.25–1% equity/คน<br>
+      <strong>ข้อดี:</strong> ไม่มี cash outflow, network valuable<br>
+      <strong>ข้อเสีย:</strong> commitment ต่ำ (ปกติ 2–4 ชม./เดือน)
+    </div>
+  </div>
+
+  <div class="role" style="border-left: 4px solid #C62828;">
+    <div class="role-title">Option C: Co-founder Model (แนะนำที่สุดสำหรับ Phase นี้)</div>
+    <div class="role-value" style="margin-top: 8px; font-size: 12px;">
+      หา co-founder 1 คนที่มี business/clinical skills complementary<br>
+      <strong>ข้อดี:</strong> shared ownership, ทำงานเต็มที่, no cash out<br>
+      <strong>ข้อเสีย:</strong> ต้องแบ่ง equity 15–40%, ต้องหา fit ที่ใช่ (ยาก)
+    </div>
+  </div>
+
+  <div class="role" style="border-left: 4px solid #E65100;">
+    <div class="role-title">Option D: Internship / Fresh Grad</div>
+    <div class="role-value" style="margin-top: 8px; font-size: 12px;">
+      รับนักศึกษาเภสัช/แพทย์/CS เป็น intern (paid stipend 10–15k/mo)<br>
+      <strong>ข้อดี:</strong> ถูก, ได้ potential future hire<br>
+      <strong>ข้อเสีย:</strong> ต้องใช้เวลา training มาก (ตรงข้ามกับสิ่งที่พี่ต้องการ)
+    </div>
+  </div>
+</div>
+
+<!-- Anti-Patterns -->
+<div class="card">
+  <h2>⛔ Anti-Patterns ที่ Solo Founder มักผิดพลาด</h2>
+
+  <div class="anti-pattern">
+    <strong>1. จ้าง full-time ก่อนมี revenue</strong> — เผา runway หมดใน 6–12 เดือน
+    ก่อนเจอ product-market fit
+  </div>
+
+  <div class="anti-pattern">
+    <strong>2. จ้าง junior หลายคนแทน senior 1 คน</strong> — พี่จะกลายเป็น manager
+    แทนที่จะเป็น builder เสียเวลามากกว่าเดิม
+  </div>
+
+  <div class="anti-pattern">
+    <strong>3. จ้างเพราะเหนื่อย ไม่ใช่เพราะจำเป็น</strong> — จะได้ hire ที่ไม่ fit
+    หา contractor ช่วยเฉพาะเรื่องดีกว่าจ้างเต็มตัว
+  </div>
+
+  <div class="anti-pattern">
+    <strong>4. ไม่เขียน equity vesting agreement</strong> — co-founder ที่ออกก่อนถือ equity ไปมหาศาล
+    เขียน 4-year vesting + 1-year cliff เสมอ
+  </div>
+
+  <div class="anti-pattern">
+    <strong>5. จ้างเพื่อน/ญาติเพราะสะดวก</strong> — ความสัมพันธ์จะเสีย ถ้า fire ยาก
+    เก็บเพื่อนไว้เป็น advisor/contractor แทน
+  </div>
+
+  <div class="anti-pattern">
+    <strong>6. Delegate ก่อน document</strong> — ถ้าไม่มี process/docs ชัดเจน คนใหม่จะทำผิด
+    พี่จะ debug 2 เท่าและกลับมาทำเองสุดท้าย
+  </div>
+</div>
+
+<!-- Immediate Action -->
+<div class="card">
+  <h2>🎯 Action Items สำหรับพี่ตอนนี้</h2>
+
+  <ol style="padding-left: 20px; font-size: 13px; line-height: 1.8;">
+    <li><strong>สัปดาห์นี้:</strong> เขียน job description 1 หน้าสำหรับ Clinical Advisor + Business Co-founder
+      เพื่อ clarify ในหัวว่าต้องการอะไร</li>
+    <li><strong>เดือนนี้:</strong> คุยกับแพทย์ในเครือข่ายพี่ 3–5 คน หา clinical advisor candidate</li>
+    <li><strong>เดือนนี้:</strong> โพสต์หา UX designer contractor (Dribbble/Behance)
+      สำหรับ redesign frontend project เดียว</li>
+    <li><strong>2–3 เดือน:</strong> เข้าร่วม startup event (Techsauce, Slush Asia)
+      หา business co-founder candidate</li>
+    <li><strong>ต่อเนื่อง:</strong> เตรียม equity structure + shareholder agreement กับทนาย
+      ก่อนคุย co-founder จริง</li>
+  </ol>
+
+  <div class="warning" style="margin-top: 16px;">
+    <strong>Burnout warning:</strong> พี่ทำงาน 14+ ชม./วันมานาน ก่อนหา co-founder จริง
+    ควรพัก 1–2 สัปดาห์เพื่อกลับมามีพลังคุยเรื่อง vision กับ candidate ได้ชัดเจน
+    Founder ที่ burnout จะดึงคน commit สูงเข้าทีมยากมาก
+  </div>
+</div>
+
+<footer>
+  MedTrack Team Building Roadmap · v2026.07.02 · เตรียมโดย Claude สำหรับ bluecode.pro
+</footer>
+
+</div>
+</body>
+</html>

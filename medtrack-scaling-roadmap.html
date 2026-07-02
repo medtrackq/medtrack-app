@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack Scaling Roadmap</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Sarabun", sans-serif;
+    background: #EEF1F6;
+    padding: 20px 16px;
+    color: #1a2332;
+    line-height: 1.6;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(20, 40, 80, 0.06);
+  }
+  h1 { font-size: 20px; color: #0a1929; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #6b7a90; margin-bottom: 12px; }
+  .disclaimer {
+    background: #FFF8E1;
+    border-left: 3px solid #F9A825;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #5c4a1a;
+  }
+
+  .timeline {
+    position: relative;
+  }
+
+  .phase {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(20, 40, 80, 0.06);
+    position: relative;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef1f6;
+  }
+  .phase-num {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .phase-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0a1929;
+  }
+  .phase-meta {
+    font-size: 11px;
+    color: #6b7a90;
+    margin-top: 2px;
+  }
+
+  /* Phase colors */
+  .p0 .phase-num { background: #6b7a90; }
+  .p0 { border-left: 4px solid #6b7a90; }
+  .p1 .phase-num { background: #1976D2; }
+  .p1 { border-left: 4px solid #1976D2; }
+  .p2 .phase-num { background: #388E3C; }
+  .p2 { border-left: 4px solid #388E3C; }
+  .p3 .phase-num { background: #F57C00; }
+  .p3 { border-left: 4px solid #F57C00; }
+  .p4 .phase-num { background: #C62828; }
+  .p4 { border-left: 4px solid #C62828; }
+  .p5 .phase-num { background: #6A1B9A; }
+  .p5 { border-left: 4px solid #6A1B9A; }
+
+  .current-badge {
+    background: #E8F5E9;
+    color: #2E7D32;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  .section {
+    margin: 12px 0;
+  }
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4a5a70;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .section-content { font-size: 13px; color: #2a3a50; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 10px 0;
+  }
+  @media (max-width: 500px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .grid-item {
+    background: #f5f7fa;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+  .grid-item .label { color: #6b7a90; font-size: 10px; text-transform: uppercase; margin-bottom: 3px; }
+  .grid-item .value { color: #0a1929; font-weight: 600; font-size: 13px; }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .checklist li {
+    padding: 5px 0 5px 20px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .checklist li:before {
+    content: "▸";
+    position: absolute;
+    left: 4px;
+    color: #6b7a90;
+  }
+  .checklist li.done:before { content: "✓"; color: #388E3C; }
+  .checklist li.done { color: #6b7a90; text-decoration: line-through; }
+  .checklist li.risk:before { content: "⚠"; color: #F57C00; }
+
+  code {
+    background: #f5f7fa;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #d32f2f;
+    font-family: monospace;
+  }
+
+  .cost-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .cost-table th, .cost-table td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #eef1f6;
+  }
+  .cost-table th {
+    background: #f5f7fa;
+    color: #4a5a70;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+  .cost-table .total {
+    background: #FFF3E0;
+    font-weight: 700;
+    color: #E65100;
+  }
+
+  .decision-box {
+    background: #FFEBEE;
+    border-left: 3px solid #C62828;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #6a1414;
+  }
+  .decision-box strong { color: #C62828; }
+
+  .go-nogo {
+    background: #FFF8E1;
+    border-left: 3px solid #F9A825;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 12px;
+    color: #5c4a1a;
+  }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: #6b7a90;
+    padding: 16px;
+    margin-top: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🚂 MedTrack Scaling Roadmap</h1>
+  <div class="subtitle">Cloudflare × Railway × Anthropic API</div>
+  <div class="disclaimer">
+    <strong>Realistic view:</strong> พี่ตอนนี้อยู่ Phase 0 (test user 1 คน) ที่แสดงคือ realistic path ไม่ใช่ hype
+    ตัวเลขทั้งหมดเป็น estimate ต้อง validate ด้วยข้อมูลจริงหลังเปิด beta
+  </div>
+</header>
+
+<div class="timeline">
+
+<!-- PHASE 0 -->
+<div class="phase p0">
+  <div class="phase-header">
+    <div class="phase-num">0</div>
+    <div>
+      <div class="phase-title">Test & Validation <span class="current-badge">ตอนนี้อยู่ตรงนี้</span></div>
+      <div class="phase-meta">0–10 users · เดือน 0–2</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">Atom + user16</div></div>
+    <div class="grid-item"><div class="label">Infra Cost</div><div class="value">~$5/mo (~฿180)</div></div>
+    <div class="grid-item"><div class="label">Railway</div><div class="value">Hobby $5</div></div>
+    <div class="grid-item"><div class="label">Cloudflare</div><div class="value">ฟรี</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎯 เป้าหมายเฟสนี้</div>
+    <ul class="checklist">
+      <li class="done">Backend deploy บน Railway (v1.9.2)</li>
+      <li class="done">Frontend บน Cloudflare Pages</li>
+      <li class="done">Caregiver dashboard Steps 1–3</li>
+      <li>ทำ LIFF setup ให้เสร็จ</li>
+      <li>Real deployment test กับ Atom monitor user16</li>
+      <li>เสร็จ Layer 8 (Reports + ยาคืน)</li>
+      <li>Full history + appointment pages (ยัง placeholder)</li>
+    </ul>
+  </div>
+
+  <div class="go-nogo">
+    <strong>Go/No-Go เข้า Phase 1:</strong> ต้องมี test user จริง 3–5 คนใช้ครบ 2 สัปดาห์ ไม่มี bug ระดับ P0
+    และเห็น adherence data ที่ใช้งานได้จริง
+  </div>
+</div>
+
+<!-- PHASE 1 -->
+<div class="phase p1">
+  <div class="phase-header">
+    <div class="phase-num">1</div>
+    <div>
+      <div class="phase-title">Alpha — Friends & Family</div>
+      <div class="phase-meta">10–100 users · เดือน 2–5</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">10–100 real users</div></div>
+    <div class="grid-item"><div class="label">Infra Cost</div><div class="value">~$5–15/mo</div></div>
+    <div class="grid-item"><div class="label">API Cost (ถ้า 3 scan/user/mo)</div><div class="value">~฿700–7,000</div></div>
+    <div class="grid-item"><div class="label">รวม/เดือน</div><div class="value">~฿1,000–7,500</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔧 สิ่งที่ต้องทำ</div>
+    <ul class="checklist">
+      <li>ยังไม่ต้องอัป Railway plan</li>
+      <li>เริ่มทำ automated backup PostgreSQL (ทุกวัน export ไป R2/S3)</li>
+      <li>ตั้ง monitoring: Railway usage dashboard + Anthropic Console</li>
+      <li>Baseline cost per active user (สำคัญมาก)</li>
+      <li>เริ่ม Phase 1 ของ AI cost reduction (prompt trimming)</li>
+      <li class="risk">Railway DB ไม่มี SLA — backup routine สำคัญมาก</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📊 KPI ที่ต้อง track</div>
+    <ul class="checklist">
+      <li>Weekly Active Users (WAU)</li>
+      <li>Adherence rate (% taken/late vs. scheduled)</li>
+      <li>Cost per active user/month</li>
+      <li>Retention week 1, week 4</li>
+    </ul>
+  </div>
+
+  <div class="go-nogo">
+    <strong>Go/No-Go เข้า Phase 2:</strong> 50+ WAU ที่ใช้ต่อเนื่อง 4+ สัปดาห์, retention week 4 ≥ 40%,
+    ค่า API/user/mo ≤ ฿15
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div class="phase p2">
+  <div class="phase-header">
+    <div class="phase-num">2</div>
+    <div>
+      <div class="phase-title">Beta — Early Adopters</div>
+      <div class="phase-meta">100–1,000 users · เดือน 5–12</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">100–1,000 active</div></div>
+    <div class="grid-item"><div class="label">Railway</div><div class="value">Pro $20</div></div>
+    <div class="grid-item"><div class="label">API Cost (5 scan/user/mo)</div><div class="value">฿1,180–11,800</div></div>
+    <div class="grid-item"><div class="label">รวม/เดือน</div><div class="value">~฿2,000–13,000</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔧 สิ่งที่ต้องทำ</div>
+    <ul class="checklist">
+      <li>อัป Railway จาก Hobby → Pro ($20/mo) เพื่อ resource ceiling สูงขึ้น</li>
+      <li>เปิดใช้ Anthropic prompt caching เต็มที่ (ทำแล้ว 74.5% hit ratio)</li>
+      <li>Phase 2 AI cost reduction: image cropping ก่อนส่ง API</li>
+      <li>ตั้ง alert เมื่อ Anthropic spend เกิน budget/day</li>
+      <li>Load test: จำลอง 500 concurrent scans ดูว่า Railway ทน</li>
+      <li>Cloudflare ยังฟรี (ไม่ต้องทำอะไร)</li>
+      <li class="risk">เริ่มพิจารณาย้าย DB (Railway DB ยังไม่มี read replica)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🏢 Business Milestones</div>
+    <ul class="checklist">
+      <li>NIA grant ได้/ไม่ได้ (ยื่นแล้ว 1M THB)</li>
+      <li>Depa Digital Startup Fund ผลลัพธ์</li>
+      <li>เจอ 1–2 โรงพยาบาลที่สนใจ pilot</li>
+    </ul>
+  </div>
+
+  <div class="go-nogo">
+    <strong>Go/No-Go เข้า Phase 3:</strong> 500+ WAU, unit economics เป็นบวก (ค่า API/user < ค่าที่ผู้ใช้/รพ. ยอมจ่าย),
+    มี hospital partner อย่างน้อย 1 แห่ง
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div class="phase p3">
+  <div class="phase-header">
+    <div class="phase-num">3</div>
+    <div>
+      <div class="phase-title">Growth — Product-Market Fit</div>
+      <div class="phase-meta">1,000–10,000 users · ปี 2</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">1k–10k active</div></div>
+    <div class="grid-item"><div class="label">Railway</div><div class="value">Pro + upgrade DB</div></div>
+    <div class="grid-item"><div class="label">API Cost (Haiku/Sonnet hybrid)</div><div class="value">~฿0.60/scan</div></div>
+    <div class="grid-item"><div class="label">รวม/เดือน</div><div class="value">~฿5,000–40,000</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔧 Infrastructure Changes ที่จำเป็น</div>
+    <ul class="checklist">
+      <li><strong>ย้าย PostgreSQL ออกจาก Railway</strong> → Neon (ฟรี tier ใหญ่) หรือ Supabase (มี auth+realtime)
+        <br><small style="color:#6b7a90">เหตุผล: Railway DB ไม่มี read replica, ไม่มี PITR, ไม่มี HA</small>
+      </li>
+      <li>ยัง run backend บน Railway Pro ได้ (แค่เปลี่ยน DATABASE_URL)</li>
+      <li>Phase 3 AI cost reduction: Haiku classify → Sonnet only when needed</li>
+      <li>Redis cache สำหรับ session + hot data</li>
+      <li>เริ่มใช้ Cloudflare R2 สำหรับเก็บ appointment images (แทน base64 ใน DB)</li>
+      <li class="risk">พิจารณา Cloudflare Workers สำหรับ LINE webhook (latency ต่ำกว่า Railway)</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">💰 Cost Breakdown (สมมติ 5,000 active users)</div>
+    <table class="cost-table">
+      <tr><th>Component</th><th>Cost/เดือน</th></tr>
+      <tr><td>Railway Pro (backend + cron)</td><td>~$40 (฿1,400)</td></tr>
+      <tr><td>Neon Postgres (Scale plan)</td><td>~$69 (฿2,400)</td></tr>
+      <tr><td>Cloudflare Pages + R2</td><td>~$5 (฿180)</td></tr>
+      <tr><td>Anthropic API (25k scan × ฿0.60)</td><td>฿15,000</td></tr>
+      <tr class="total"><td>รวม</td><td>~฿19,000</td></tr>
+    </table>
+  </div>
+
+  <div class="decision-box">
+    <strong>Critical Decision:</strong> ที่ scale นี้ต้องรู้แล้วว่าจะเป็น B2C (ผู้ป่วย/ญาติจ่าย) หรือ B2B (รพ./ประกันจ่าย)
+    unit economics ต่างกันมาก และมีผลต่อ infra choice
+  </div>
+</div>
+
+<!-- PHASE 4 -->
+<div class="phase p4">
+  <div class="phase-header">
+    <div class="phase-num">4</div>
+    <div>
+      <div class="phase-title">Scale — Multi-Region</div>
+      <div class="phase-meta">10,000–50,000 users · ปี 3</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">10k–50k active</div></div>
+    <div class="grid-item"><div class="label">Backend</div><div class="value">Multi-instance</div></div>
+    <div class="grid-item"><div class="label">DB</div><div class="value">Neon Scale + Read replica</div></div>
+    <div class="grid-item"><div class="label">รวม/เดือน</div><div class="value">~฿80,000–300,000</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔧 Infrastructure Changes</div>
+    <ul class="checklist">
+      <li>Railway Pro + horizontal scaling (multiple replicas)</li>
+      <li>Cloudflare Workers: LINE webhook handler ที่ edge (ลด latency)</li>
+      <li>Cloudflare Queue: buffer OCR requests</li>
+      <li>Neon: read replica สำหรับ dashboard queries</li>
+      <li>แยก cron jobs ออกจาก main API server (เพื่อไม่ให้ cron block traffic)</li>
+      <li>Prometheus + Grafana หรือ Better Stack สำหรับ observability</li>
+      <li class="risk">Railway outage risk มีความสำคัญมากขึ้น — ต้องมี fallback plan</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">⚖️ Compliance & Legal</div>
+    <ul class="checklist">
+      <li>PDPA audit เต็มระบบ</li>
+      <li>ISO 27001 หรือ HITRUST พิจารณา</li>
+      <li>Business Associate Agreement (BAA) กับ Anthropic (ถ้ามี PHI จริง)</li>
+      <li>Data residency: PDPA ต้องการข้อมูลใน TH หรือประเทศที่มี adequacy</li>
+    </ul>
+  </div>
+
+  <div class="decision-box">
+    <strong>Migration Decision Point:</strong> ที่ 20k+ users ควรพิจารณาย้าย backend ไป AWS/GCP
+    เพราะ Railway outage 8 ชม. ที่เกิดใน พ.ค. 2026 = พลาด reminder ยา 20k คน × 3 มื้อ = 60k pill misses
+    ความเสี่ยงเชิง reputation และ legal สูง
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div class="phase p5">
+  <div class="phase-header">
+    <div class="phase-num">5</div>
+    <div>
+      <div class="phase-title">Enterprise — Own Infrastructure</div>
+      <div class="phase-meta">50,000+ users · ปี 4+</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="grid-item"><div class="label">Users</div><div class="value">50k+ active</div></div>
+    <div class="grid-item"><div class="label">Backend</div><div class="value">AWS/GCP + K8s</div></div>
+    <div class="grid-item"><div class="label">DB</div><div class="value">RDS Aurora / Cloud SQL</div></div>
+    <div class="grid-item"><div class="label">รวม/เดือน</div><div class="value">~฿500,000+</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔧 Full Migration</div>
+    <ul class="checklist">
+      <li>ย้าย backend จาก Railway → AWS ECS Fargate หรือ GCP Cloud Run</li>
+      <li>Managed database: AWS RDS Aurora Postgres หรือ GCP Cloud SQL</li>
+      <li>Multi-AZ deployment (HA จริง)</li>
+      <li>CDN + Edge: Cloudflare ยังใช้ต่อได้ (ทำ Cloudflare + AWS/GCP hybrid)</li>
+      <li>Dedicated DevOps engineer (หรือ contractor)</li>
+      <li>SOC 2 Type II audit</li>
+      <li>On-premise option สำหรับ enterprise hospital customers</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🎯 Strategic Positioning</div>
+    <ul class="checklist">
+      <li>SaaS สำหรับโรงพยาบาล/ประกัน (B2B2C)</li>
+      <li>White-label option</li>
+      <li>API ให้ third-party</li>
+      <li>Real World Evidence (RWE) data business</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+
+<!-- SUMMARY -->
+<header style="margin-top: 24px;">
+  <h1>📌 สรุป Key Decision Points</h1>
+  <table class="cost-table" style="margin-top: 12px;">
+    <tr><th>Users</th><th>สิ่งที่ต้องทำ</th><th>Cost/mo</th></tr>
+    <tr><td>0–100</td><td>Railway Hobby + backup routine</td><td>~฿180–1k</td></tr>
+    <tr><td>100–1k</td><td>Railway Pro</td><td>~฿1k–13k</td></tr>
+    <tr><td><strong>1k–10k</strong></td><td><strong>ย้าย DB ไป Neon/Supabase</strong></td><td>~฿5k–40k</td></tr>
+    <tr><td><strong>10k–50k</strong></td><td><strong>Horizontal scaling + observability</strong></td><td>~฿80k–300k</td></tr>
+    <tr><td>50k+</td><td>Migrate to AWS/GCP</td><td>~฿500k+</td></tr>
+  </table>
+
+  <div class="disclaimer" style="margin-top: 16px;">
+    <strong>Realistic odds:</strong> การไปถึง Phase 3 (1k active users) ภายในปี 2 = 20–30% (average solo founder in Thai health tech)
+    Phase 5 (50k+) = 5–10% ในระดับที่ทำสำเร็จจริง — ตัวเลขเหล่านี้ไม่ใช่ Apidej ล้มเหลว แต่คือ base rate ของอุตสาหกรรม
+  </div>
+</header>
+
+<footer>
+  MedTrack Scaling Roadmap · v2026.07.02 · เตรียมโดย Claude สำหรับ bluecode.pro
+</footer>
+
+</div>
+</body>
+</html>
