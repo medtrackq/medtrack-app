@@ -724,13 +724,24 @@ h1, h2, h3 {
       </div>
     </div>
 
-    <!-- TODAY DOSES -->
-    <div class="section">
+    <!-- TODAY DOSES (primary only) -->
+    <div class="section" id="todaySection">
       <div class="section-title">
         <h2>💊 ยาวันนี้</h2>
         <span class="meta" id="todayMeta">—</span>
       </div>
       <div class="meal-list" id="todayList"></div>
+    </div>
+
+    <!-- SECONDARY INFO BOX (secondary only) -->
+    <div class="section" id="secondaryInfoSection" style="display:none;">
+      <div class="insight-card" style="background:var(--yellow-soft);border:1px solid var(--yellow);">
+        <div class="insight-icon">ℹ️</div>
+        <div>
+          <div class="insight-title" style="color:#B45309;">สิทธิ์ของคุณ</div>
+          <div class="insight-body">คุณเป็น <strong>ผู้ดูแลทั่วไป</strong> — เห็นภาพรวมและติดต่อผู้ป่วยได้ หากต้องการเห็นรายละเอียดยา ติดต่อผู้ดูแลหลักเพื่อขอสิทธิ์เพิ่ม</div>
+        </div>
+      </div>
     </div>
 
     <!-- WEEK TREND (primary only) -->
@@ -829,7 +840,12 @@ function render(d) {
   const tierBadge = document.getElementById('tierBadge');
   tierBadge.style.display = 'flex';
   document.getElementById('tierLabel').textContent =
-    d.tier === 'secondary' ? 'ผู้ดูแลรอง' : 'ผู้ดูแลหลัก';
+    d.tier === 'secondary' ? 'ผู้ดูแลทั่วไป' : 'ผู้ดูแลหลัก';
+
+  // tier: show/hide sections
+  const isPrimary = d.tier !== 'secondary';
+  document.getElementById('todaySection').style.display       = isPrimary ? '' : 'none';
+  document.getElementById('secondaryInfoSection').style.display = isPrimary ? 'none' : '';
 
   // greeting
   const now = new Date();
@@ -881,7 +897,7 @@ function render(d) {
   renderAppointment(d.appointment);
 
   // quick actions
-  renderActions(d.patient);
+  renderActions(d.patient, d.tier);
 }
 
 function renderInsights(insights, tier) {
@@ -911,24 +927,26 @@ function renderInsights(insights, tier) {
   });
 }
 
-function renderActions(patient) {
+function renderActions(patient, tier) {
   const list = document.getElementById('actionsList');
   list.innerHTML = '';
   const name = patient.name || 'คนไข้';
+  const isPrimary = tier !== 'secondary';
   const actions = [];
 
   // โทร (ถ้ามีเบอร์)
   if (patient.phone) {
     actions.push({ icon:'📞', text:`โทรหา${name}`, onclick:`window.location.href='tel:${patient.phone}'` });
   }
-  // ส่ง LINE (ถ้ามี line_user_id — เปิด LINE)
+  // ส่ง LINE
   if (patient.line_user_id) {
     actions.push({ icon:'💬', text:'ส่ง LINE', onclick:`window.open('https://line.me/R/','_blank')` });
   }
-  // ดูประวัติเต็ม
-  actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
-  // นัดหมอทั้งหมด
-  actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
+  // primary only
+  if (isPrimary) {
+    actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
+    actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
+  }
 
   actions.forEach(a => {
     const btn = document.createElement('button');
@@ -1086,6 +1104,6 @@ function renderAppointment(appt) {
 
 loadDashboard();
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.02</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.02b</div>
 </body>
 </html>
