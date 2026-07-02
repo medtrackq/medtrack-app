@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack depa R2 Master Prep Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Sarabun", sans-serif;
+    background: #EEF1F6;
+    padding: 20px 16px;
+    color: #1a2332;
+    line-height: 1.6;
+  }
+  .container { max-width: 860px; margin: 0 auto; }
+
+  header {
+    background: linear-gradient(135deg, #003D4D, #028090);
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 61, 77, 0.2);
+  }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
+  .badge-hero {
+    display: inline-block;
+    background: rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px rgba(20, 40, 80, 0.06);
+  }
+
+  h2 {
+    font-size: 16px;
+    color: #003D4D;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eef1f6;
+  }
+
+  h3 { font-size: 14px; color: #028090; margin: 12px 0 8px 0; }
+
+  .deliverable {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: #F0FBFA;
+    border-left: 3px solid #028090;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+  .deliverable-num {
+    background: #028090;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .deliverable-title { font-size: 13px; font-weight: 700; color: #003D4D; margin-bottom: 3px; }
+  .deliverable-desc { font-size: 12px; color: #4a5a70; }
+  .deliverable-file { font-size: 11px; color: #028090; font-family: monospace; margin-top: 4px; }
+
+  .timeline {
+    position: relative;
+    padding-left: 28px;
+  }
+  .timeline::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
+    background: #028090;
+  }
+  .timeline-item {
+    position: relative;
+    padding: 10px 0;
+  }
+  .timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -22px;
+    top: 16px;
+    width: 12px;
+    height: 12px;
+    background: #028090;
+    border-radius: 50%;
+    border: 3px solid #EEF1F6;
+  }
+  .timeline-date {
+    font-size: 11px;
+    font-weight: 700;
+    color: #028090;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .timeline-title { font-size: 13px; font-weight: 700; color: #1a2332; margin-bottom: 4px; }
+  .timeline-desc { font-size: 12px; color: #4a5a70; }
+
+  .checklist {
+    list-style: none;
+    padding: 0;
+  }
+  .checklist li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    font-size: 13px;
+    line-height: 1.5;
+    border-bottom: 1px dashed #eef1f6;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: "☐";
+    position: absolute;
+    left: 4px;
+    color: #6b7a90;
+    font-size: 16px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0;
+  }
+  @media (max-width: 500px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+  .stat-card {
+    background: #F0FBFA;
+    border: 1px solid #028090;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 24px;
+    font-weight: 700;
+    color: #028090;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #4a5a70;
+    margin-top: 3px;
+  }
+
+  .warning {
+    background: #FFEBEE;
+    border-left: 3px solid #C62828;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6a1414;
+    margin: 12px 0;
+  }
+  .success-note {
+    background: #E8F5E9;
+    border-left: 3px solid #2E7D32;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #1b5e20;
+    margin: 12px 0;
+  }
+
+  code {
+    background: #f5f7fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #d32f2f;
+    font-family: monospace;
+  }
+
+  .cta-list {
+    display: grid;
+    gap: 10px;
+    margin: 12px 0;
+  }
+  .cta-item {
+    background: white;
+    border: 1px solid #d5dce6;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .cta-item strong { color: #028090; font-size: 13px; }
+  .cta-item div { font-size: 12px; color: #4a5a70; margin-top: 4px; }
+
+  footer {
+    text-align: center;
+    font-size: 11px;
+    color: #6b7a90;
+    padding: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <span class="badge-hero">Round 2</span>
+  <span class="badge-hero">1 / 13</span>
+  <h1>MedTrack — depa R2 Master Prep Guide</h1>
+  <div class="subtitle">Live Pitch to Committee · 12-Day Preparation Roadmap</div>
+</header>
+
+<!-- Situation -->
+<div class="card">
+  <h2>📍 สถานการณ์ปัจจุบัน</h2>
+  <div class="grid-2">
+    <div class="stat-card">
+      <div class="stat-num">1 / 13</div>
+      <div class="stat-label">ผ่าน Round 1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">~30%</div>
+      <div class="stat-label">Conditional odds เข้ารอบสุดท้าย</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">3-5</div>
+      <div class="stat-label">คาดว่าจะได้ทุนจริง</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">฿1M</div>
+      <div class="stat-label">Grant size</div>
+    </div>
+  </div>
+  <div class="success-note">
+    <strong>สิ่งที่เปลี่ยนจากตอน apply เดือน เม.ย.:</strong> ตอนนี้มี working system (backend v1.9.2) + pilot ตกลงกับสถาบันประสาทวิทยา + LINE OA active + caregiver dashboard live — จาก "Evidence Builder" กลายเป็น "Working system with real pilot"
+  </div>
+</div>
+
+<!-- Deliverables -->
+<div class="card">
+  <h2>📦 4 Deliverables ในชุดนี้</h2>
+
+  <div class="deliverable">
+    <div class="deliverable-num">1</div>
+    <div>
+      <div class="deliverable-title">Pitch Preparation Guide (Word)</div>
+      <div class="deliverable-desc">Script 5 นาที + 10 นาที · Q&A 25 ข้อพร้อมคำตอบ · Key Numbers cheat sheet · Delivery tips · 24-hr checklist</div>
+      <div class="deliverable-file">MedTrack_PitchPrepGuide_v1.docx (11 หน้า)</div>
+    </div>
+  </div>
+
+  <div class="deliverable">
+    <div class="deliverable-num">2</div>
+    <div>
+      <div class="deliverable-title">Pitch Deck v5 (PowerPoint)</div>
+      <div class="deliverable-desc">14 slides · updated ด้วย pilot info + working system · Teal Trust palette · เตรียมสำหรับ 5-min live pitch</div>
+      <div class="deliverable-file">MedTrack_PitchDeck_v5.pptx</div>
+    </div>
+  </div>
+
+  <div class="deliverable">
+    <div class="deliverable-num">3</div>
+    <div>
+      <div class="deliverable-title">Grant Utilization Breakdown (Excel)</div>
+      <div class="deliverable-desc">Summary · 25 line items · Quarterly milestones · Post-grant sustainability plan</div>
+      <div class="deliverable-file">MedTrack_GrantUtilization_v1.xlsx (4 sheets)</div>
+    </div>
+  </div>
+
+  <div class="deliverable">
+    <div class="deliverable-num">4</div>
+    <div>
+      <div class="deliverable-title">Master Prep Guide (HTML)</div>
+      <div class="deliverable-desc">Overview + 12-day preparation timeline + final checklist (คุณกำลังอ่านอยู่)</div>
+      <div class="deliverable-file">master-guide.html</div>
+    </div>
+  </div>
+</div>
+
+<!-- 12-Day Timeline -->
+<div class="card">
+  <h2>⏰ 12-Day Preparation Timeline</h2>
+  <p style="font-size: 12px; color: #6b7a90; margin-bottom: 16px;">ปรับตามวันที่ depa แจ้ง pitch date จริง</p>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-date">Day 1-2 (Deep Prep)</div>
+      <div class="timeline-title">อ่านทั้ง 4 deliverables + ทำ mental map</div>
+      <div class="timeline-desc">อ่าน Pitch Prep Guide ให้จบ · ตรวจ deck ทีละสไลด์ · ตรวจ Excel ปรับตัวเลขให้ตรงจริง</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 3-4 (Customize)</div>
+      <div class="timeline-title">ปรับ deliverables ให้ตรงกับข้อมูลจริง</div>
+      <div class="timeline-desc">
+        • เพิ่มชื่อ advisor จริง (slide 12)<br>
+        • อัพเดท email + phone (slide 14)<br>
+        • ปรับ pilot status ให้ตรง (ถ้ามี MOU แล้ว)<br>
+        • เพิ่ม screenshot จริงจาก app ในสไลด์ 4-5 ถ้ามี
+      </div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 5-6 (Practice Round 1)</div>
+      <div class="timeline-title">ซ้อม 5-min pitch คนเดียว 10 รอบ</div>
+      <div class="timeline-desc">อัดคลิปตัวเอง · ฟังซ้ำ · จับเวลาให้อยู่ 5:00 ± 15 วิ · จำ script ให้ได้แต่ไม่ท่องแบบหุ่นยนต์</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 7-8 (Q&A Deep Dive)</div>
+      <div class="timeline-title">เตรียม Q&A ทั้ง 25 ข้อ</div>
+      <div class="timeline-desc">อ่านคำตอบให้จำได้ · ซ้อม answering out loud · เตรียม backup data สำหรับ Traction คำถาม</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 9-10 (Practice Round 2)</div>
+      <div class="timeline-title">ซ้อมกับคน 2-3 คน (mock pitch)</div>
+      <div class="timeline-desc">เชิญคนที่ไม่รู้ MedTrack · ให้ถาม Q&A รุนแรง · จับเวลา + record feedback</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 11 (Polish)</div>
+      <div class="timeline-title">Final polish + logistics</div>
+      <div class="timeline-desc">อัพเดท deck ตาม feedback · ทดสอบเทคนิค (laptop, adapter, backup slides in cloud) · เตรียม demo video</div>
+    </div>
+
+    <div class="timeline-item">
+      <div class="timeline-date">Day 12 (Rest)</div>
+      <div class="timeline-title">พักสมอง · นอนก่อน 5 ทุ่ม</div>
+      <div class="timeline-desc">อย่าซ้อมหนักในวันสุดท้าย · sleep quality > over-preparation · เตรียมชุดใส่พรุ่งนี้</div>
+    </div>
+  </div>
+</div>
+
+<!-- Key Messages -->
+<div class="card">
+  <h2>🎯 3 Key Messages ที่ต้องสื่อให้ชัด</h2>
+
+  <h3>1. Working Product (ไม่ใช่ mockup)</h3>
+  <p style="font-size: 13px; color: #4a5a70; margin-bottom: 10px;">
+    Backend v1.9.2 running on Railway · LINE OA @785gznlp active · Caregiver dashboard live · OCR safety nets ทำงานได้จริงกับยาซับซ้อน
+  </p>
+
+  <h3>2. Real Pilot (ไม่ใช่ hypothetical)</h3>
+  <p style="font-size: 13px; color: #4a5a70; margin-bottom: 10px;">
+    Pilot ตกลงกับสถาบันประสาทวิทยา — hospital validation ที่ startup early stage ไม่ค่อยมี · เริ่มรับผู้ป่วยจริง Q1 2027
+  </p>
+
+  <h3>3. Founder-Market Fit (Domain + Technical)</h3>
+  <p style="font-size: 13px; color: #4a5a70;">
+    เภสัชกรใบประกอบ + AI engineer + ประสบการณ์ขายเข้ารพ.รัฐ + build 5 AI products แล้ว — solo founder ที่หา profile แบบนี้ยาก
+  </p>
+</div>
+
+<!-- Red Flags -->
+<div class="card">
+  <h2>⛔ Red Flags ที่ห้ามทำเด็ดขาด</h2>
+  <div class="warning">
+    <strong>Deal-breakers ทำแล้วเสร็จเลย:</strong>
+    <ul style="margin-top: 8px; padding-left: 20px;">
+      <li>โกหกตัวเลข traction (บอกมี 100 users ทั้งที่มี 1)</li>
+      <li>อ้างว่ามี MOU กับสถาบันประสาทวิทยา (ยังไม่มีทางการ)</li>
+      <li>บอกว่าไม่มี competitor</li>
+      <li>Dismiss คำถามยาก แทนที่จะยอมรับตรงๆ</li>
+      <li>ใช้คำ hype "unicorn" "revolutionary" "disruptive"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Post-Pitch -->
+<div class="card">
+  <h2>📮 Post-Pitch Follow-Up</h2>
+  <ol style="padding-left: 20px; font-size: 13px; line-height: 1.8;">
+    <li><strong>ภายใน 24 ชม.:</strong> ส่ง thank-you email ถึงคณะกรรมการ (ถ้ามี contact) · ให้สั้น: ขอบคุณ + 1 ประโยคที่จำได้จาก pitch</li>
+    <li><strong>ภายใน 3 วัน:</strong> เขียน retrospective — อะไรได้ผล อะไรไม่ได้ผล · ประโยคไหนตอบยาก</li>
+    <li><strong>รอผล 2-4 สัปดาห์:</strong> อย่าถามผลบ่อย · ทำ product ต่อ · เตรียม plan B ถ้าไม่ผ่าน</li>
+    <li><strong>ถ้าผ่าน:</strong> ลง contract details, เตรียม milestone reporting</li>
+    <li><strong>ถ้าไม่ผ่าน:</strong> ขอ feedback จาก depa (มีสิทธิ์) · apply Round 4</li>
+  </ol>
+</div>
+
+<!-- Final Checklist -->
+<div class="card">
+  <h2>✅ Final Pre-Pitch Checklist (T-24 hours)</h2>
+  <ul class="checklist">
+    <li>Pitch Deck v5 (PPTX) เปิดได้ทุก device (ทดสอบใน PowerPoint + Keynote + Google Slides)</li>
+    <li>Backup slides ใน Dropbox + Google Drive + USB</li>
+    <li>Demo video 30 วินาที (ทดสอบว่าเล่นได้)</li>
+    <li>ปริ้น Q&A cheat sheet + Key Numbers เอาไปด้วย</li>
+    <li>ซ้อม 5-min pitch ครั้งสุดท้าย (จับเวลา ≤ 5:00)</li>
+    <li>เตรียมชุด: business casual (เสื้อคอปกไม่มี jacket)</li>
+    <li>พกน้ำ + tissue + business card + laptop + charger + HDMI adapter</li>
+    <li>เช็คเส้นทาง + เผื่อเวลา 30 นาที</li>
+    <li>นอนก่อน 5 ทุ่ม — sleep > over-prep</li>
+    <li>5 นาทีก่อน pitch: หายใจลึก 3 ครั้ง + power pose 2 นาที</li>
+  </ul>
+</div>
+
+<!-- Realistic Note -->
+<div class="card" style="border: 2px solid #F9A825;">
+  <h2 style="color: #E65100;">💭 Realistic Perspective</h2>
+  <p style="font-size: 13px; line-height: 1.7;">
+    <strong>สิ่งที่ต้องรู้:</strong> ผ่าน Round 1 ≠ ได้ทุนแน่นอน คาดว่าจาก 13 บริษัท จะได้ทุนจริง 3-5 บริษัท conditional probability ตอนนี้อยู่ที่ 25-40%
+  </p>
+  <p style="font-size: 13px; line-height: 1.7; margin-top: 10px;">
+    <strong>ที่พี่ต้องทำใจ:</strong> ถ้าไม่ผ่าน Round 2 ไม่ได้แปลว่า MedTrack ล้มเหลว — ปัจจัยการตัดสินของ committee มีหลาย factor ที่พี่ควบคุมไม่ได้ (portfolio balance, sector priorities, other competitors' pitches)
+  </p>
+  <p style="font-size: 13px; line-height: 1.7; margin-top: 10px;">
+    <strong>Plan B:</strong> ถ้าไม่ผ่าน — ยังมี NIA grant, Techsauce Sandbox, angel investors ในเครือข่ายไทย · MedTrack ที่มี working system + pilot มีมูลค่าไม่ว่าจะได้ depa หรือไม่
+  </p>
+  <p style="font-size: 13px; line-height: 1.7; margin-top: 10px; font-weight: 700; color: #003D4D;">
+    ตอนนี้พี่ทำงาน 14+ ชม./วัน มาแล้ว — ทำ pitch นี้ให้ดีที่สุดในเวลาที่มี แล้วปล่อย ไม่ว่าผลจะเป็นยังไง MedTrack ยังต้อง scale ต่อ · Round 2 คือ milestone หนึ่ง ไม่ใช่ end game
+  </p>
+</div>
+
+<footer>
+  MedTrack depa R2 Prep Package · v2026.07.02 · เตรียมโดย Claude สำหรับ bluecode.pro
+</footer>
+
+</div>
+</body>
+</html>
