@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MedTrack — คำเชิญผู้ดูแล</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<style>
+:root {
+  --ink: #1A2840;
+  --ink-light: #5A6A7A;
+  --bg: #EEF1F6;
+  --card: #FFFFFF;
+  --teal: #0F5C4A;
+  --teal-soft: #E6F4F1;
+  --green: #16A34A;
+  --green-soft: #DCFCE7;
+  --yellow: #EAB308;
+  --yellow-soft: #FEF3C7;
+  --red: #DC2626;
+  --red-soft: #FEE2E2;
+  --line: #E3E8EF;
+  --shadow: 0 1px 4px rgba(16,40,64,0.10);
+  --card-border: 1px solid #E3E8EF;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+.page {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100vh;
+}
+
+/* === LOADING === */
+#stateLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  text-align: center;
+  padding: 60px 0;
+}
+.spinner {
+  width: 48px; height: 48px;
+  border: 4px solid var(--line);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 15px; color: var(--ink-light); }
+
+/* === CARD === */
+.invite-card {
+  width: 100%;
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: none;
+}
+.invite-card.show { display: block; }
+
+/* header */
+.card-header {
+  background: var(--teal);
+  padding: 28px 20px 24px;
+  text-align: center;
+  color: white;
+}
+.card-header-icon { font-size: 40px; margin-bottom: 10px; }
+.card-header-title { font-size: 20px; font-weight: 600; font-family: 'Bai Jamjuree', sans-serif; }
+.card-header-sub { font-size: 13px; opacity: .8; margin-top: 4px; }
+
+/* body */
+.card-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.patient-box {
+  background: var(--teal-soft);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.patient-label { font-size: 12px; color: var(--ink-light); margin-bottom: 4px; }
+.patient-name { font-size: 20px; font-weight: 600; font-family: 'Bai Jamjuree', sans-serif; color: var(--teal); }
+.patient-sub { font-size: 13px; color: var(--ink-light); margin-top: 2px; }
+
+.meta-row { display: flex; gap: 10px; }
+.meta-box {
+  flex: 1;
+  background: var(--green-soft);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.meta-box-label { font-size: 11px; color: var(--ink-light); }
+.meta-box-value { font-size: 14px; font-weight: 600; color: var(--green); margin-top: 4px; }
+
+.warn-box {
+  background: var(--yellow-soft);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 12px;
+  color: #92400E;
+  line-height: 1.6;
+}
+
+/* buttons */
+.btn-primary {
+  width: 100%;
+  padding: 15px;
+  background: var(--teal);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Sarabun', sans-serif;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.btn-primary:active { opacity: .85; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--ink-light);
+  border: var(--card-border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: 'Sarabun', sans-serif;
+  cursor: pointer;
+}
+
+/* === SUCCESS === */
+#stateSuccess {
+  width: 100%;
+  display: none;
+}
+#stateSuccess.show { display: block; }
+.success-card {
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.success-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: var(--green-soft);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+}
+.success-title { font-size: 20px; font-weight: 600; color: var(--green); }
+.success-sub { font-size: 14px; color: var(--ink-light); line-height: 1.7; }
+.success-sub strong { color: var(--ink); }
+
+/* === ERROR === */
+#stateError {
+  width: 100%;
+  display: none;
+}
+#stateError.show { display: block; }
+.error-card {
+  background: var(--card);
+  border: var(--card-border);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.error-icon { font-size: 48px; }
+.error-title { font-size: 18px; font-weight: 600; color: var(--red); }
+.error-sub { font-size: 13px; color: var(--ink-light); line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- STATE: Loading -->
+  <div id="stateLoading">
+    <div class="spinner"></div>
+    <div class="loading-text">กำลังตรวจสอบคำเชิญ...</div>
+  </div>
+
+  <!-- STATE: Invite Info -->
+  <div class="invite-card" id="stateInvite">
+    <div class="card-header">
+      <div class="card-header-icon">💊</div>
+      <div class="card-header-title">MedTrack</div>
+      <div class="card-header-sub">คำเชิญเป็นผู้ดูแล</div>
+    </div>
+    <div class="card-body">
+      <div class="patient-box">
+        <div class="patient-label">คุณถูกเชิญโดย</div>
+        <div class="patient-name" id="patientName">—</div>
+        <div class="patient-sub">ให้ช่วยติดตามการกินยา</div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-box">
+          <div class="meta-box-label">ความสัมพันธ์</div>
+          <div class="meta-box-value" id="cgRelationship">—</div>
+        </div>
+        <div class="meta-box">
+          <div class="meta-box-label">สิทธิ์</div>
+          <div class="meta-box-value" id="cgTier">—</div>
+        </div>
+      </div>
+      <div class="warn-box">⚠️ ลิงก์นี้ใช้ได้ครั้งเดียว และหมดอายุภายใน 7 วันหลังจากที่ผู้ป่วยส่งให้</div>
+      <button class="btn-primary" id="btnAccept" onclick="acceptInvite()">✅ ยืนยันรับเชิญ</button>
+      <button class="btn-ghost" onclick="declineInvite()">ไม่รับคำเชิญ</button>
+    </div>
+  </div>
+
+  <!-- STATE: Success -->
+  <div id="stateSuccess">
+    <div class="success-card">
+      <div class="success-icon">✅</div>
+      <div class="success-title">เชื่อมต่อสำเร็จ!</div>
+      <div class="success-sub">คุณเป็นผู้ดูแลของ<br><strong id="successPatientName">—</strong> แล้ว</div>
+      <button class="btn-primary" style="margin-top:8px;" onclick="goToDashboard()">ไปที่แดชบอร์ด →</button>
+    </div>
+  </div>
+
+  <!-- STATE: Error -->
+  <div id="stateError">
+    <div class="error-card">
+      <div class="error-icon">❌</div>
+      <div class="error-title" id="errorTitle">ลิงก์ไม่ถูกต้อง</div>
+      <div class="error-sub" id="errorMsg">ลิงก์หมดอายุหรือถูกใช้แล้ว<br>ขอลิงก์ใหม่จากผู้ป่วย</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.02</div>
+
+<script>
+const API_BASE = 'https://api.medtrackq.com';
+const LIFF_ID  = '2009969889-35ERQPQA';
+const DASHBOARD_URL = 'https://app.medtrackq.com/medtrack-app/caregiver-dashboard.html';
+
+// ดึง token จาก URL
+const urlParams = new URLSearchParams(window.location.search);
+const TOKEN = urlParams.get('token');
+
+// สถานะ
+let _patientName = '';
+let _lineUserId  = '';
+
+// แสดง state
+function showState(name) {
+  ['stateLoading','stateInvite','stateSuccess','stateError'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'stateInvite') {
+      // ใช้ class show แทน display เพราะ class .invite-card ใช้ display:none เป็น default
+      el.classList.toggle('show', id === name);
+    } else {
+      el.style.display = (id === name) ? '' : 'none';
+      if (id !== 'stateLoading') el.classList.toggle('show', id === name);
+    }
+  });
+  // loading ใช้ flex
+  const loading = document.getElementById('stateLoading');
+  loading.style.display = (name === 'stateLoading') ? 'flex' : 'none';
+}
+
+function showError(title, msg) {
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').innerHTML = msg;
+  showState('stateError');
+}
+
+// STEP 1: verify token
+async function verifyToken() {
+  if (!TOKEN) {
+    showError('ไม่พบลิงก์', 'กรุณาเปิดลิงก์จากข้อความที่ผู้ป่วยส่งให้');
+    return;
+  }
+  try {
+    const res = await fetch(`${API_BASE}/api/caregivers/verify-token?token=${encodeURIComponent(TOKEN)}`);
+    const data = await res.json();
+
+    if (!data.ok) {
+      if (data.error === 'token_expired') {
+        showError('ลิงก์หมดอายุ', 'ลิงก์นี้หมดอายุแล้ว<br>ขอลิงก์ใหม่จากผู้ป่วย');
+      } else {
+        showError('ลิงก์ไม่ถูกต้อง', data.message || 'ลิงก์ไม่ถูกต้องหรือถูกยกเลิก');
+      }
+      return;
+    }
+
+    // ถ้าเชื่อมต่อแล้ว (กดซ้ำ)
+    if (data.already_linked) {
+      _patientName = data.patient_name;
+      document.getElementById('successPatientName').textContent = _patientName;
+      showState('stateSuccess');
+      return;
+    }
+
+    // แสดงข้อมูลคำเชิญ
+    _patientName = data.patient_name;
+    document.getElementById('patientName').textContent = data.patient_name;
+    document.getElementById('cgRelationship').textContent = data.relationship || 'ผู้ดูแล';
+    document.getElementById('cgTier').textContent =
+      data.tier === 'secondary' ? 'ผู้ดูแลทั่วไป' : 'ผู้ดูแลหลัก';
+    document.getElementById('successPatientName').textContent = data.patient_name;
+
+    showState('stateInvite');
+  } catch (e) {
+    console.error('[verify-token]', e);
+    showError('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้<br>กรุณาลองใหม่อีกครั้ง');
+  }
+}
+
+// STEP 2: ยืนยันรับเชิญ → LIFF login → link-token
+async function acceptInvite() {
+  const btn = document.getElementById('btnAccept');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังเชื่อมต่อ...';
+
+  try {
+    // init LIFF + ดึง line_user_id
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      liff.login({ redirectUri: window.location.href });
+      return;
+    }
+    const profile = await liff.getProfile();
+    _lineUserId = profile.userId;
+
+    // POST link-token
+    const res = await fetch(`${API_BASE}/api/caregivers/link-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: TOKEN, line_user_id: _lineUserId })
+    });
+    const data = await res.json();
+
+    if (!data.ok) {
+      btn.disabled = false;
+      btn.textContent = '✅ ยืนยันรับเชิญ';
+      if (data.error === 'token_expired') {
+        showError('ลิงก์หมดอายุ', 'ลิงก์นี้หมดอายุแล้ว<br>ขอลิงก์ใหม่จากผู้ป่วย');
+      } else {
+        showError('เชื่อมต่อไม่สำเร็จ', data.message || 'กรุณาลองใหม่อีกครั้ง');
+      }
+      return;
+    }
+
+    // สำเร็จ
+    showState('stateSuccess');
+
+  } catch (e) {
+    console.error('[accept-invite]', e);
+    btn.disabled = false;
+    btn.textContent = '✅ ยืนยันรับเชิญ';
+    showError('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อได้<br>กรุณาลองใหม่อีกครั้ง');
+  }
+}
+
+function declineInvite() {
+  if (liff.isInClient()) {
+    liff.closeWindow();
+  } else {
+    window.history.back();
+  }
+}
+
+function goToDashboard() {
+  // ส่ง line_user_id ไปกับ URL (fallback ถ้า LIFF session หาย)
+  const url = _lineUserId
+    ? `${DASHBOARD_URL}?line_user_id=${encodeURIComponent(_lineUserId)}`
+    : DASHBOARD_URL;
+  window.location.href = url;
+}
+
+// เริ่ม
+showState('stateLoading');
+verifyToken();
+</script>
+</body>
+</html>

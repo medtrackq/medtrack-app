@@ -3858,6 +3858,7 @@ let _genderVal = '';
 // ════════════════════════════════════════════════════════
 
 let _currentInviteCode = '';
+let _currentMagicLink  = '';
 
 // Get current user_id (helper)
 function getCurrentUserId(){
@@ -3968,13 +3969,16 @@ async function saveCaregiverNew(){
     const data = await r.json();
     
     if(data.ok && data.caregiver){
-      // Show invite code modal
       _currentInviteCode = data.caregiver.invite_code;
+      _currentMagicLink  = data.magic_link || '';
       closeHomeModal();
       setTimeout(() => {
+        // แสดง magic link ใน modal (ย่อให้อ่านง่าย)
         document.getElementById('cg-invite-code').textContent = _currentInviteCode;
         document.getElementById('cg-invite-code-inline').textContent = _currentInviteCode;
-        // Open invite modal
+        // อัปเดต magic link display (ถ้ามี element)
+        const mlEl = document.getElementById('cg-magic-link');
+        if (mlEl) mlEl.textContent = _currentMagicLink;
         document.getElementById('homeModalOverlay').classList.add('on');
         document.getElementById('modal-cg-invite').style.display = 'block';
       }, 200);
@@ -3997,20 +4001,20 @@ async function copyExistingCode(code){
   await copyText(code);
 }
 
-// 📤 Share invite via LINE (or any messaging app)
+// 📤 Share invite via LINE — ใช้ magic link แทน code
 async function shareInviteToLine(code, caregiverName){
-  const text = `สวัสดีครับ ${caregiverName}\n\nผมขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n📋 รหัสเชิญ: ${code}\n\nวิธีใช้:\n1. กดเพิ่มเพื่อน → @medtrack (หมอน้อย)\n2. พิมพ์ใน LINE chat: /care ${code}\n3. ระบบเชื่อมต่ออัตโนมัติ ✅\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณที่ดูแลครับ 🙏`;
-  
+  // หา magic link จาก card (ถ้ายังอยู่ใน session ใช้ _currentMagicLink)
+  // fallback: สร้าง URL จาก code (กรณีเปิดหน้าใหม่แล้ว magic link หาย)
+  const link = _currentMagicLink ||
+    `https://app.medtrackq.com/medtrack-app/care-link.html?code=${code}`;
+  const text = `สวัสดีครับ ${caregiverName} 🙏\n\nขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n👉 กดลิงก์นี้เพื่อรับเชิญ (ใช้ได้เลย ไม่ต้องพิมพ์รหัส):\n${link}\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณครับ 💊`;
+
   if(navigator.share){
     try {
-      await navigator.share({
-        title: 'MedTrack — เชิญเป็นผู้ดูแล',
-        text: text
-      });
+      await navigator.share({ title: 'MedTrack — เชิญเป็นผู้ดูแล', text });
       showToast?.('📤 เปิด share menu');
     } catch(e) {/* user cancelled */}
   } else {
-    // Fallback: copy to clipboard
     await copyText(text);
     showToast?.('📋 คัดลอกข้อความแล้ว — paste ใน LINE');
   }
@@ -4058,16 +4062,15 @@ async function copyText(text){
   }
 }
 
-// Share invite code via Web Share API
+// Share invite via Web Share API — ส่ง magic link
 async function shareInviteCode(){
-  const text = `เชิญคุณเป็นผู้ดูแลของฉันใน MedTrack!\n\n📋 รหัสเชิญ: ${_currentInviteCode}\n\nวิธีใช้:\n1. Add @หมอน้อย เป็นเพื่อนใน LINE\n2. ส่งข้อความ: /care ${_currentInviteCode}\n3. ระบบจะเชื่อมต่ออัตโนมัติ ✅`;
-  
+  const link = _currentMagicLink ||
+    `https://app.medtrackq.com/medtrack-app/care-link.html?code=${_currentInviteCode}`;
+  const text = `ขอเชิญคุณเป็นผู้ดูแลของฉันใน MedTrack! 🙏\n\n👉 กดลิงก์นี้เพื่อรับเชิญ:\n${link}\n\nกดลิงก์ได้เลย ไม่ต้องพิมพ์รหัส ✅`;
+
   if(navigator.share){
     try {
-      await navigator.share({
-        title: 'MedTrack — เชิญเป็นผู้ดูแล',
-        text: text
-      });
+      await navigator.share({ title: 'MedTrack — เชิญเป็นผู้ดูแล', text });
     } catch(e) {/* user cancelled */}
   } else {
     // Fallback: copy
