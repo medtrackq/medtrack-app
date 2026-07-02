@@ -984,6 +984,24 @@ textarea.field-input{resize:none;min-height:80px}
       <div class="field"><div class="field-label">ความสัมพันธ์</div><select class="field-input" id="mc_rel"><option>ลูก</option><option>สามี/ภรรยา</option><option>พ่อ/แม่</option><option>หลาน</option><option>อื่นๆ</option></select></div>
       <div class="field"><div class="field-label">เบอร์โทร</div><input class="field-input" id="mc_phone" type="tel"></div>
     </div>
+    <div class="field"><div class="field-label">สิทธิ์การดูแล</div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <label style="flex:1;display:flex;align-items:flex-start;gap:8px;background:#f0fdf4;border:1.5px solid #0a9c7a;border-radius:8px;padding:10px;cursor:pointer;">
+          <input type="radio" name="mc_tier" id="mc_tier_primary" value="primary" checked style="flex-shrink:0;margin-top:2px;accent-color:#0a9c7a;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#0a9c7a;">ผู้ดูแลหลัก</div>
+            <div style="font-size:10px;color:#059669;margin-top:1px;">เห็นยาและประวัติ</div>
+          </div>
+        </label>
+        <label style="flex:1;display:flex;align-items:flex-start;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;cursor:pointer;">
+          <input type="radio" name="mc_tier" id="mc_tier_secondary" value="secondary" style="flex-shrink:0;margin-top:2px;accent-color:#0a9c7a;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#334155;">ผู้ดูแลทั่วไป</div>
+            <div style="font-size:10px;color:#64748b;margin-top:1px;">เห็นภาพรวม</div>
+          </div>
+        </label>
+      </div>
+    </div>
     <button onclick="addCaregiverModal()" style="width:100%;padding:10px;background:var(--blue3);color:var(--blue);border:1.5px solid var(--blue);border-radius:var(--r2);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-bottom:12px">+ เพิ่มผู้ดูแล</button>
     <div class="modal-footer">
       <button class="modal-cancel" onclick="closeModal()">ยกเลิก</button>
@@ -1456,11 +1474,16 @@ function addCaregiverModal(){
   const name=document.getElementById('mc_name').value.trim();
   const rel=document.getElementById('mc_rel').value;
   const phone=document.getElementById('mc_phone').value.trim();
+  const tierEl=document.querySelector('input[name="mc_tier"]:checked');
+  const tier=tierEl?tierEl.value:'primary';
   if(!name) return showToast('กรุณากรอกชื่อ');
-  caregivers.push({name,rel,phone});
+  caregivers.push({name,rel,phone,caregiver_tier:tier});
   const p=loadProfile()||{}; p.caregivers=caregivers; saveProfile2(p);
   document.getElementById('mc_name').value=''; document.getElementById('mc_phone').value='';
-  loadSettingsUI(); showToast(`✅ เพิ่ม ${name} แล้ว`);
+  // reset tier radio กลับ primary
+  const primaryRadio=document.getElementById('mc_tier_primary');
+  if(primaryRadio) primaryRadio.checked=true;
+  loadSettingsUI(); showToast(`✅ เพิ่ม ${name} (${tier==='secondary'?'ผู้ดูแลทั่วไป':'ผู้ดูแลหลัก'}) แล้ว`);
 }
 
 // ── MODAL OPEN/CLOSE ──

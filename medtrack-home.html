@@ -3910,7 +3910,7 @@ async function loadCaregiverList(){
             <div class="cg-card-ico">${ico}</div>
             <div class="cg-card-info">
               <div class="cg-card-name">${cg.name}</div>
-              <div class="cg-card-meta">${cg.relationship||'ผู้ดูแล'} · เตือน ${cg.alert_threshold_minutes} นาที</div>
+              <div class="cg-card-meta">${cg.relationship||'ผู้ดูแล'} · เตือน ${cg.alert_threshold_minutes} นาที · <span style="color:${cg.caregiver_tier==='secondary'?'#64748b':'#0a9c7a'};font-weight:600">${cg.caregiver_tier==='secondary'?'ผู้ดูแลทั่วไป':'ผู้ดูแลหลัก'}</span></div>
               <div class="cg-card-status ${statusCls}">${statusLabel}</div>
               ${!linked && cg.invite_code ? `<div style="margin-top:6px;font-family:monospace;font-size:13px;font-weight:700;color:#0a9c7a;letter-spacing:2px">📋 ${cg.invite_code}</div>` : ''}
             </div>
@@ -3942,14 +3942,16 @@ async function saveCaregiverNew(){
   const phone = document.getElementById('mc-phone').value.trim();
   const thresholdEl = document.querySelector('#mc-threshold-chips .chip.on');
   const threshold = parseInt(thresholdEl?.dataset.min || '30');
-  
+  const tierEl = document.querySelector('input[name="mc-tier"]:checked');
+  const tier = tierEl ? tierEl.value : 'primary';
+
   if(!name){
     alert('กรุณากรอกชื่อผู้ดูแล');
     return;
   }
-  
+
   const userId = getCurrentUserId();
-  
+
   try {
     const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers`, {
       method: 'POST',
@@ -3959,7 +3961,8 @@ async function saveCaregiverNew(){
         name: name,
         relationship: relation,
         phone: phone || null,
-        alert_threshold_minutes: threshold
+        alert_threshold_minutes: threshold,
+        caregiver_tier: tier
       })
     });
     const data = await r.json();
@@ -5269,6 +5272,24 @@ function saveHomeModal(name){
       </select>
     </div>
     <div class="mfield"><label>เบอร์โทร</label><input id="mc-phone" type="tel" placeholder="08x-xxx-xxxx"></div>
+    <div class="mfield"><label>สิทธิ์การดูแล</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        <label style="display:flex;align-items:flex-start;gap:10px;background:#f0fdf4;border:1.5px solid #0a9c7a;border-radius:8px;padding:10px 12px;cursor:pointer;">
+          <input type="radio" name="mc-tier" id="mc-tier-primary" value="primary" checked style="margin-top:2px;flex-shrink:0;accent-color:#0a9c7a;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#0a9c7a;">ผู้ดูแลหลัก</div>
+            <div style="font-size:11px;color:#059669;margin-top:1px;">เห็นยาทุกมื้อ ประวัติ และแนวโน้ม</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;cursor:pointer;">
+          <input type="radio" name="mc-tier" id="mc-tier-secondary" value="secondary" style="margin-top:2px;flex-shrink:0;accent-color:#0a9c7a;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#334155;">ผู้ดูแลทั่วไป</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px;">เห็นแค่ภาพรวมและนัดหมาย</div>
+          </div>
+        </label>
+      </div>
+    </div>
     <div class="mfield"><label>เตือนผู้ดูแลหากผ่านมาแล้ว</label>
       <div class="chip-group" id="mc-threshold-chips">
         <button class="chip" data-min="15" onclick="selectThresholdChip(this)">15 นาที</button>
