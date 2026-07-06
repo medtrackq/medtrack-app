@@ -401,7 +401,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 .modal-close{width:28px;height:28px;border-radius:50%;background:#F3F4F6;border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
 .mfield{margin-bottom:14px}
 .mfield label{font-size:12px;font-weight:600;color:#6B7280;display:block;margin-bottom:5px}
-.mfield input,.mfield select,.mfield textarea{width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;color:#111}
+.mfield input:not([type=radio]):not([type=checkbox]),.mfield select,.mfield textarea{width:100%;padding:10px 12px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;font-family:inherit;outline:none;background:#fff;color:#111}
+.mfield input[type=radio]{width:16px;height:16px;flex-shrink:0;margin:2px 0 0 0;padding:0}
 .mfield input:focus,.mfield select:focus,.mfield textarea:focus{border-color:var(--teal)}
 .mfield textarea{resize:none;height:80px}
 .mfield-row{display:flex;gap:10px}
@@ -1512,7 +1513,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
     <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
       <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
-      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.06.27</span></div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.06</span></div>
       <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 bluecode.pro. All rights reserved.</div>
     </div>
   </div>
@@ -5544,6 +5545,6 @@ function saveHomeModal(name){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.06.27</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.06</div>
 </body>
 </html>
