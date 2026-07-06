@@ -1513,7 +1513,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
     <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
       <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
-      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.06</span></div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.06c</span></div>
       <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 bluecode.pro. All rights reserved.</div>
     </div>
   </div>
@@ -3859,6 +3859,7 @@ let _genderVal = '';
 // ════════════════════════════════════════════════════════
 
 let _currentInviteCode = '';
+let _currentInviteToken = '';
 let _currentMagicLink  = '';
 
 // Get current user_id (helper)
@@ -3917,7 +3918,7 @@ async function loadCaregiverList(){
               ${!linked && cg.invite_code ? `<div style="margin-top:6px;font-family:monospace;font-size:13px;font-weight:700;color:#0a9c7a;letter-spacing:2px">📋 ${cg.invite_code}</div>` : ''}
             </div>
             <div class="cg-card-actions">
-              ${!linked && cg.invite_code ? `<button class="cg-card-btn primary" onclick="shareInviteToLine('${cg.invite_code}', '${cg.name.replace(/'/g, "\\'")}')">📤</button>` : ''}
+              ${!linked && cg.invite_token ? `<button class="cg-card-btn primary" onclick="shareInviteToLine('${cg.invite_token}', '${cg.name.replace(/'/g, "\\'")}')">📤</button>` : ''}
               ${!linked && cg.invite_code ? `<button class="cg-card-btn primary" onclick="copyExistingCode('${cg.invite_code}')">📋</button>` : ''}
               ${linked ? `<button class="cg-card-btn primary" onclick="testCaregiverAlert(${cg.id}, '${cg.name.replace(/'/g, "\\'")}')">🧪</button>` : ''}
               <button class="cg-card-btn danger" onclick="deleteCaregiver(${cg.id}, '${cg.name.replace(/'/g, "\\'")}')">🗑️</button>
@@ -3971,6 +3972,7 @@ async function saveCaregiverNew(){
     
     if(data.ok && data.caregiver){
       _currentInviteCode = data.caregiver.invite_code;
+      _currentInviteToken = data.caregiver.invite_token || '';
       _currentMagicLink  = data.magic_link || '';
       closeHomeModal();
       setTimeout(() => {
@@ -4003,11 +4005,10 @@ async function copyExistingCode(code){
 }
 
 // 📤 Share invite via LINE — ใช้ magic link แทน code
-async function shareInviteToLine(code, caregiverName){
-  // หา magic link จาก card (ถ้ายังอยู่ใน session ใช้ _currentMagicLink)
-  // fallback: สร้าง URL จาก code (กรณีเปิดหน้าใหม่แล้ว magic link หาย)
+async function shareInviteToLine(token, caregiverName){
+  // สร้าง magic link จาก invite_token (fallback ถ้า _currentMagicLink หาย)
   const link = _currentMagicLink ||
-    `https://app.medtrackq.com/medtrack-app/care-link.html?code=${code}`;
+    `https://app.medtrackq.com/medtrack-app/care-link.html?token=${token}`;
   const text = `สวัสดีครับ ${caregiverName} 🙏\n\nขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n👉 กดลิงก์นี้เพื่อรับเชิญ (ใช้ได้เลย ไม่ต้องพิมพ์รหัส):\n${link}\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทันที ขอบคุณครับ 💊`;
 
   if(navigator.share){
@@ -4066,7 +4067,7 @@ async function copyText(text){
 // Share invite via Web Share API — ส่ง magic link
 async function shareInviteCode(){
   const link = _currentMagicLink ||
-    `https://app.medtrackq.com/medtrack-app/care-link.html?code=${_currentInviteCode}`;
+    `https://app.medtrackq.com/medtrack-app/care-link.html?token=${_currentInviteToken}`;
   const text = `ขอเชิญคุณเป็นผู้ดูแลของฉันใน MedTrack! 🙏\n\n👉 กดลิงก์นี้เพื่อรับเชิญ:\n${link}\n\nกดลิงก์ได้เลย ไม่ต้องพิมพ์รหัส ✅`;
 
   if(navigator.share){
@@ -5545,6 +5546,6 @@ function saveHomeModal(name){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.06</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.06c</div>
 </body>
 </html>
