@@ -8,13 +8,14 @@
 <link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <style>
+<style>
 :root {
   --ink-deep: #0F1A2E;
   --ink: #1A2840;
   --ink-light: #5A6A7A;
   --paper: #FAFAF7;
   --paper-warm: #F4EDE0;
-  --bg: #EEF1F6;
+  --bg: #F5F6FA;
   --card: #FFFFFF;
   --accent: #C8392F;
   --accent-soft: #E76F5A;
@@ -27,17 +28,11 @@
   --red: #DC2626;
   --red-soft: #FEE2E2;
   --line: #E5E7EB;
-  --card-border: 1px solid #E3E8EF;
-  --shadow: 0 1px 4px rgba(16,40,64,0.10);
-  --shadow-lg: 0 4px 16px rgba(16,40,64,0.14);
+  --shadow: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.12);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
-/* แบบ B: การ์ดขาวทุกอันมีขอบบาง + เงานุ่ม ให้เด้งจากพื้นเทา */
-.hero-msg, .qstat, .week-card, .trend-card, .insight-card, .appt-card, .action-btn {
-  border: var(--card-border);
-}
 html, body {
   font-family: 'Sarabun', sans-serif;
   background: var(--bg);
@@ -318,82 +313,6 @@ h1, h2, h3 {
 .meal-status.missed {
   background: var(--red-soft);
   color: var(--red);
-}
-
-/* === MEAL CARD (แยกรายมื้อ + รายเม็ด) === */
-.meal-list {
-  background: transparent;
-  box-shadow: none;
-  border-radius: 0;
-  overflow: visible;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.meal-card {
-  background: white;
-  border: var(--card-border);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  padding: 16px;
-}
-.meal-card-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-.meal-card .meal-icon-big { font-size: 30px; }
-.dose-items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.dose-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #F8FAFC;
-  border-radius: 8px;
-  padding: 9px 12px;
-}
-.dose-item.missed { background: var(--red-soft); }
-.dose-item.late   { background: var(--yellow-soft); }
-.dose-check {
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; flex-shrink: 0;
-  color: white;
-}
-.dose-check.taken   { background: var(--green); }
-.dose-check.late    { background: var(--yellow); }
-.dose-check.missed  { background: var(--red); }
-.dose-check.pending {
-  background: transparent;
-  border: 1.5px solid var(--line);
-  color: var(--ink-light);
-}
-.dose-name {
-  flex: 1;
-  font-size: 14px;
-  color: var(--ink);
-}
-.dose-item.missed .dose-name { color: var(--red); }
-.dose-item.late .dose-name   { color: #B45309; }
-.dose-qty {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ink-light);
-  white-space: nowrap;
-}
-.dose-item.missed .dose-qty { color: var(--red); }
-.dose-item.late .dose-qty   { color: #B45309; }
-.dose-empty {
-  font-size: 13px;
-  color: var(--ink-light);
-  font-style: italic;
-  padding: 4px 2px;
 }
 
 /* WEEK CARDS */
@@ -724,24 +643,13 @@ h1, h2, h3 {
       </div>
     </div>
 
-    <!-- TODAY DOSES (primary only) -->
-    <div class="section" id="todaySection">
+    <!-- TODAY DOSES -->
+    <div class="section">
       <div class="section-title">
         <h2>💊 ยาวันนี้</h2>
         <span class="meta" id="todayMeta">—</span>
       </div>
       <div class="meal-list" id="todayList"></div>
-    </div>
-
-    <!-- SECONDARY INFO BOX (secondary only) -->
-    <div class="section" id="secondaryInfoSection" style="display:none;">
-      <div class="insight-card" style="background:var(--yellow-soft);border:1px solid var(--yellow);">
-        <div class="insight-icon">ℹ️</div>
-        <div>
-          <div class="insight-title" style="color:#B45309;">สิทธิ์ของคุณ</div>
-          <div class="insight-body">คุณเป็น <strong>ผู้ดูแลทั่วไป</strong> — เห็นภาพรวมและติดต่อผู้ป่วยได้ หากต้องการเห็นรายละเอียดยา ติดต่อผู้ดูแลหลักเพื่อขอสิทธิ์เพิ่ม</div>
-        </div>
-      </div>
     </div>
 
     <!-- WEEK TREND (primary only) -->
@@ -775,7 +683,7 @@ h1, h2, h3 {
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
-const LIFF_ID = '2009969889-35ERQPQA';
+const LIFF_ID = '';  // TODO: ใส่ LIFF ID หลังสร้างใน LINE Console
 
 const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
@@ -840,12 +748,7 @@ function render(d) {
   const tierBadge = document.getElementById('tierBadge');
   tierBadge.style.display = 'flex';
   document.getElementById('tierLabel').textContent =
-    d.tier === 'secondary' ? 'ผู้ดูแลทั่วไป' : 'ผู้ดูแลหลัก';
-
-  // tier: show/hide sections
-  const isPrimary = d.tier !== 'secondary';
-  document.getElementById('todaySection').style.display       = isPrimary ? '' : 'none';
-  document.getElementById('secondaryInfoSection').style.display = isPrimary ? 'none' : '';
+    d.tier === 'secondary' ? 'ผู้ดูแลรอง' : 'ผู้ดูแลหลัก';
 
   // greeting
   const now = new Date();
@@ -897,7 +800,7 @@ function render(d) {
   renderAppointment(d.appointment);
 
   // quick actions
-  renderActions(d.patient, d.tier);
+  renderActions(d.patient);
 }
 
 function renderInsights(insights, tier) {
@@ -927,26 +830,24 @@ function renderInsights(insights, tier) {
   });
 }
 
-function renderActions(patient, tier) {
+function renderActions(patient) {
   const list = document.getElementById('actionsList');
   list.innerHTML = '';
   const name = patient.name || 'คนไข้';
-  const isPrimary = tier !== 'secondary';
   const actions = [];
 
   // โทร (ถ้ามีเบอร์)
   if (patient.phone) {
     actions.push({ icon:'📞', text:`โทรหา${name}`, onclick:`window.location.href='tel:${patient.phone}'` });
   }
-  // ส่ง LINE
+  // ส่ง LINE (ถ้ามี line_user_id — เปิด LINE)
   if (patient.line_user_id) {
     actions.push({ icon:'💬', text:'ส่ง LINE', onclick:`window.open('https://line.me/R/','_blank')` });
   }
-  // primary only
-  if (isPrimary) {
-    actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
-    actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
-  }
+  // ดูประวัติเต็ม
+  actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
+  // นัดหมอทั้งหมด
+  actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
 
   actions.forEach(a => {
     const btn = document.createElement('button');
@@ -957,107 +858,41 @@ function renderActions(patient, tier) {
   });
 }
 
-// นิยามมื้อ — เรียงตามลำดับเวลา (เวลา hardcode ตาม demo)
-const MEAL_SLOTS = [
-  { key:'breakfast', icon:'🌅', name:'มื้อเช้า',  time:'7:00 น.',  hour:7  },
-  { key:'lunch',     icon:'🌞', name:'มื้อเที่ยง', time:'12:00 น.', hour:12 },
-  { key:'dinner',    icon:'🌆', name:'มื้อเย็น',   time:'18:00 น.', hour:18 },
-  { key:'bedtime',   icon:'🌙', name:'ก่อนนอน',   time:'21:00 น.', hour:21 },
-];
-
-// จัด dose ที่ meal_anchor ว่าง/all/null เข้ามื้อตาม scheduled_time
-function inferMealKey(dose) {
-  const a = (dose.meal_anchor || '').toLowerCase();
-  if (a === 'breakfast' || a === 'lunch' || a === 'dinner' || a === 'bedtime') return a;
-  // fallback: ใช้ชั่วโมงจาก scheduled_time หาว่ามื้อไหนใกล้สุด
-  const h = parseInt((dose.scheduled_time || '00:00').slice(0,2), 10);
-  if (h < 10) return 'breakfast';
-  if (h < 15) return 'lunch';
-  if (h < 20) return 'dinner';
-  return 'bedtime';
-}
-
-// สรุป status ของทั้งมื้อจาก dose หลายตัว
-// taken/late = กินแล้ว · pending = รอ · missed = ขาด
-function summarizeMealStatus(meds, slotHour) {
-  if (meds.length === 0) return { cls:'confirmed', label:'✓ เช็คแล้ว' };
-  const isTaken = d => d.status === 'taken' || d.status === 'late';
-  if (meds.every(isTaken)) {
-    return { cls:'confirmed', label:`✓ ครบ ${meds.length} ตัว` };
-  }
-  if (meds.some(d => d.status === 'missed')) {
-    const n = meds.filter(d => d.status === 'missed').length;
-    return { cls:'missed', label:`⚠️ ขาด ${n} ตัว` };
-  }
-  // ยังมี pending → นับ "อีก X ชม." จากเวลามื้อ (hardcode hour) เทียบเวลาปัจจุบัน
-  const now = new Date();
-  const hoursLeft = slotHour - now.getHours() - (now.getMinutes() / 60);
-  if (hoursLeft > 0) {
-    return { cls:'pending', label:`⏰ อีก ${Math.ceil(hoursLeft)} ชม.` };
-  }
-  // เลยเวลาแล้วแต่ยัง pending (ยังไม่ถึงรอบ missed)
-  return { cls:'pending', label:'⏰ ถึงเวลาแล้ว' };
-}
-
-// status รายเม็ด → ไอคอน + class แถว
-const DOSE_STATUS = {
-  taken:   { cls:'taken',   icon:'✓', label:'กินแล้ว' },
-  late:    { cls:'late',    icon:'⏱', label:'กินช้า' },
-  missed:  { cls:'missed',  icon:'✕', label:'ขาด' },
-  pending: { cls:'pending', icon:'—', label:'รอ' },
+const STATUS_MAP = {
+  taken:   { cls:'confirmed', label:'กินแล้ว' },
+  late:    { cls:'late',      label:'กินช้า' },
+  missed:  { cls:'missed',    label:'ขาด' },
+  pending: { cls:'pending',   label:'รอ' },
 };
-
-function tabletStr(d) {
-  const t = parseFloat(d.tablets_per_dose || 0);
-  return t ? `${t % 1 === 0 ? t : t} เม็ด` : '';
-}
 
 function renderTodayDoses(doses) {
   const list = document.getElementById('todayList');
   list.innerHTML = '';
-
-  // group dose เข้ามื้อ
-  const byMeal = { breakfast:[], lunch:[], dinner:[], bedtime:[] };
-  (doses || []).forEach(d => { byMeal[inferMealKey(d)].push(d); });
-
-  // render ทุกมื้อเป็น card แยก (แสดงครบ 4 มื้อแม้ไม่มียา)
-  MEAL_SLOTS.forEach(slot => {
-    const meds = byMeal[slot.key];
-    const st = summarizeMealStatus(meds, slot.hour);
-
-    // รายการยาแยกแถว — ชื่อซ้าย / จำนวนขวา + ไอคอน status
-    let itemsHtml;
-    if (meds.length === 0) {
-      itemsHtml = '<div class="dose-empty">ไม่มียาในมื้อนี้</div>';
-    } else {
-      itemsHtml = meds.map(d => {
-        const ds = DOSE_STATUS[d.status] || DOSE_STATUS.pending;
-        const name = d.drug_name || d.drug_name_en || 'ยา';
-        const tab = tabletStr(d);
-        return `
-          <div class="dose-item ${ds.cls}">
-            <span class="dose-check ${ds.cls}">${ds.icon}</span>
-            <span class="dose-name">${name}</span>
-            <span class="dose-qty">${tab}</span>
-          </div>`;
-      }).join('');
-    }
-
-    const countStr = meds.length ? ` · ${meds.length} รายการ` : '';
-    const card = document.createElement('div');
-    card.className = 'meal-card';
-    card.innerHTML = `
-      <div class="meal-card-head">
-        <div class="meal-icon-big">${slot.icon}</div>
-        <div class="meal-info">
-          <div class="meal-name">${slot.name}</div>
-          <div class="meal-time">${slot.time}${countStr}</div>
-        </div>
-        <div class="meal-status ${st.cls}">${st.label}</div>
+  if (!doses || doses.length === 0) {
+    list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-light);">ไม่มียาวันนี้</div>';
+    return;
+  }
+  doses.forEach(dose => {
+    const st = STATUS_MAP[dose.status] || STATUS_MAP.pending;
+    const time = (dose.scheduled_time || '').slice(0,5);
+    const tablets = parseFloat(dose.tablets_per_dose || 0);
+    const tabStr = tablets ? `${tablets % 1 === 0 ? tablets : tablets} เม็ด` : '';
+    // badge ยาหมด (กินครบแล้ว — ตรงกับหน้าคนไข้)
+    const finishedBadge = dose.is_finished
+      ? '<span style="background:#94A3B8;color:#fff;font-size:9px;padding:1px 7px;border-radius:8px;margin-left:6px">ยาหมด</span>'
+      : '';
+    const row = document.createElement('div');
+    row.className = 'meal-row';
+    if (dose.is_finished) row.style.opacity = '0.7';
+    row.innerHTML = `
+      <div class="dose-time-badge">${time}</div>
+      <div class="meal-info">
+        <div class="meal-name">${dose.drug_name || dose.drug_name_en || 'ยา'}${finishedBadge}</div>
+        <div class="meal-meds">${dose.dose_mg||''} ${dose.dose_unit||''} ${tabStr ? '· '+tabStr : ''}</div>
       </div>
-      <div class="dose-items">${itemsHtml}</div>
+      <div class="meal-status ${st.cls}">${st.label}</div>
     `;
-    list.appendChild(card);
+    list.appendChild(row);
   });
 }
 
@@ -1104,6 +939,5 @@ function renderAppointment(appt) {
 
 loadDashboard();
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.02b</div>
 </body>
 </html>
