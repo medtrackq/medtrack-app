@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — ระบบ Monitor หลังบ้าน</title>
+<style>
+  :root {
+    --bg:#0f1620; --panel:#182533; --panel2:#1e3042; --line:#2a3d52;
+    --t1:#e8f0f7; --t2:#8fa8bf; --t3:#5d7a94;
+    --ok:#2dd4a7; --warn:#f5b544; --err:#ff5d6c; --info:#4a9eff;
+    --accent:#2dd4a7;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'IBM Plex Sans Thai','Sarabun',-apple-system,sans-serif;
+    background:var(--bg); color:var(--t1); padding:16px; line-height:1.5;
+    background-image:radial-gradient(circle at 20% 0%, rgba(45,212,167,.04), transparent 40%);
+  }
+  .wrap { max-width:1200px; margin:0 auto; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom:6px; flex-wrap:wrap; }
+  .logo { font-size:20px; font-weight:800; letter-spacing:-.02em; }
+  .logo span { color:var(--accent); }
+  .status-live { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--t2); }
+  .pulse { width:8px; height:8px; border-radius:50%; background:var(--ok); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .refresh-info { margin-left:auto; font-size:12px; color:var(--t2); display:flex; align-items:center; gap:10px; }
+  .btn { background:var(--panel2); border:1px solid var(--line); color:var(--t1); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-family:inherit; }
+  .btn:hover { border-color:var(--accent); }
+  .btn-primary { background:var(--accent); color:#04231a; border:none; font-weight:600; }
+  .subtitle { font-size:13px; color:var(--t2); margin-bottom:20px; }
+
+  /* health strip */
+  .health-strip { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; margin-bottom:20px; }
+  .hcard { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; position:relative; overflow:hidden; }
+  .hcard::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent); }
+  .hcard.ok::before { background:var(--ok); } .hcard.warn::before { background:var(--warn); } .hcard.err::before { background:var(--err); } .hcard.info::before { background:var(--info); }
+  .hcard-label { font-size:11px; color:var(--t2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+  .hcard-value { font-size:28px; font-weight:800; letter-spacing:-.02em; }
+  .hcard-value.small { font-size:20px; }
+  .hcard-sub { font-size:11px; color:var(--t2); margin-top:2px; }
+  .hcard-value.ok { color:var(--ok); } .hcard-value.warn { color:var(--warn); } .hcard-value.err { color:var(--err); }
+
+  /* sections */
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media(max-width:820px){ .grid2 { grid-template-columns:1fr; } }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px; }
+  .panel-head { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+  .panel-title { font-size:15px; font-weight:700; }
+  .panel-count { margin-left:auto; font-size:12px; color:var(--t2); background:var(--panel2); padding:2px 10px; border-radius:20px; }
+
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:var(--t2); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:.04em; padding:8px 10px; border-bottom:1px solid var(--line); }
+  td { padding:9px 10px; border-bottom:1px solid rgba(42,61,82,.4); }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(74,158,255,.04); }
+  .pill { display:inline-block; font-size:11px; padding:2px 9px; border-radius:20px; font-weight:600; }
+  .pill-ok { background:rgba(45,212,167,.15); color:var(--ok); }
+  .pill-warn { background:rgba(245,181,68,.15); color:var(--warn); }
+  .pill-err { background:rgba(255,93,108,.15); color:var(--err); }
+  .pill-mute { background:rgba(143,168,191,.12); color:var(--t2); }
+  .mono { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--t2); }
+  .empty { text-align:center; padding:30px; color:var(--t2); font-size:13px; }
+  .adherence-bar { display:inline-block; width:50px; height:6px; background:var(--panel2); border-radius:3px; overflow:hidden; vertical-align:middle; margin-right:6px; }
+  .adherence-fill { height:100%; background:var(--ok); }
+  .err-row { color:var(--err); }
+  .loading { text-align:center; padding:60px; color:var(--t2); }
+  .spinner { width:32px; height:32px; border:3px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 12px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .secret-box { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:30px; max-width:400px; margin:80px auto; text-align:center; }
+  .secret-box input { width:100%; padding:11px 14px; background:var(--bg); border:1px solid var(--line); border-radius:8px; color:var(--t1); font-size:14px; margin:14px 0; font-family:inherit; }
+  .full { grid-column:1/-1; }
+  .um-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid var(--line); }
+  .um-name { font-size:18px; font-weight:700; }
+  .um-section { margin-bottom:18px; }
+  .um-title { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- Secret gate -->
+  <div id="secretGate" class="secret-box">
+    <div class="logo">Med<span>Track</span> Monitor</div>
+    <p style="color:var(--t2);font-size:13px;margin-top:8px">ใส่ admin secret เพื่อเข้าระบบ</p>
+    <input type="password" id="secretInput" placeholder="admin secret" onkeydown="if(event.key==='Enter')enterDash()">
+    <button class="btn btn-primary" style="width:100%" onclick="enterDash()">เข้าสู่ระบบ</button>
+    <p id="secretErr" style="color:var(--err);font-size:12px;margin-top:10px;display:none">รหัสไม่ถูกต้อง</p>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none">
+    <header>
+      <div class="logo">Med<span>Track</span> Monitor</div>
+      <span class="status-live"><span class="pulse"></span> LIVE</span>
+      <div class="refresh-info">
+        <span id="lastUpdate">—</span>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="autoRefresh" checked> auto 30s</label>
+        <button class="btn" onclick="loadData()">รีเฟรช</button>
+      </div>
+    </header>
+    <div class="subtitle">ภาพรวมระบบ 24 ชั่วโมงล่าสุด · ดูปัญหาได้โดยไม่ต้องแตะ database</div>
+
+    <div id="content"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
+  </div>
+
+  <!-- User Inspector Modal -->
+  <div id="userModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto" onclick="if(event.target===this)this.style.display='none'">
+    <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:640px;width:100%;padding:24px">
+      <div id="userModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://medtrack-backend-production-7731.up.railway.app';
+let SECRET = '';
+let autoTimer = null;
+
+function enterDash(){
+  SECRET = document.getElementById('secretInput').value.trim();
+  if(!SECRET) return;
+  loadData(true);
+}
+
+async function loadData(isFirst){
+  try {
+    const r = await fetch(`${API}/api/admin/overview?secret=${encodeURIComponent(SECRET)}`);
+    if(r.status === 403){
+      if(isFirst){ document.getElementById('secretErr').style.display='block'; }
+      return;
+    }
+    const d = await r.json();
+    if(!d.ok) throw new Error('bad response');
+    // ผ่าน secret → แสดง dashboard
+    document.getElementById('secretGate').style.display='none';
+    document.getElementById('dashboard').style.display='block';
+    render(d);
+    document.getElementById('lastUpdate').textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH');
+    setupAutoRefresh();
+  } catch(e){
+    if(isFirst) document.getElementById('secretErr').style.display='block';
+    else console.error('load failed', e);
+  }
+}
+
+function setupAutoRefresh(){
+  if(autoTimer) clearInterval(autoTimer);
+  if(document.getElementById('autoRefresh')?.checked){
+    autoTimer = setInterval(()=>loadData(false), 30000);
+  }
+}
+document.addEventListener('change', e=>{ if(e.target.id==='autoRefresh') setupAutoRefresh(); });
+
+function fmtTime(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now-d)/60000); // นาที
+  if(diff < 1) return 'เมื่อกี้';
+  if(diff < 60) return diff+' นาทีที่แล้ว';
+  if(diff < 1440) return Math.floor(diff/60)+' ชม.ที่แล้ว';
+  return d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+}
+
+function render(d){
+  const s = d.stats || {};
+  // LINE push health
+  const pushTotal = +s.push_24h || 0;
+  const pushFailed = +s.push_failed_24h || 0;
+  const pushOk = +s.push_sent_24h || 0;
+  const pushHealth = pushTotal===0 ? 'mute' : (pushFailed > 0 ? (pushFailed > pushOk ? 'err':'warn') : 'ok');
+  const pushLabel = pushTotal===0 ? 'ไม่มีการส่ง' : `${pushOk} สำเร็จ / ${pushFailed} ล้มเหลว`;
+
+  let html = `
+    <!-- Health strip -->
+    <div class="health-strip">
+      <div class="hcard info">
+        <div class="hcard-label">ผู้ใช้ทั้งหมด</div>
+        <div class="hcard-value">${s.total_users||0}</div>
+        <div class="hcard-sub">+${s.new_users_24h||0} วันนี้</div>
+      </div>
+      <div class="hcard ok">
+        <div class="hcard-label">สแกน 24 ชม.</div>
+        <div class="hcard-value">${s.scans_24h||0}</div>
+        <div class="hcard-sub">รวม ${s.total_scans||0} ครั้ง</div>
+      </div>
+      <div class="hcard ${pushHealth==='ok'?'ok':pushHealth==='err'?'err':pushHealth==='warn'?'warn':'info'}">
+        <div class="hcard-label">LINE เตือน 24 ชม.</div>
+        <div class="hcard-value ${pushHealth==='err'?'err':pushHealth==='warn'?'warn':''} small">${pushTotal}</div>
+        <div class="hcard-sub">${pushLabel}</div>
+      </div>
+      <div class="hcard ok">
+        <div class="hcard-label">กินยา 24 ชม.</div>
+        <div class="hcard-value">${s.taken_24h||0}<span style="font-size:14px;color:var(--t2)">/${s.doses_24h||0}</span></div>
+        <div class="hcard-sub">กินแล้ว/ทั้งหมด</div>
+      </div>
+      <div class="hcard info">
+        <div class="hcard-label">ผู้ดูแล active</div>
+        <div class="hcard-value">${s.active_caregivers||0}</div>
+        <div class="hcard-sub">caregivers</div>
+      </div>
+      <div class="hcard warn">
+        <div class="hcard-label">ต้นทุน AI 24 ชม.</div>
+        <div class="hcard-value small">฿${s.ai_cost_24h||0}</div>
+        <div class="hcard-sub">ค่าสแกน</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <!-- LINE errors -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">⚠️ LINE ส่งล้มเหลว</span>
+          <span class="panel-count">${(d.push_errors||[]).length} ล่าสุด</span>
+        </div>
+        ${(d.push_errors||[]).length === 0
+          ? '<div class="empty">✓ ไม่มีการส่งล้มเหลว</div>'
+          : `<table><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>สาเหตุ</th></tr></thead><tbody>
+             ${d.push_errors.map(e=>`<tr class="err-row">
+               <td class="mono">${fmtTime(e.created_at)}</td>
+               <td>${e.display_name||'—'}</td>
+               <td style="font-size:12px">${(e.error_message||'unknown').slice(0,50)}</td>
+             </tr>`).join('')}</tbody></table>`}
+      </div>
+
+      <!-- Recent activity -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">📋 กิจกรรมล่าสุด</span>
+          <span class="panel-count">${(d.activity||[]).length} event</span>
+        </div>
+        ${(d.activity||[]).length === 0
+          ? '<div class="empty">ยังไม่มีกิจกรรม</div>'
+          : `<table><tbody>
+             ${d.activity.slice(0,10).map(a=>`<tr>
+               <td class="mono" style="width:90px">${fmtTime(a.event_time)}</td>
+               <td>${a.event_type==='scan'?'📷':'💊'} ${a.display_name||'—'}</td>
+               <td><span class="pill pill-${a.detail==='taken'?'ok':a.detail==='scan'||a.event_type==='scan'?'info':'mute'}">${a.event_type==='scan'?('สแกน '+(a.detail||'')):(a.detail||'')}</span></td>
+             </tr>`).join('')}</tbody></table>`}
+      </div>
+    </div>
+
+    <!-- Users table -->
+    <div class="panel full">
+      <div class="panel-head">
+        <span class="panel-title">👥 ผู้ใช้งาน</span>
+        <span class="panel-count">${(d.users||[]).length} คน</span>
+      </div>
+      ${(d.users||[]).length === 0
+        ? '<div class="empty">ยังไม่มีผู้ใช้ (database สะอาด พร้อมเทส)</div>'
+        : `<div style="font-size:11px;color:var(--t2);margin-bottom:8px">💡 คลิกที่ผู้ใช้เพื่อดูรายละเอียด (สแกน / ยา / การส่ง LINE)</div><table><thead><tr>
+            <th>ID</th><th>ชื่อ</th><th>สมัคร</th><th>กินยาล่าสุด</th>
+            <th>ยา</th><th>สแกน</th><th>นัด</th><th>Adherence 7d</th>
+           </tr></thead><tbody>
+           ${d.users.map(u=>{
+             const adh = u.adherence_7d;
+             const adhColor = adh===null?'mute':adh>=80?'ok':adh>=50?'warn':'err';
+             return `<tr style="cursor:pointer" onclick="inspectUser(${u.id})">
+               <td class="mono">#${u.id}</td>
+               <td><b>${u.display_name||'—'}</b></td>
+               <td class="mono">${fmtTime(u.created_at)}</td>
+               <td class="mono">${fmtTime(u.last_dose)}</td>
+               <td>${u.active_meds||0}</td>
+               <td>${u.total_scans||0}</td>
+               <td>${u.upcoming_appts||0}</td>
+               <td>${adh===null?'<span class="pill pill-mute">—</span>':
+                 `<span class="adherence-bar"><span class="adherence-fill" style="width:${adh}%;background:var(--${adhColor==='mute'?'t2':adhColor})"></span></span><span class="pill pill-${adhColor}">${adh}%</span>`}</td>
+             </tr>`;
+           }).join('')}</tbody></table>`}
+    </div>
+  `;
+  document.getElementById('content').innerHTML = html;
+}
+
+// ══ User Inspector — ตอบ "สแกนแล้วหายไปไหน" ══
+async function inspectUser(userId){
+  const modal = document.getElementById('userModal');
+  const body = document.getElementById('userModalBody');
+  modal.style.display = 'flex';
+  body.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลด...</div>';
+  try {
+    const r = await fetch(`${API}/api/admin/user/${userId}?secret=${encodeURIComponent(SECRET)}`);
+    const d = await r.json();
+    if(!d.ok) throw new Error('failed');
+    const u = d.user;
+    const scans = d.recent_scans||[];
+    const pushes = d.recent_pushes||[];
+    const meds = d.medications||[];
+
+    body.innerHTML = `
+      <div class="um-head">
+        <div><div class="um-name">${u.name||'—'}</div><div class="mono" style="color:var(--t2);font-size:12px">#${u.id} · ${u.phone||'ไม่มีเบอร์'} · สมัคร ${fmtTime(u.created_at)}</div></div>
+        <button class="btn" onclick="document.getElementById('userModal').style.display='none'">ปิด</button>
+      </div>
+
+      <div class="um-section">
+        <div class="um-title">📷 ประวัติสแกน (${scans.length})</div>
+        ${scans.length===0 ? '<div class="empty" style="padding:16px">ยังไม่เคยสแกน — ถ้าคนไข้บอก "สแกนแล้ว" แต่ตรงนี้ว่าง = สแกนไม่ถึงระบบ</div>'
+          : `<table><tbody>${scans.map(s=>`<tr>
+              <td class="mono" style="width:110px">${fmtTime(s.created_at)}</td>
+              <td>${s.scan_type==='medicine'?'💊 ยา':s.scan_type==='appointment'?'📅 ใบนัด':s.scan_type}</td>
+              <td>${s.created_record?'<span class="pill pill-ok">เข้าระบบ ✓</span>':'<span class="pill pill-err">ไม่สร้างข้อมูล ✗</span>'}</td>
+            </tr>`).join('')}</tbody></table>`}
+      </div>
+
+      <div class="um-section">
+        <div class="um-title">💊 ยาปัจจุบัน (${meds.filter(m=>m.is_active).length} active)</div>
+        ${meds.length===0 ? '<div class="empty" style="padding:16px">ไม่มียา</div>'
+          : `<table><tbody>${meds.slice(0,10).map(m=>`<tr>
+              <td>${m.drug_name}</td><td class="mono">${m.dose_mg||''} ${m.dose_unit||''}</td>
+              <td>${m.is_active?'<span class="pill pill-ok">ใช้อยู่</span>':'<span class="pill pill-mute">หยุด</span>'}</td>
+            </tr>`).join('')}</tbody></table>`}
+      </div>
+
+      <div class="um-section">
+        <div class="um-title">📤 การส่ง LINE ล่าสุด (${pushes.length})</div>
+        ${pushes.length===0 ? '<div class="empty" style="padding:16px">ยังไม่มีการส่ง — ถ้าคนไข้บอก "ไม่ได้รับเตือน" ตรงนี้ว่าง = ระบบยังไม่ส่ง (เช็ค LINE token/โควตา)</div>'
+          : `<table><tbody>${pushes.map(p=>`<tr>
+              <td class="mono" style="width:110px">${fmtTime(p.created_at)}</td>
+              <td>${p.status==='sent'?'<span class="pill pill-ok">ส่งสำเร็จ</span>':p.status==='failed'?'<span class="pill pill-err">ล้มเหลว</span>':'<span class="pill pill-mute">'+p.status+'</span>'}</td>
+              <td style="font-size:12px;color:var(--err)">${p.error_message?p.error_message.slice(0,40):''}</td>
+            </tr>`).join('')}</tbody></table>`}
+      </div>
+    `;
+  } catch(e){
+    body.innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ</div>';
+  }
+}
+</script>
+</body>
+</html>
