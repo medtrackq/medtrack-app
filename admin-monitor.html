@@ -74,6 +74,13 @@
   .um-name { font-size:18px; font-weight:700; }
   .um-section { margin-bottom:18px; }
   .um-title { font-size:13px; font-weight:700; color:var(--t1); margin-bottom:8px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tab { background:var(--panel); border:1px solid var(--line); color:var(--t2); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-family:inherit; font-weight:600; }
+  .tab.active { background:var(--panel2); color:var(--t1); border-color:var(--accent); }
+  .log-filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:center; }
+  .log-filters select, .log-filters input { background:var(--panel); border:1px solid var(--line); color:var(--t1); padding:7px 12px; border-radius:8px; font-size:13px; font-family:inherit; }
+  .log-row { cursor:pointer; }
+  .log-detail-box { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--t2); white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto; }
 </style>
 </head>
 <body>
@@ -100,7 +107,13 @@
     </header>
     <div class="subtitle">ภาพรวมระบบ 24 ชั่วโมงล่าสุด · ดูปัญหาได้โดยไม่ต้องแตะ database</div>
 
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('overview',this)">📊 ภาพรวม</button>
+      <button class="tab" onclick="switchTab('logs',this)">📜 Logs (ละเอียด)</button>
+    </div>
+
     <div id="content"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
+    <div id="logsContent" style="display:none"></div>
   </div>
 
   <!-- User Inspector Modal -->
@@ -324,6 +337,89 @@ async function inspectUser(userId){
     `;
   } catch(e){
     body.innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ</div>';
+  }
+}
+// ══ Tab switching + Logs viewer ══
+let currentTab = 'overview';
+function switchTab(tab, btn){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('content').style.display = tab==='overview'?'block':'none';
+  document.getElementById('logsContent').style.display = tab==='logs'?'block':'none';
+  if(tab==='logs') loadLogs();
+}
+
+async function loadLogs(){
+  const box = document.getElementById('logsContent');
+  const typeF = document.getElementById('logTypeFilter')?.value || '';
+  const successF = document.getElementById('logSuccessFilter')?.value || '';
+  box.innerHTML = '<div class="loading"><div class="spinner"></div>โหลด logs...</div>';
+  try {
+    let url = `${API}/api/admin/logs?secret=${encodeURIComponent(SECRET)}&limit=100`;
+    if(typeF) url += `&type=${typeF}`;
+    if(successF) url += `&success=${successF}`;
+    const r = await fetch(url);
+    const d = await r.json();
+    if(!d.ok) throw new Error('failed');
+    const st = d.stats||{};
+    box.innerHTML = `
+      <div class="health-strip" style="grid-template-columns:repeat(4,1fr)">
+        <div class="hcard info"><div class="hcard-label">Events 24 ชม.</div><div class="hcard-value small">${st.total_24h||0}</div></div>
+        <div class="hcard ${st.failed_24h>0?'err':'ok'}"><div class="hcard-label">ล้มเหลว</div><div class="hcard-value small ${st.failed_24h>0?'err':''}">${st.failed_24h||0}</div></div>
+        <div class="hcard ok"><div class="hcard-label">เร็วเฉลี่ย</div><div class="hcard-value small">${st.avg_ms||0}ms</div></div>
+        <div class="hcard warn"><div class="hcard-label">ช้าสุด</div><div class="hcard-value small">${st.max_ms||0}ms</div></div>
+      </div>
+      <div class="panel full">
+        <div class="log-filters">
+          <select id="logTypeFilter" onchange="loadLogs()">
+            <option value="">ทุกประเภท</option>
+            <option value="auth" ${typeF==='auth'?'selected':''}>สมัคร</option>
+            <option value="scan" ${typeF==='scan'?'selected':''}>สแกน</option>
+            <option value="dose" ${typeF==='dose'?'selected':''}>กินยา</option>
+            <option value="api" ${typeF==='api'?'selected':''}>API</option>
+            <option value="error" ${typeF==='error'?'selected':''}>Error</option>
+          </select>
+          <select id="logSuccessFilter" onchange="loadLogs()">
+            <option value="">สำเร็จ+ล้มเหลว</option>
+            <option value="false" ${successF==='false'?'selected':''}>เฉพาะล้มเหลว</option>
+            <option value="true" ${successF==='true'?'selected':''}>เฉพาะสำเร็จ</option>
+          </select>
+          <button class="btn" onclick="loadLogs()">รีเฟรช</button>
+          <span style="font-size:12px;color:var(--t2);margin-left:auto">💡 คลิก log เพื่อดู request/response เต็ม</span>
+        </div>
+        ${(d.logs||[]).length===0 ? '<div class="empty">ยังไม่มี log</div>'
+          : `<table><thead><tr><th>เวลา</th><th>ประเภท</th><th>action</th><th>path</th><th>status</th><th>ms</th></tr></thead><tbody>
+             ${d.logs.map(l=>`<tr class="log-row" onclick="toggleLogDetail(${l.id},this)">
+               <td class="mono" style="width:90px">${fmtTime(l.created_at)}</td>
+               <td><span class="pill pill-${l.event_type==='error'?'err':l.event_type==='scan'?'info':'mute'}">${l.event_type}</span></td>
+               <td style="font-size:12px">${l.event_action||'—'}</td>
+               <td class="mono" style="font-size:11px">${l.method||''} ${(l.path||'').slice(0,30)}</td>
+               <td>${l.success?'<span class="pill pill-ok">'+l.status_code+'</span>':'<span class="pill pill-err">'+(l.status_code||'ERR')+'</span>'}</td>
+               <td class="mono">${l.duration_ms||'—'}</td>
+             </tr>`).join('')}</tbody></table>`}
+      </div>`;
+  } catch(e){
+    box.innerHTML = '<div class="empty">โหลด logs ไม่สำเร็จ</div>';
+  }
+}
+
+async function toggleLogDetail(logId, row){
+  // ถ้ามี detail row อยู่แล้ว → ปิด
+  const next = row.nextElementSibling;
+  if(next && next.classList.contains('detail-row')){ next.remove(); return; }
+  const tr = document.createElement('tr');
+  tr.className = 'detail-row';
+  tr.innerHTML = `<td colspan="6"><div class="log-detail-box">โหลด...</div></td>`;
+  row.after(tr);
+  try {
+    const r = await fetch(`${API}/api/admin/logs/${logId}?secret=${encodeURIComponent(SECRET)}`);
+    const d = await r.json();
+    const det = d.detail||{};
+    tr.querySelector('.log-detail-box').textContent =
+      `REQUEST:\n${det.request_body?JSON.stringify(det.request_body,null,2):'(ไม่มี)'}\n\nRESPONSE:\n${det.response_body?JSON.stringify(det.response_body,null,2):'(ไม่มี)'}${det.error_stack?'\n\nERROR:\n'+det.error_stack:''}`;
+  } catch(e){
+    tr.querySelector('.log-detail-box').textContent = 'โหลด detail ไม่สำเร็จ';
   }
 }
 </script>
