@@ -109,10 +109,12 @@
 
     <div class="tabs">
       <button class="tab active" onclick="switchTab('overview',this)">📊 ภาพรวม</button>
+      <button class="tab" onclick="switchTab('cost',this)">💰 Cost</button>
       <button class="tab" onclick="switchTab('logs',this)">📜 Logs (ละเอียด)</button>
     </div>
 
     <div id="content"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
+    <div id="costContent" style="display:none"></div>
     <div id="logsContent" style="display:none"></div>
   </div>
 
@@ -346,8 +348,57 @@ function switchTab(tab, btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('content').style.display = tab==='overview'?'block':'none';
+  document.getElementById('costContent').style.display = tab==='cost'?'block':'none';
   document.getElementById('logsContent').style.display = tab==='logs'?'block':'none';
   if(tab==='logs') loadLogs();
+  if(tab==='cost') loadCost();
+}
+
+async function loadCost(){
+  const box = document.getElementById('costContent');
+  box.innerHTML = '<div class="loading"><div class="spinner"></div>โหลดข้อมูลต้นทุน...</div>';
+  try {
+    const r = await fetch(`${API}/api/admin/cost?secret=${encodeURIComponent(SECRET)}`);
+    const d = await r.json();
+    if(!d.ok) throw new Error('failed');
+    const s = d.summary;
+    const avgToday = s.scans_today>0 ? (s.cost_today/s.scans_today).toFixed(2) : '0';
+
+    let html = `
+      <div class="health-strip">
+        <div class="hcard warn"><div class="hcard-label">ต้นทุนวันนี้</div><div class="hcard-value small">฿${(+s.cost_today).toFixed(2)}</div><div class="hcard-sub">${s.scans_today} สแกน · เฉลี่ย ฿${avgToday}</div></div>
+        <div class="hcard info"><div class="hcard-label">7 วัน</div><div class="hcard-value small">฿${(+s.cost_7d).toFixed(2)}</div><div class="hcard-sub">${s.scans_7d} สแกน</div></div>
+        <div class="hcard info"><div class="hcard-label">30 วัน</div><div class="hcard-value small">฿${(+s.cost_30d).toFixed(2)}</div><div class="hcard-sub">${s.scans_30d} สแกน</div></div>
+        <div class="hcard ${s.hit_rate_7d>=70?'ok':'warn'}"><div class="hcard-label">Cache HIT (7 วัน)</div><div class="hcard-value small ${s.hit_rate_7d>=70?'ok':''}">${s.hit_rate_7d}%</div><div class="hcard-sub">ยิ่งสูง ยิ่งประหยัด</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">📅 ต้นทุนต่อวัน (14 วัน)</span></div>
+          ${d.daily.length===0?'<div class="empty">ยังไม่มีข้อมูล</div>':
+            `<table><thead><tr><th>วันไทย</th><th>สแกน</th><th>ต้นทุน</th><th>เฉลี่ย/ใบ</th></tr></thead><tbody>
+             ${d.daily.map(x=>`<tr><td class="mono">${new Date(x.day).toLocaleDateString('th-TH',{day:'numeric',month:'short'})}</td><td>${x.scans}</td><td>฿${x.cost}</td><td class="mono">฿${x.avg_cost}</td></tr>`).join('')}</tbody></table>`}
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">🏷️ แยกตามประเภท (30 วัน)</span></div>
+          ${d.by_type.length===0?'<div class="empty">ยังไม่มีข้อมูล</div>':
+            `<table><thead><tr><th>ประเภท</th><th>สแกน</th><th>ต้นทุน</th><th>เฉลี่ย</th><th>HIT</th></tr></thead><tbody>
+             ${d.by_type.map(x=>`<tr><td>${x.scan_type==='medicine'?'💊 ยา':x.scan_type==='appointment'?'📅 นัด':x.scan_type||'—'}</td><td>${x.scans}</td><td>฿${x.cost}</td><td class="mono">฿${x.avg_cost}</td><td>${x.hits}/${x.scans}</td></tr>`).join('')}</tbody></table>`}
+        </div>
+      </div>
+
+      <div class="panel full">
+        <div class="panel-head"><span class="panel-title">👥 ต้นทุนต่อผู้ใช้ (Top 10, 30 วัน)</span></div>
+        ${d.by_user.length===0?'<div class="empty">ยังไม่มีข้อมูล</div>':
+          `<table><thead><tr><th>ผู้ใช้</th><th>สแกน</th><th>ต้นทุนรวม</th></tr></thead><tbody>
+           ${d.by_user.map(x=>`<tr><td><b>${x.display_name||'—'}</b> <span class="mono">#${x.user_id}</span></td><td>${x.scans}</td><td>฿${x.cost}</td></tr>`).join('')}</tbody></table>`}
+      </div>
+    `;
+    box.innerHTML = html;
+  } catch(e){
+    box.innerHTML = '<div class="empty">โหลดข้อมูลต้นทุนไม่สำเร็จ</div>';
+  }
 }
 
 async function loadLogs(){
