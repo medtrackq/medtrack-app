@@ -2852,9 +2852,56 @@ async function loadTodayDoses(userId){
     document.getElementById('viewToggle').style.display = '';
     setViewMode(viewMode);  // apply + render ตาม mode ปัจจุบัน
     renderStatsBar(data.doses);
+    checkMedReportButton(userId, data.doses);  // เช็คว่าควรขึ้นปุ่มสรุปมั้ย
   } catch(e) {
     console.warn('loadTodayDoses error:', e);
   }
+}
+
+// ────────────────────────────────────────────────────────
+// Med Report Button — ขึ้นเมื่อยาหมดครบ หรือใกล้นัด (≤3 วัน)
+// ────────────────────────────────────────────────────────
+async function checkMedReportButton(userId, doses){
+  try {
+    // เงื่อนไข 1: ยาที่มี dose หมดครบ (ไม่มียา has-dose ที่ยังไม่ finished เหลือ)
+    const withDose = (doses||[]).filter(d => d.total_doses != null);
+    const activeWithDose = withDose.filter(d => !d.is_finished);
+    const allDoseFinished = withDose.length > 0 && activeWithDose.length === 0;
+
+    // เงื่อนไข 2: ใกล้นัด (≤3 วัน) — ดึงจาก med-report
+    const rep = await fetch(`${MEDTRACK_BACKEND}/api/med-report?user_id=${userId}`).then(r=>r.json()).catch(()=>null);
+    let nearAppt = false, apptDate = null, pct = null;
+    if(rep && rep.ok){
+      pct = rep.overall_pct;
+      if(rep.next_appointment){
+        const days = Math.ceil((new Date(rep.next_appointment.appointment_date) - new Date())/(1000*60*60*24));
+        if(days >= 0 && days <= 3) nearAppt = true;
+        apptDate = new Date(rep.next_appointment.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+      }
+    }
+
+    const show = allDoseFinished || nearAppt;
+    renderMedReportButton(show, userId, apptDate, pct);
+  } catch(e){ console.warn('checkMedReportButton', e); }
+}
+
+function renderMedReportButton(show, userId, apptDate, pct){
+  let btn = document.getElementById('medReportBtn');
+  if(!show){ if(btn) btn.remove(); return; }
+  if(btn) return; // มีแล้ว ไม่ซ้ำ
+
+  const html = `
+    <div id="medReportBtn" onclick="window.open('med-report.html?user_id=${userId}','_blank')"
+         style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:18px;color:#fff;margin:0 0 16px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
+      <div style="font-size:12px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">สรุป 💊 ก่อนพบหมอ</div>
+      <div style="font-size:12px;opacity:.9">ดูผลการกินยารอบนี้ + คะแนน${pct!=null?' · '+pct+'%':''}</div>
+      <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
+    </div>`;
+
+  // แทรกไว้บนสุดของพื้นที่ยา (elderlyView หรือ todaysDoses)
+  const target = document.getElementById('elderlyView') || document.getElementById('todaysDoses');
+  if(target) target.insertAdjacentHTML('beforebegin', html);
 }
 
 // ────────────────────────────────────────────────────────

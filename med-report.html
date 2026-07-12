@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สรุปการกินยา — MedTrack</title>
+<style>
+  :root {
+    --teal:#0a9c7a; --blue:#2563EB; --amber:#F59E0B; --bg:#f0f4f7;
+    --card:#fff; --t1:#1a2733; --t2:#64748b; --line:#e5e7eb; --gray:#94a3b8; --red:#dc2626;
+    --gold:#F5A623; --silver:#94a3b8; --bronze:#c17a3f; --green:#0a9c7a;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'IBM Plex Sans Thai','Sarabun',sans-serif; background:var(--bg); color:var(--t1); line-height:1.5; }
+  .wrap { max-width:440px; margin:0 auto; min-height:100vh; background:var(--card); }
+
+  /* header เกมจบ */
+  .game-head { padding:32px 20px 26px; text-align:center; color:#fff; }
+  .head-gold { background:linear-gradient(135deg,#F5A623,#e8890b); }
+  .head-silver { background:linear-gradient(160deg,#a8b4c0,#64748b); }
+  .head-bronze { background:linear-gradient(160deg,#cd8a4f,#9a5f2f); }
+  .head-none { background:linear-gradient(135deg,#0a9c7a,#0fb389); }
+  .trophy { font-size:56px; margin-bottom:6px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.2)); }
+  .grade-big { font-size:15px; font-weight:700; opacity:.95; letter-spacing:.05em; }
+  .pct-huge { font-size:60px; font-weight:900; line-height:1; margin:4px 0; letter-spacing:-.03em; }
+  .pct-label { font-size:13px; opacity:.9; }
+  .cycle-info { font-size:12px; opacity:.85; margin-top:10px; background:rgba(255,255,255,.18); display:inline-block; padding:4px 14px; border-radius:20px; }
+
+  .body { padding:18px; }
+  .section-t { font-size:13px; font-weight:700; color:var(--t2); margin:18px 0 10px; }
+  .section-t:first-child { margin-top:0; }
+
+  /* reward */
+  .reward-card { background:linear-gradient(135deg,#eff6ff,#dbeafe); border:1px solid #bfdbfe; border-radius:14px; padding:16px; text-align:center; }
+  .reward-card.gold { background:linear-gradient(135deg,#fffbeb,#fef3c7); border-color:#fde68a; }
+  .points-num { font-size:34px; font-weight:900; color:var(--blue); }
+  .points-num.gold { color:#e8890b; }
+  .reward-sub { font-size:12px; color:var(--t2); margin-top:2px; }
+  .discount-badge { background:var(--teal); color:#fff; font-size:13px; font-weight:700; padding:6px 16px; border-radius:20px; display:inline-block; margin-top:10px; }
+  .discount-badge.locked { background:var(--gray); }
+
+  /* กราฟแท่ง */
+  .drug-bar { margin-bottom:14px; }
+  .drug-bar-top { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
+  .drug-name { font-weight:600; }
+  .drug-pct { font-weight:700; }
+  .bar-track { height:22px; background:#eef2f5; border-radius:11px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:11px; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:10px; color:#fff; font-weight:700; transition:width 1s ease-out; min-width:24px; }
+  .fill-high { background:linear-gradient(90deg,#0a9c7a,#0fb389); }
+  .fill-mid { background:linear-gradient(90deg,#F5A623,#e8890b); }
+  .fill-low { background:linear-gradient(90deg,#dc2626,#ef4444); }
+  .drug-null { display:flex; align-items:center; gap:8px; padding:10px 12px; background:#fffbeb; border-radius:10px; margin-bottom:8px; font-size:13px; }
+  .badge-null { font-size:10px; padding:1px 8px; border-radius:10px; background:#fde68a; color:#92400e; font-weight:600; }
+
+  /* stats */
+  .stats-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .stat-box { background:#f7fafc; border-radius:10px; padding:12px 8px; text-align:center; }
+  .stat-num { font-size:22px; font-weight:800; }
+  .stat-lbl { font-size:10px; color:var(--t2); margin-top:1px; }
+
+  .streak-badge { display:inline-flex; align-items:center; gap:6px; background:#fff7ed; border:1px solid #fed7aa; border-radius:20px; padding:6px 14px; font-size:13px; font-weight:600; color:#c2410c; }
+  .compare { display:flex; align-items:center; gap:8px; background:#f0fdf4; border-radius:10px; padding:10px 14px; font-size:13px; margin-top:10px; }
+  .compare.down { background:#fef2f2; }
+  .arrow-up { color:var(--green); font-weight:800; }
+  .arrow-down { color:var(--red); font-weight:800; }
+  .warn-drug { background:#fef2f2; border-left:3px solid var(--red); border-radius:8px; padding:10px 12px; font-size:12px; margin-top:10px; }
+  .warn-drug b { color:var(--red); }
+
+  .doc-btn { width:100%; background:var(--blue); color:#fff; border:none; padding:13px; border-radius:12px; font-size:14px; font-weight:700; font-family:inherit; margin-top:16px; cursor:pointer; }
+  .doc-summary { background:#1e293b; color:#e2e8f0; border-radius:12px; padding:16px; margin-top:10px; font-size:12.5px; line-height:1.8; display:none; }
+  .doc-summary.show { display:block; }
+  .doc-summary .dt { color:#7dd3fc; font-weight:700; margin-bottom:4px; }
+
+  .close-btn { width:100%; background:#f1f5f9; color:var(--t2); border:none; padding:12px; border-radius:12px; font-size:14px; font-family:inherit; margin-top:10px; cursor:pointer; }
+  .loading { text-align:center; padding:80px 20px; color:var(--t2); }
+  .spinner { width:36px; height:36px; border:4px solid var(--line); border-top-color:var(--teal); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 14px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .err-box { text-align:center; padding:60px 20px; color:var(--t2); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loading"><div class="spinner"></div>กำลังโหลดสรุป...</div>
+</div>
+
+<script>
+const API = 'https://medtrack-backend-production-7731.up.railway.app';
+const params = new URLSearchParams(location.search);
+const userId = params.get('user_id');
+const forCaregiver = params.get('role') === 'caregiver';
+
+async function load(){
+  if(!userId){ showError('ไม่พบข้อมูลผู้ใช้'); return; }
+  try {
+    const [rep, cmp] = await Promise.all([
+      fetch(`${API}/api/med-report?user_id=${userId}`).then(r=>r.json()),
+      fetch(`${API}/api/med-report/cycle-compare?user_id=${userId}`).then(r=>r.json()).catch(()=>({}))
+    ]);
+    if(!rep.ok) throw new Error('failed');
+    render(rep, cmp);
+  } catch(e){
+    showError('โหลดสรุปไม่สำเร็จ');
+  }
+}
+
+function showError(msg){
+  document.getElementById('app').innerHTML = `<div class="err-box"><div style="font-size:40px;margin-bottom:10px">😕</div>${msg}</div>`;
+}
+
+function medalEmoji(m){ return m==='gold'?'🏆':m==='silver'?'🥈':m==='bronze'?'🥉':'🌟'; }
+function headClass(m){ return m==='gold'?'head-gold':m==='silver'?'head-silver':m==='bronze'?'head-bronze':'head-none'; }
+function fillClass(pct){ return pct>=90?'fill-high':pct>=70?'fill-mid':'fill-low'; }
+function pctColor(pct){ return pct>=90?'#0a9c7a':pct>=70?'#F5A623':'#dc2626'; }
+
+function render(d, cmp){
+  const who = forCaregiver ? (d.user_name||'คนไข้') : 'คุณ';
+  const appt = d.next_appointment;
+  const apptStr = appt ? new Date(appt.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'}) : null;
+
+  // header
+  const hasScore = d.overall_pct != null;
+  let head = '';
+  if(hasScore){
+    head = `<div class="game-head ${headClass(d.medal)}">
+      <div class="trophy">${medalEmoji(d.medal)}</div>
+      <div class="grade-big">${d.grade_label} · เกรด ${d.grade}</div>
+      <div class="pct-huge">${d.overall_pct}%</div>
+      <div class="pct-label">${forCaregiver?who+'กินยา':'กินยา'}${d.overall_pct>=90?'ครบเกือบทุกมื้อ':d.overall_pct>=70?'เกือบครบ':'ยังไม่ครบ'}</div>
+      ${apptStr?`<div class="cycle-info">ก่อนพบหมอ ${apptStr}</div>`:''}
+    </div>`;
+  } else {
+    head = `<div class="game-head head-none">
+      <div class="trophy">🌟</div>
+      <div class="grade-big">สรุปการกินยา</div>
+      <div class="pct-huge" style="font-size:28px;margin-top:10px">ยังไม่มีข้อมูลพอ</div>
+      <div class="pct-label">ยาที่มีจำนวนกำหนดจะแสดงผลที่นี่</div>
+    </div>`;
+  }
+
+  // reward
+  const isGold = d.overall_pct === 100;
+  const reward = `
+    <div class="section-t">🎁 แต้มสะสม</div>
+    <div class="reward-card ${isGold?'gold':''}">
+      <div class="points-num ${isGold?'gold':''}">+${d.cycle_points}</div>
+      <div class="reward-sub">แต้มรอบนี้ · รวม ${d.total_points.toLocaleString()} แต้ม</div>
+      ${isGold
+        ? '<div class="discount-badge">🎉 ปลดล็อกส่วนลดค่าบริการ 10%</div>'
+        : hasScore ? `<div class="discount-badge locked">อีก ${100-d.overall_pct}% ได้ส่วนลด</div>` : ''}
+    </div>`;
+
+  // drugs (มี dose + null)
+  const drugsWithDose = d.drugs.filter(x=>x.has_dose);
+  const drugsNull = d.drugs.filter(x=>!x.has_dose);
+  let drugsHtml = '';
+  if(drugsWithDose.length){
+    drugsHtml += `<div class="section-t">💊 การกินยาแต่ละตัว</div>`;
+    drugsWithDose.forEach(x=>{
+      drugsHtml += `<div class="drug-bar">
+        <div class="drug-bar-top"><span class="drug-name">${x.name}</span><span class="drug-pct" style="color:${pctColor(x.pct)}">${x.pct}%</span></div>
+        <div class="bar-track"><div class="bar-fill ${fillClass(x.pct)}" style="width:${x.pct}%">${x.taken}/${x.total}</div></div>
+      </div>`;
+    });
+  }
+  if(drugsNull.length){
+    drugsHtml += `<div class="section-t">💊 ยาที่ไม่ระบุจำนวน</div>`;
+    drugsNull.forEach(x=>{
+      drugsHtml += `<div class="drug-null">
+        <span>💊</span><span style="flex:1">${x.name}</span>
+        <span class="badge-null">กินไป ${x.taken} มื้อ</span>
+      </div>`;
+    });
+  }
+
+  // stats
+  const stats = `
+    <div class="section-t">📊 สถิติรอบนี้</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num" style="color:#0a9c7a">${d.doses_taken}</div><div class="stat-lbl">มื้อกินครบ</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:#F5A623">${d.streak}</div><div class="stat-lbl">วันติดต่อ</div></div>
+      <div class="stat-box"><div class="stat-num" style="color:#dc2626">${d.doses_missed}</div><div class="stat-lbl">มื้อที่ขาด</div></div>
+    </div>`;
+
+  // streak badge
+  const streakHtml = d.streak >= 3 ? `<div style="text-align:center;margin:12px 0"><span class="streak-badge">🔥 กินตรงเวลา ${d.streak} วันติด!</span></div>` : '';
+
+  // compare
+  let compareHtml = '';
+  if(cmp && cmp.this_cycle != null && cmp.prev_cycle != null){
+    const up = cmp.this_cycle >= cmp.prev_cycle;
+    compareHtml = `<div class="compare ${up?'':'down'}">
+      <span class="${up?'arrow-up':'arrow-down'}">${up?'↑':'↓'}</span>
+      ${up?'ดีขึ้น':'ลดลง'}จากรอบก่อน (${cmp.prev_cycle}% → <b>${cmp.this_cycle}%</b>)
+    </div>`;
+  }
+
+  // most missed
+  const missedHtml = d.most_missed ? `<div class="warn-drug">⚠️ <b>${d.most_missed.name}</b> ลืมบ่อยสุด (ขาด ${d.most_missed.count} มื้อ) — ลองตั้งเตือนเพิ่ม</div>` : '';
+
+  // doctor summary
+  const docSummary = `
+    <button class="doc-btn" onclick="document.getElementById('docSum').classList.toggle('show')">👨‍⚕️ แสดงสรุปให้หมอ</button>
+    <div class="doc-summary" id="docSum">
+      <div class="dt">สรุปสำหรับแพทย์ (self-report)</div>
+      ${apptStr?`นัดหมาย: ${apptStr}<br>`:''}
+      Adherence รวม: <b>${hasScore?d.overall_pct+'%':'—'}</b> (${d.doses_taken} มื้อ)<br>
+      มื้อที่ขาด: ${d.doses_missed}<br>
+      ${d.most_missed?`ยาที่ลืมบ่อย: ${d.most_missed.name} (${d.most_missed.count} มื้อ)<br>`:''}
+      Streak: ${d.streak} วัน<br>
+      <span style="opacity:.6;font-size:11px">*ข้อมูลจากการกดยืนยันในแอป</span>
+    </div>`;
+
+  document.getElementById('app').innerHTML = head + `<div class="body">
+    ${reward}${drugsHtml}${stats}${streakHtml}${compareHtml}${missedHtml}${docSummary}
+    <button class="close-btn" onclick="window.close()||history.back()">ปิด</button>
+  </div>`;
+}
+
+load();
+</script>
+</body>
+</html>

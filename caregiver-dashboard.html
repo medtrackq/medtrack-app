@@ -786,6 +786,9 @@ function render(d) {
   document.getElementById('todayMeta').textContent =
     `${s.today_taken} กินแล้ว · ${s.today_pending} รอ · ${s.today_missed} ขาด`;
 
+  // ปุ่มสรุปก่อนพบหมอ (ขึ้นตอนยาหมด/ใกล้นัด — เหมือนคนไข้)
+  checkCaregiverReportButton(d.patient?.id, d.today_doses);
+
   // trend (primary only)
   if (d.tier === 'secondary' || !d.weeks || d.weeks.length === 0) {
     document.getElementById('trendSection').style.display = 'none';
@@ -935,6 +938,41 @@ function renderAppointment(appt) {
       ${appt.purpose ? '<br>นัดเพื่อ: '+appt.purpose : ''}
     </div>
   `;
+}
+
+// ปุ่มสรุปก่อนพบหมอ (caregiver) — เงื่อนไขเดียวกับคนไข้
+async function checkCaregiverReportButton(patientId, doses){
+  if(!patientId) return;
+  try {
+    const withDose = (doses||[]).filter(d => d.total_doses != null || d.is_finished != null);
+    const allFinished = (doses||[]).length > 0 && (doses||[]).every(d => d.is_finished);
+
+    const rep = await fetch(`${API_BASE}/api/med-report?user_id=${patientId}`).then(r=>r.json()).catch(()=>null);
+    let nearAppt = false, apptDate = null, pct = null;
+    if(rep && rep.ok){
+      pct = rep.overall_pct;
+      if(rep.next_appointment){
+        const days = Math.ceil((new Date(rep.next_appointment.appointment_date) - new Date())/(1000*60*60*24));
+        if(days >= 0 && days <= 3) nearAppt = true;
+        apptDate = new Date(rep.next_appointment.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+      }
+    }
+    if(!(allFinished || nearAppt)) return;
+    if(document.getElementById('cgReportBtn')) return;
+
+    const patientName = rep?.user_name || 'คนไข้';
+    const html = `
+      <div id="cgReportBtn" onclick="window.open('med-report.html?user_id=${patientId}&role=caregiver','_blank')"
+           style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:16px;color:#fff;margin-bottom:14px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
+        <div style="font-size:11px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
+        <div style="font-size:17px;font-weight:800;margin-bottom:3px">สรุป 💊 ก่อนพบหมอ</div>
+        <div style="font-size:12px;opacity:.9">ดูผลการกินยาของ${patientName}${pct!=null?' · '+pct+'%':''}</div>
+        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
+      </div>`;
+    // แทรกบนสุดของ content (หลัง header)
+    const anchor = document.querySelector('.dashboard-content') || document.querySelector('main') || document.body;
+    anchor.insertAdjacentHTML('afterbegin', html);
+  } catch(e){ console.warn('checkCaregiverReportButton', e); }
 }
 
 loadDashboard();
