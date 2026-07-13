@@ -1513,7 +1513,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
     <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
       <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
-      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.06c</span></div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.13a</span></div>
       <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 bluecode.pro. All rights reserved.</div>
     </div>
   </div>
@@ -2661,12 +2661,19 @@ async function resolveUserIdentity() {
           return urlUid;
         }
       }
+      // 🛡️ 404 — user_id นี้ไม่มีใน DB (ถูกลบ/ค้าง) → onboard ไม่ใช้ค้าง
+      if (r.status === 404) {
+        console.warn('[resolveUserIdentity] user_id=' + urlUid + ' ไม่พบใน DB — ไป onboard');
+        localStorage.removeItem('mt_user_profile');
+        const lid = params.get('lineUserId');
+        window.location.href = 'medtrack-onboard.html' + (lid ? ('?lineUserId=' + lid) : '');
+        return null;
+      }
     } catch(e) {
       console.warn('[resolveUserIdentity] User fetch failed:', e.message);
     }
     
-    // Even if fetch failed, still use URL user_id (clear stale profile)
-    localStorage.removeItem('mt_user_profile');
+    // network error (ไม่ใช่ 404) — ใช้ URL user_id ไปก่อน (ไม่ block ตอนเน็ตมีปัญหา)
     return urlUid;
   }
   
@@ -2701,11 +2708,23 @@ async function resolveUserIdentity() {
       saveProfileFromBackend(user);
       return user.id;
     }
+    // มี line_user_id แต่ไม่เจอใน DB → ล้าง + onboard
+    console.warn('[resolveUserIdentity] line_user_id ไม่พบใน DB — ไป onboard');
+    localStorage.removeItem('mt_user_profile');
+    window.location.href = `medtrack-onboard.html?lineUserId=${profile.line_user_id}`;
+    return null;
   }
   
-  // Priority 4: Fallback to user_id=2 (Apidej test) ONLY if no profile exists
-  if (!profile) return 2;
-  
+  // 🛡️ ไม่มีตัวตนที่ verify ได้ → ต้อง onboard (ไม่ fallback เป็น user คนอื่น!)
+  // เดิม return 2 (hardcode Apidej) = อันตราย: คนแปลกหน้าเข้ามาเป็น user 2
+  console.warn('[resolveUserIdentity] ไม่พบตัวตน — redirect ไป onboarding');
+  localStorage.removeItem('mt_user_profile');
+  const fallbackLineId = urlLineId || profile?.line_user_id;
+  if (fallbackLineId && fallbackLineId.match(/^U[a-f0-9]{32}$/)) {
+    window.location.href = `medtrack-onboard.html?lineUserId=${fallbackLineId}`;
+  } else {
+    window.location.href = 'medtrack-onboard.html';
+  }
   return null;
 }
 
@@ -2852,56 +2871,9 @@ async function loadTodayDoses(userId){
     document.getElementById('viewToggle').style.display = '';
     setViewMode(viewMode);  // apply + render ตาม mode ปัจจุบัน
     renderStatsBar(data.doses);
-    checkMedReportButton(userId, data.doses);  // เช็คว่าควรขึ้นปุ่มสรุปมั้ย
   } catch(e) {
     console.warn('loadTodayDoses error:', e);
   }
-}
-
-// ────────────────────────────────────────────────────────
-// Med Report Button — ขึ้นเมื่อยาหมดครบ หรือใกล้นัด (≤3 วัน)
-// ────────────────────────────────────────────────────────
-async function checkMedReportButton(userId, doses){
-  try {
-    // เงื่อนไข 1: ยาที่มี dose หมดครบ (ไม่มียา has-dose ที่ยังไม่ finished เหลือ)
-    const withDose = (doses||[]).filter(d => d.total_doses != null);
-    const activeWithDose = withDose.filter(d => !d.is_finished);
-    const allDoseFinished = withDose.length > 0 && activeWithDose.length === 0;
-
-    // เงื่อนไข 2: ใกล้นัด (≤3 วัน) — ดึงจาก med-report
-    const rep = await fetch(`${MEDTRACK_BACKEND}/api/med-report?user_id=${userId}`).then(r=>r.json()).catch(()=>null);
-    let nearAppt = false, apptDate = null, pct = null;
-    if(rep && rep.ok){
-      pct = rep.overall_pct;
-      if(rep.next_appointment){
-        const days = Math.ceil((new Date(rep.next_appointment.appointment_date) - new Date())/(1000*60*60*24));
-        if(days >= 0 && days <= 3) nearAppt = true;
-        apptDate = new Date(rep.next_appointment.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
-      }
-    }
-
-    const show = allDoseFinished || nearAppt;
-    renderMedReportButton(show, userId, apptDate, pct);
-  } catch(e){ console.warn('checkMedReportButton', e); }
-}
-
-function renderMedReportButton(show, userId, apptDate, pct){
-  let btn = document.getElementById('medReportBtn');
-  if(!show){ if(btn) btn.remove(); return; }
-  if(btn) return; // มีแล้ว ไม่ซ้ำ
-
-  const html = `
-    <div id="medReportBtn" onclick="window.open('med-report.html?user_id=${userId}','_blank')"
-         style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:18px;color:#fff;margin:0 0 16px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
-      <div style="font-size:12px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
-      <div style="font-size:18px;font-weight:800;margin-bottom:4px">สรุป 💊 ก่อนพบหมอ</div>
-      <div style="font-size:12px;opacity:.9">ดูผลการกินยารอบนี้ + คะแนน${pct!=null?' · '+pct+'%':''}</div>
-      <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
-    </div>`;
-
-  // แทรกไว้บนสุดของพื้นที่ยา (elderlyView หรือ todaysDoses)
-  const target = document.getElementById('elderlyView') || document.getElementById('todaysDoses');
-  if(target) target.insertAdjacentHTML('beforebegin', html);
 }
 
 // ────────────────────────────────────────────────────────
@@ -3059,26 +3031,14 @@ function renderTodayDosesElderly(doses, date){
         const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
         const alert = d.is_high_alert ? '<span style="color:#DC2626;font-size:12px;font-weight:700"> ⚠️ ยาเสี่ยงสูง</span>' : '';
         const done = d.status==='taken' || d.status==='late';
-        // badge ยาหมด (กินครบแล้ว — อยู่ในช่วง grace 1 วัน)
-        const finishedBadge = d.is_finished
-          ? '<span style="background:#94A3B8;color:#fff;font-size:9px;padding:1px 7px;border-radius:8px;margin-left:4px">ยาหมด</span>'
-          : '';
-        // แสดงจำนวนที่เหลือ (ถ้ามีข้อมูล total_doses)
-        let remainInfo = '';
-        if(d.total_doses != null){
-          const left = Math.max(0, d.total_doses - (d.taken_doses||0));
-          remainInfo = left > 0
-            ? `<span style="color:#64748b;font-size:11px"> · เหลือ ${left} มื้อ</span>`
-            : '<span style="color:#94A3B8;font-size:11px"> · ครบแล้ว</span>';
-        }
         const action = done
           ? '<div class="med-action confirmed"></div>'
           : `<button class="med-action" onclick="confirmDose(${d.id})"></button>`;
-        return `<div class="med-item"${d.is_finished?' style="opacity:.7"':''}>
+        return `<div class="med-item">
           <div class="med-pill">💊</div>
           <div class="med-info">
-            <div class="med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}${finishedBadge}</div>
-            <div class="med-detail"><span class="med-tablets">${tablets || '—'}</span>${remainInfo}</div>
+            <div class="med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}</div>
+            <div class="med-detail"><span class="med-tablets">${tablets || '—'}</span></div>
           </div>
           ${action}
         </div>`;
@@ -5605,6 +5565,6 @@ function saveHomeModal(name){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.06c</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.13a</div>
 </body>
 </html>
