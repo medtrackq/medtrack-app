@@ -3071,14 +3071,25 @@ function renderTodayDosesElderly(doses, date){
         const tablets = d.tablets_per_dose ? fmtTablets(d.tablets_per_dose) : '';
         const alert = d.is_high_alert ? '<span style="color:#DC2626;font-size:12px;font-weight:700"> ⚠️ ยาเสี่ยงสูง</span>' : '';
         const done = d.status==='taken' || d.status==='late';
+        // 🔵 ยาหมด: backend ส่ง is_finished (กินครบ total_tablets) — badge + จางลง
+        const finished = d.is_finished === true;
+        const finBadge = finished
+          ? '<span style="background:#e2e8f0;color:#64748b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;margin-left:6px">ยาหมด</span>'
+          : '';
+        // 🔢 เหลือ X มื้อ (total_doses - taken_doses) — ให้คนไข้เห็นชัด
+        let remainTxt = '';
+        if(!finished && d.total_doses != null && d.taken_doses != null){
+          const remain = d.total_doses - d.taken_doses;
+          if(remain > 0) remainTxt = `<span style="color:#0a9c7a;font-size:11px;font-weight:600;margin-left:6px">เหลือ ${remain} มื้อ</span>`;
+        }
         const action = done
           ? '<div class="med-action confirmed"></div>'
           : `<button class="med-action" onclick="confirmDose(${d.id})"></button>`;
-        return `<div class="med-item">
+        return `<div class="med-item" style="${finished?'opacity:0.65':''}">
           <div class="med-pill">💊</div>
           <div class="med-info">
-            <div class="med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}</div>
-            <div class="med-detail"><span class="med-tablets">${tablets || '—'}</span></div>
+            <div class="med-name">${d.drug_name_raw || d.drug_name || 'ยา'}${alert}${finBadge}</div>
+            <div class="med-detail"><span class="med-tablets">${tablets || '—'}</span>${remainTxt}</div>
           </div>
           ${action}
         </div>`;
