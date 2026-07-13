@@ -1065,6 +1065,37 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 </style>
 </head>
 <body>
+<!-- ═══ แถบเชิญเพิ่มไอคอนหน้าจอ (โผล่ล่างจอ) ═══ -->
+<div id="a2hsBar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9997;background:#0a9c7a;color:#fff;padding:12px 16px;box-shadow:0 -4px 16px rgba(0,0,0,.15);align-items:center;gap:12px;font-family:'Sarabun',sans-serif">
+  <div style="width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">💊</div>
+  <div style="flex:1;line-height:1.3">
+    <div style="font-weight:700;font-size:14px">เพิ่ม MedTrack ลงหน้าจอ</div>
+    <div style="font-size:12px;opacity:.9">กดเข้าใช้ง่ายทุกวัน ไม่ต้องเปิด LINE</div>
+  </div>
+  <button id="a2hsAddBtn" style="background:#fff;color:#0a9c7a;border:none;padding:8px 16px;border-radius:20px;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer;flex-shrink:0">เพิ่มเลย</button>
+  <button id="a2hsCloseBtn" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;padding:4px;flex-shrink:0;opacity:.8">×</button>
+</div>
+
+<!-- ═══ Modal สอน iOS (Safari ไม่มีป๊อปอัพ) ═══ -->
+<div id="iosGuide" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:24px;font-family:'Sarabun',sans-serif">
+  <div style="background:#fff;border-radius:20px;padding:24px;max-width:340px;width:100%;text-align:center">
+    <div style="width:56px;height:56px;background:#0a9c7a;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 14px">💊</div>
+    <div style="font-size:18px;font-weight:800;color:#12303a;margin-bottom:6px">เพิ่ม MedTrack ลงหน้าจอ</div>
+    <div style="font-size:13px;color:#5a6b6a;margin-bottom:18px">ทำตาม 2 ขั้นตอนง่ายๆ</div>
+    <div style="text-align:left;background:#f0faf7;border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+        <div style="width:26px;height:26px;background:#0a9c7a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+        <div style="font-size:14px;color:#12303a">กดปุ่ม <b>แชร์</b> <span style="font-size:18px">􀈂</span> ด้านล่างจอ</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="width:26px;height:26px;background:#0a9c7a;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+        <div style="font-size:14px;color:#12303a">เลือก <b>"เพิ่มไปยังหน้าจอโฮม"</b> ➕</div>
+      </div>
+    </div>
+    <button onclick="document.getElementById('iosGuide').style.display='none'" style="width:100%;background:#0a9c7a;color:#fff;border:none;padding:12px;border-radius:12px;font-weight:700;font-size:14px;font-family:inherit;cursor:pointer">เข้าใจแล้ว</button>
+  </div>
+</div>
+
 <div class="phone">
 
   <!-- Header -->
@@ -4975,6 +5006,68 @@ function saveHomeModal(name){
 
   closeHomeModal();
 }
+
+// ══════════════════════════════════════════════════════
+//  Add to Home Screen (เพิ่มไอคอนลงหน้าจอ)
+//  Android: ใช้ beforeinstallprompt (ป๊อปอัพเอง)
+//  iOS: โชว์คำแนะนำ (Safari ไม่มีป๊อปอัพ)
+// ══════════════════════════════════════════════════════
+(function(){
+  let deferredPrompt = null;
+  const bar = document.getElementById('a2hsBar');
+  const addBtn = document.getElementById('a2hsAddBtn');
+  const closeBtn = document.getElementById('a2hsCloseBtn');
+  if(!bar) return;
+
+  // เช็คว่าเปิดจากไอคอน (standalone) อยู่แล้ว → ไม่ต้องเชิญ
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if(isStandalone) return;
+
+  // เช็คว่าเคยปิดแถบไปแล้ววันนี้ (ไม่กวน)
+  const dismissedAt = localStorage.getItem('a2hs_dismissed');
+  if(dismissedAt && (Date.now() - parseInt(dismissedAt)) < 3*24*60*60*1000) return; // เงียบ 3 วัน
+
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/.test(ua) && !window.MSStream;
+  const isAndroid = /Android/.test(ua);
+
+  // Android: ดัก beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    bar.style.display = 'flex';
+  });
+
+  // iOS: ไม่มี event → โชว์แถบเลย (หลังโหลด 3 วิ ให้ดูข้อมูลก่อน)
+  if(isIOS){
+    setTimeout(()=>{ if(!isStandalone) bar.style.display = 'flex'; }, 3000);
+  }
+
+  // กดปุ่ม "เพิ่มเลย"
+  addBtn.addEventListener('click', async () => {
+    if(deferredPrompt){
+      // Android → เด้งป๊อปอัพ native
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('[a2hs] user choice:', outcome);
+      deferredPrompt = null;
+      bar.style.display = 'none';
+    } else if(isIOS){
+      // iOS → โชว์คำแนะนำ
+      document.getElementById('iosGuide').style.display = 'flex';
+    } else {
+      // อื่นๆ → ซ่อน
+      bar.style.display = 'none';
+    }
+  });
+
+  // กดปิด (×)
+  closeBtn.addEventListener('click', () => {
+    bar.style.display = 'none';
+    localStorage.setItem('a2hs_dismissed', Date.now().toString());
+  });
+})();
 
 </script>
 
