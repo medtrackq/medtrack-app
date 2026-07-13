@@ -1809,6 +1809,31 @@ function ob4SimConnect(){
     } catch(e){}
   }
 
+  // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
+  const _urlParams2 = new URLSearchParams(window.location.search);
+  const _urlLineId = _urlParams2.get('lineUserId');
+  if(_urlLineId && _urlLineId.match(/^U[a-f0-9]{32}$/)){
+    try {
+      const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/'+_urlLineId);
+      if(chk.ok){
+        const d = await chk.json();
+        if(d && d.user && d.user.id && d.user.name){
+          console.log('[onboard] user มีแล้ว (id='+d.user.id+') — เด้ง home');
+          const prof = JSON.parse(localStorage.getItem(KEY)||'{}');
+          prof.user_id = d.user.id; prof.id = d.user.id; prof.line_user_id = _urlLineId;
+          if(d.user.name) prof.name = d.user.name;
+          localStorage.setItem(KEY, JSON.stringify(prof));
+          showToast('👋 ยินดีต้อนรับกลับ คุณ'+(d.user.name.split(' ').slice(-1)[0]||d.user.name));
+          setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 1000);
+          return;
+        }
+      }
+      console.log('[onboard] lineUserId นี้ยังไม่มี user — ให้กรอก onboard');
+    } catch(e){
+      console.warn('[onboard] เช็ค by-line-id ล้มเหลว:', e);
+    }
+  }
+
   const p=loadProfile();
   // 🔧 Check ที่ไม่ใช้ meal_time (DB มี default)
   // ถ้ามี name + age + gender = onboarding completed
