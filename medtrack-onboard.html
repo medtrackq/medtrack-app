@@ -1557,14 +1557,16 @@ function showSuccessScreen(p){
 }
 
 function goToHome(){
-  // Path B: Preserve lineUserId in URL for cross-device support
   const params = new URLSearchParams(window.location.search);
   const lineUserId = params.get('lineUserId');
-  // แนบ user_id ต่อไป home — กัน localStorage หายใน LINE in-app browser
-  let uid = null;
-  try { const pr = JSON.parse(localStorage.getItem(KEY)||'{}'); uid = pr.user_id || pr.id; } catch(e){}
-  // 🛡️ ถ้าไม่มี user_id เลย (submit ไม่สำเร็จ) → เตือน ไม่เข้า home
-  if (!uid && !lineUserId) {
+  let uid = null, hasProfile = false;
+  try {
+    const pr = JSON.parse(localStorage.getItem(KEY)||'{}');
+    uid = pr.user_id || pr.id;
+    hasProfile = !!(pr.name && pr.age); // มีข้อมูลสมัครครบ
+  } catch(e){}
+  // 🛡️ เข้า home ได้ถ้ามี: user_id / lineUserId / profile ครบ (home จะ verify + หา user เอง)
+  if (!uid && !lineUserId && !hasProfile) {
     showToast('⚠️ ยังบันทึกไม่สำเร็จ กรุณาลองใหม่');
     return;
   }
@@ -1572,6 +1574,7 @@ function goToHome(){
   let homeUrl = 'medtrack-home.html';
   if (uid) homeUrl += '?user_id=' + uid;
   else if (lineUserId) homeUrl += '?lineUserId=' + lineUserId;
+  // ถ้ามีแค่ profile (ไม่มี uid/lineUserId) → home อ่านจาก localStorage เอง
   setTimeout(()=>{ window.location.href=homeUrl; },1000);
 }
 
