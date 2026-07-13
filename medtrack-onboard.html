@@ -1078,16 +1078,35 @@ function goTo(id){
   });
 }
 
-function loginExisting(){
+async function loginExisting(){
   const p=loadProfile();
-  if(p&&p.name){
-    // มีข้อมูลแล้ว → ไปหน้าหลัก (แนบ user_id กัน localStorage หาย)
-    showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
-    const uid = p.user_id || p.id;
-    const homeUrl = 'medtrack-home.html' + (uid ? ('?user_id='+uid) : '');
-    setTimeout(()=>{ window.location.href=homeUrl; }, 800);
+  const uid = p ? (p.user_id || p.id) : null;
+  // 🛡️ VERIFY กับ DB ก่อน — กัน localStorage ค้าง (user ถูกลบ/ไม่เคยลงจริง)
+  if(p && p.name && uid){
+    showToast('⏳ กำลังตรวจสอบ...');
+    try {
+      const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/'+uid);
+      if(chk.status === 404){
+        // ไม่มีใน DB → ล้าง + ให้ลงทะเบียน
+        showToast('ยังไม่มีบัญชี กรุณาลงทะเบียน');
+        localStorage.removeItem(KEY);
+        setTimeout(()=>goTo('sOnboard'), 900);
+        return;
+      }
+      // มีจริง → เข้า home
+      showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
+      const homeUrl = 'medtrack-home.html?user_id='+uid;
+      setTimeout(()=>{ window.location.href=homeUrl; }, 800);
+    } catch(e){
+      // network error → เข้า home ด้วย local (ไม่ block)
+      showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
+      const homeUrl = 'medtrack-home.html?user_id='+uid;
+      setTimeout(()=>{ window.location.href=homeUrl; }, 800);
+    }
   } else {
-    goTo('sOnboard');
+    // ไม่มี profile หรือไม่มี user_id → ต้องลงทะเบียน
+    showToast('กรุณาลงทะเบียนก่อนใช้งาน');
+    setTimeout(()=>goTo('sOnboard'), 700);
   }
 }
 
@@ -1424,13 +1443,18 @@ function showSuccessScreen(p){
 }
 
 function goToHome(){
-  showToast('🏠 กำลังเข้าสู่หน้าหลัก...');
   // Path B: Preserve lineUserId in URL for cross-device support
   const params = new URLSearchParams(window.location.search);
   const lineUserId = params.get('lineUserId');
   // แนบ user_id ต่อไป home — กัน localStorage หายใน LINE in-app browser
   let uid = null;
   try { const pr = JSON.parse(localStorage.getItem(KEY)||'{}'); uid = pr.user_id || pr.id; } catch(e){}
+  // 🛡️ ถ้าไม่มี user_id เลย (submit ไม่สำเร็จ) → เตือน ไม่เข้า home
+  if (!uid && !lineUserId) {
+    showToast('⚠️ ยังบันทึกไม่สำเร็จ กรุณาลองใหม่');
+    return;
+  }
+  showToast('🏠 กำลังเข้าสู่หน้าหลัก...');
   let homeUrl = 'medtrack-home.html';
   if (uid) homeUrl += '?user_id=' + uid;
   else if (lineUserId) homeUrl += '?lineUserId=' + lineUserId;
