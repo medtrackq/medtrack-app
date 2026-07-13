@@ -100,29 +100,6 @@ html,body{height:100%;background:var(--navy);font-family:var(--sans);color:var(-
 select.field-input{cursor:pointer}
 textarea.field-input{resize:none;min-height:80px}
 
-/* ── Hospital autocomplete + multi (สูงสุด 3 รพ.) ── */
-.hosp-ac-wrap{position:relative}
-.hosp-ac-list{position:absolute;top:100%;left:0;right:0;z-index:60;background:var(--card);border:1.5px solid var(--bd);border-top:none;border-radius:0 0 var(--r2) var(--r2);max-height:240px;overflow-y:auto;box-shadow:0 6px 16px rgba(0,0,0,.1);display:none}
-.hosp-ac-list.show{display:block}
-.hosp-ac-item{padding:11px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:center;gap:8px}
-.hosp-ac-item:last-child{border-bottom:none}
-.hosp-ac-item:hover,.hosp-ac-item.active{background:rgba(13,125,132,.08)}
-.hosp-ac-item .htag{font-size:9.5px;padding:2px 7px;border-radius:20px;font-weight:600;margin-left:auto;white-space:nowrap}
-.htag-gov{background:rgba(13,125,132,.12);color:#0d7d84}
-.htag-uni{background:rgba(107,76,154,.12);color:#6b4c9a}
-.htag-priv{background:rgba(201,118,29,.12);color:#c9761d}
-.hosp-ac-empty{padding:14px;color:var(--t2);font-size:13px;text-align:center}
-.hosp-added{margin-top:10px;display:flex;flex-direction:column;gap:8px}
-.hosp-chip{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(13,125,132,.06);border:1px solid rgba(13,125,132,.15);border-radius:var(--r2)}
-.hosp-chip-info{flex:1;min-width:0}
-.hosp-chip-name{font-size:13.5px;font-weight:600;color:var(--t1)}
-.hosp-chip-hn{font-size:12px;color:var(--t2);margin-top:1px}
-.hosp-chip-del{width:26px;height:26px;border-radius:50%;border:none;background:rgba(193,69,69,.1);color:#c14545;cursor:pointer;font-size:14px;flex-shrink:0}
-.hosp-add-btn{margin-top:8px;width:100%;padding:11px;border:1.5px dashed var(--bd);border-radius:var(--r2);background:transparent;color:var(--brand,#0d7d84);font-size:13.5px;font-weight:600;cursor:pointer;font-family:var(--sans)}
-.hosp-add-btn:disabled{opacity:.4;cursor:not-allowed}
-.hosp-hn-input{margin-top:8px}
-.hosp-max-note{font-size:12px;color:var(--t2);margin-top:6px;text-align:center}
-
 /* row 2 col */
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -478,8 +455,11 @@ textarea.field-input{resize:none;min-height:80px}
         </div>
       </div>
 
-      <!-- HN ย้ายไปรวมกับ "โรงพยาบาลประจำ" ใน STEP 2 (ผูก HN ต่อ รพ.) -->
-
+      <div class="field">
+        <div class="field-label">เลข HN (ถ้ามี)</div>
+        <input class="field-input" id="f_hn" type="text" placeholder="หมายเลขผู้ป่วยจากโรงพยาบาล">
+        <div class="field-hint">สามารถกรอกภายหลังได้</div>
+      </div>
     </div>
 
     <!-- STEP 2: โรคประจำตัว -->
@@ -506,24 +486,9 @@ textarea.field-input{resize:none;min-height:80px}
 
       <div class="sec-div" style="margin-top:12px">ข้อมูลเพิ่มเติม</div>
       <div class="field">
-        <div class="field-label">โรงพยาบาลประจำ (เพิ่มได้สูงสุด 3)</div>
-        <!-- autocomplete: พิมพ์ชื่อ → เลือกจากรายการ -->
-        <div class="hosp-ac-wrap">
-          <input class="field-input" id="f_hospital" type="text" autocomplete="off"
-                 placeholder="พิมพ์ชื่อ เช่น ศิริราช, รามา, ประสาท...">
-          <div class="hosp-ac-list" id="hospAcList"></div>
-        </div>
-        <!-- ช่อง HN (โผล่หลังเลือก รพ.) -->
-        <input class="field-input hosp-hn-input" id="f_hn_input" type="text"
-               placeholder="เลข HN ของโรงพยาบาลนี้ (ถ้ามี)" style="display:none">
-        <button type="button" class="hosp-add-btn" id="hospAddBtn" onclick="addHospital()" disabled>+ เพิ่มโรงพยาบาลนี้</button>
-        <!-- รายการ รพ.ที่เพิ่มแล้ว -->
-        <div class="hosp-added" id="hospAdded"></div>
-        <div class="hosp-max-note" id="hospMaxNote" style="display:none">ครบ 3 โรงพยาบาลแล้ว — ลบก่อนเพิ่มใหม่</div>
+        <div class="field-label">โรงพยาบาลประจำ</div>
+        <input class="field-input" id="f_hospital" type="text" placeholder="เช่น โรงพยาบาลรามาธิบดี">
       </div>
-      <!-- hidden: เก็บ HN เดี่ยว (backward compat กับ success page) -->
-      <input type="hidden" id="f_hn">
-      <input type="hidden" id="f_hospital_hidden">
       <div class="field">
         <div class="field-label">แพทย์ประจำตัว</div>
         <input class="field-input" id="f_doctor" type="text" placeholder="เช่น นพ. วิชัย รักสุขภาพ">
@@ -1104,137 +1069,6 @@ const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.ap
 const MEDTRACK_URL = 'https://medtrackq.github.io/medtrack-app';
 
 const KEY = 'mt_user_profile';
-const MT_API = 'https://medtrack-backend-production-7731.up.railway.app';
-
-// ══ Hospital autocomplete + multi (สูงสุด 3) ══
-const HOSP_MAX = 3;
-let HOSP_ALL = [];        // รายชื่อ รพ.ทั้งหมด (จาก API)
-let hospSelected = null;  // รพ.ที่กำลังเลือก (ก่อนกดเพิ่ม)
-let hospAdded = [];       // [{hospital_id, hospital_code, short_name, hn}]
-let hospActiveIdx = -1;
-
-const HTAG = { government:['htag-gov','รัฐ'], university:['htag-uni','มหาลัย'], private:['htag-priv','เอกชน'] };
-
-// โหลดรายชื่อ รพ.จาก backend
-async function loadHospitals(){
-  try{
-    const r = await fetch(`${MT_API}/api/hospitals`);
-    const d = await r.json();
-    if(d.ok && Array.isArray(d.hospitals)) HOSP_ALL = d.hospitals;
-  }catch(e){ console.warn('[hosp] load failed:', e.message); }
-}
-
-function hospFilter(q){
-  const list = document.getElementById('hospAcList');
-  q = (q||'').trim().toLowerCase();
-  if(!q){ list.classList.remove('show'); return; }
-  const addedIds = hospAdded.map(h=>h.hospital_id);
-  const matched = HOSP_ALL.filter(h =>
-    !addedIds.includes(h.id) && (
-      (h.short_name||'').toLowerCase().includes(q) ||
-      (h.name||'').toLowerCase().includes(q) ||
-      (h.hospital_code||'').toLowerCase().includes(q)
-    )
-  ).slice(0,8);
-  hospActiveIdx = -1;
-  if(matched.length===0){
-    list.innerHTML = '<div class="hosp-ac-empty">ไม่พบโรงพยาบาล</div>';
-    list.classList.add('show'); return;
-  }
-  list.innerHTML = matched.map((h,i)=>{
-    const [cls,label] = HTAG[h.hospital_type] || ['htag-gov','-'];
-    return `<div class="hosp-ac-item" data-id="${h.id}" data-idx="${i}"
-       data-code="${h.hospital_code}" data-name="${h.short_name}">
-       <span>${h.short_name}</span><span class="htag ${cls}">${label}</span></div>`;
-  }).join('');
-  list.classList.add('show');
-  list.querySelectorAll('.hosp-ac-item').forEach(el=>{
-    el.onclick = ()=> hospChoose(el.dataset.id, el.dataset.code, el.dataset.name);
-  });
-}
-
-function hospChoose(id, code, name){
-  hospSelected = { hospital_id: parseInt(id), hospital_code: code, short_name: name };
-  document.getElementById('f_hospital').value = name;
-  document.getElementById('hospAcList').classList.remove('show');
-  // โชว์ช่อง HN + เปิดปุ่มเพิ่ม
-  document.getElementById('f_hn_input').style.display = 'block';
-  document.getElementById('hospAddBtn').disabled = false;
-}
-
-function addHospital(){
-  if(!hospSelected) return;
-  if(hospAdded.length >= HOSP_MAX) return;
-  const hn = document.getElementById('f_hn_input').value.trim();
-  hospAdded.push({ ...hospSelected, hn });
-  hospSelected = null;
-  // reset input
-  document.getElementById('f_hospital').value = '';
-  document.getElementById('f_hn_input').value = '';
-  document.getElementById('f_hn_input').style.display = 'none';
-  document.getElementById('hospAddBtn').disabled = true;
-  renderHospAdded();
-}
-
-function removeHospital(idx){
-  hospAdded.splice(idx,1);
-  renderHospAdded();
-}
-
-function renderHospAdded(){
-  const box = document.getElementById('hospAdded');
-  box.innerHTML = hospAdded.map((h,i)=>`
-    <div class="hosp-chip">
-      <div class="hosp-chip-info">
-        <div class="hosp-chip-name">🏥 ${h.short_name}</div>
-        <div class="hosp-chip-hn">${h.hn ? 'HN: '+h.hn : 'ยังไม่ระบุ HN'}</div>
-      </div>
-      <button type="button" class="hosp-chip-del" onclick="removeHospital(${i})">✕</button>
-    </div>`).join('');
-  // ครบ 3 → ซ่อนช่องเพิ่ม
-  const full = hospAdded.length >= HOSP_MAX;
-  document.querySelector('.hosp-ac-wrap').style.display = full ? 'none' : 'block';
-  document.getElementById('hospAddBtn').style.display = full ? 'none' : 'block';
-  document.getElementById('f_hn_input').style.display = 'none';
-  document.getElementById('hospMaxNote').style.display = full ? 'block' : 'none';
-  // sync ค่าแรกไป hidden field (backward compat)
-  document.getElementById('f_hospital_hidden').value = hospAdded[0]?.short_name || '';
-  document.getElementById('f_hn').value = hospAdded[0]?.hn || '';
-}
-
-// ผูก รพ.+HN ไป backend (เรียกหลังได้ user_id)
-async function saveHospitalMappings(userId){
-  for(const h of hospAdded){
-    if(!h.hn) continue; // ไม่มี HN = ข้าม (ผูกทีหลังได้)
-    try{
-      await fetch(`${MT_API}/api/users/${userId}/hospitals`,{
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ hospital_id: h.hospital_id, hn: h.hn })
-      });
-    }catch(e){ console.warn('[hosp] map failed:', h.short_name, e.message); }
-  }
-}
-
-// init autocomplete listeners
-function initHospitalAC(){
-  loadHospitals();
-  const input = document.getElementById('f_hospital');
-  if(!input) return;
-  input.addEventListener('input', e=>{ hospSelected=null; document.getElementById('hospAddBtn').disabled=true; document.getElementById('f_hn_input').style.display='none'; hospFilter(e.target.value); });
-  input.addEventListener('focus', e=>{ if(e.target.value) hospFilter(e.target.value); });
-  input.addEventListener('keydown', e=>{
-    const items = document.querySelectorAll('#hospAcList .hosp-ac-item');
-    if(!items.length) return;
-    if(e.key==='ArrowDown'){ e.preventDefault(); hospActiveIdx=Math.min(hospActiveIdx+1,items.length-1); }
-    else if(e.key==='ArrowUp'){ e.preventDefault(); hospActiveIdx=Math.max(hospActiveIdx-1,0); }
-    else if(e.key==='Enter' && hospActiveIdx>=0){ e.preventDefault(); const el=items[hospActiveIdx]; hospChoose(el.dataset.id,el.dataset.code,el.dataset.name); return; }
-    items.forEach((el,i)=>el.classList.toggle('active',i===hospActiveIdx));
-  });
-  document.addEventListener('click', e=>{
-    if(!e.target.closest('.hosp-ac-wrap')) document.getElementById('hospAcList')?.classList.remove('show');
-  });
-}
-document.addEventListener('DOMContentLoaded', initHospitalAC);
 
 // ── SCREEN NAVIGATION ──
 function goTo(id){
@@ -1428,8 +1262,7 @@ async function saveOnboarding(){
     phone:document.getElementById('f_phone').value.trim(),
     hn:document.getElementById('f_hn').value.trim(),
     diseases,
-    hospital:document.getElementById('f_hospital_hidden').value.trim(),
-    hospitals: hospAdded,
+    hospital:document.getElementById('f_hospital').value.trim(),
     doctor:document.getElementById('f_doctor').value.trim(),
     doctor_phone:document.getElementById('f_doctor_phone')?.value.trim()||'',
     allergy:document.getElementById('f_allergy').value.trim(),
@@ -1487,6 +1320,37 @@ async function saveOnboarding(){
         profile.line_user_id = existingLineUserId;
         console.log('[onboard] ✅ User updated via PATCH:', existingUserId);
         showToast('✅ บันทึกข้อมูลสำเร็จ');
+      } else if (r.status === 404 && lineUserId && lineUserId.match(/^U[a-f0-9]{32}$/)) {
+        // 🛡️ user_id ค้าง (ถูกลบใน DB) → POST สร้างใหม่ด้วย lineUserId
+        console.warn('[onboard] PATCH 404 — user ถูกลบ, สร้างใหม่ด้วย POST');
+        const rNew = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/onboard', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            line_user_id: lineUserId,
+            name: profile.name,
+            age: profile.age ? parseInt(profile.age) : null,
+            gender: profile.gender,
+            phone: profile.phone,
+            breakfast_time: profile.meals.morning + ':00',
+            lunch_time: profile.meals.noon + ':00',
+            dinner_time: profile.meals.evening + ':00',
+            bedtime: profile.meals.bed + ':00',
+            push_lead_minutes: 0,
+            chronic_conditions: profile.diseases
+          })
+        });
+        const dNew = await rNew.json();
+        if ((dNew.ok && dNew.user) || dNew.error === 'user_exists') {
+          profile.user_id = dNew.user ? dNew.user.id : dNew.user_id;
+          profile.id = profile.user_id;
+          profile.line_user_id = lineUserId;
+          console.log('[onboard] ✅ สร้าง user ใหม่:', profile.user_id);
+          showToast('✅ บันทึกข้อมูลสำเร็จ');
+        } else {
+          console.error('[onboard] POST ใหม่ error:', dNew);
+          showToast('⚠️ บันทึก local แล้ว — backend ติดขัด');
+        }
       } else {
         console.error('[onboard] PATCH error:', data);
         showToast('⚠️ บันทึก local แล้ว — backend ติดขัดเล็กน้อย');
@@ -1540,11 +1404,6 @@ async function saveOnboarding(){
     console.log('[onboard] No user_id and no lineUserId — saving local only');
   }
   
-  // ผูก รพ.+HN ไป backend (ถ้ามี user_id + มี รพ.ที่เพิ่ม)
-  if(profile.user_id && hospAdded.length){
-    await saveHospitalMappings(profile.user_id);
-  }
-
   localStorage.setItem(KEY, JSON.stringify(profile));
   showSuccessScreen(profile);
 }
@@ -1809,7 +1668,7 @@ function ob4SimConnect(){
 }
 
 // ── INIT ──
-(function(){
+(async function(){
   // ✅ รับ token + user_id จาก URL (callback แนบมา) — กัน localStorage หายใน LINE in-app browser
   const params = new URLSearchParams(window.location.search);
   const urlToken = params.get('token');
@@ -1835,12 +1694,37 @@ function ob4SimConnect(){
   const isCompleted = p && p.name && p.age && p.gender;
   
   if(isCompleted){
-    // Returning user with completed profile → auto-redirect to home (แนบ user_id ต่อ)
-    showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
     const uid = p.user_id || p.id;
-    const homeUrl = 'medtrack-home.html' + (uid ? ('?user_id='+uid) : '');
-    setTimeout(()=>{ window.location.href=homeUrl; }, 1200);
-    return; // skip onboarding init
+    // 🛡️ VERIFY กับ DB ก่อน — กัน localStorage ค้าง (user ถูกลบ/เปลี่ยนเครื่อง)
+    if(uid){
+      try {
+        const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/'+uid);
+        if(chk.status === 404){
+          // user ไม่มีใน DB แล้ว (ถูกลบ/ค้าง) → ล้าง แล้วลงทะเบียนใหม่
+          console.warn('[onboard] user_id '+uid+' ไม่พบใน DB — ล้าง localStorage + onboard ใหม่');
+          localStorage.removeItem(KEY);
+          initOb();
+          return;
+        }
+        // มีจริง → ต้อนรับกลับ + ไป home
+        showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
+        const homeUrl = 'medtrack-home.html?user_id='+uid;
+        setTimeout(()=>{ window.location.href=homeUrl; }, 1200);
+        return;
+      } catch(e){
+        // network error — ไม่ block (ให้เข้า home ด้วย local ไปก่อน)
+        console.warn('[onboard] verify ล้มเหลว (network) — ใช้ local:', e);
+        showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
+        const homeUrl = 'medtrack-home.html?user_id='+uid;
+        setTimeout(()=>{ window.location.href=homeUrl; }, 1200);
+        return;
+      }
+    }
+    // ไม่มี user_id เลย (local อย่างเดียว ไม่เคยลง backend) → ให้ลงทะเบียนใหม่
+    console.warn('[onboard] มี profile local แต่ไม่มี user_id — onboard ใหม่');
+    localStorage.removeItem(KEY);
+    initOb();
+    return;
   }
   // New user OR incomplete profile → run onboarding
   initOb();
