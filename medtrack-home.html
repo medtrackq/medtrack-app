@@ -1487,6 +1487,15 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="sheet-item-arrow">›</div>
     </div>
 
+    <div class="sheet-item" onclick="openHospitalModal()">
+      <div class="sheet-item-ico" style="background:#e3f2f2">🏥</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title">โรงพยาบาลของฉัน</div>
+        <div class="sheet-item-sub">ผูกโรงพยาบาล + HN (สูงสุด 3 แห่ง)</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>
+
     <div class="sheet-sec">การแจ้งเตือน</div>
     <div class="sheet-item" onclick="openHomeModal('mealtime')">
       <div class="sheet-item-ico" style="background:#FFFBEB">⏰</div>
@@ -5069,6 +5078,127 @@ function saveHomeModal(name){
   });
 })();
 
+// ══════════════════════════════════════════════════════
+//  🏥 จัดการโรงพยาบาล (multi 3 รพ. + HN) — เชื่อม backend
+// ══════════════════════════════════════════════════════
+const H_HOSP_TAG = { government:['รัฐ','#e3f2f2','#0d7d84'], university:['มหาลัย','#eae4f5','#6b4c9a'], private:['เอกชน','#fbf0e2','#c9761d'] };
+let _hHospAll = [];
+
+async function openHospitalModal(){
+  if(_hHospAll.length === 0){
+    try {
+      const r = await fetch(MEDTRACK_BACKEND + '/api/hospitals');
+      const d = await r.json();
+      _hHospAll = (d.ok && d.hospitals) ? d.hospitals : [];
+    } catch(e){ console.warn('[home] โหลด รพ.ไม่สำเร็จ', e); }
+  }
+  setupHospitalSearch();
+  await renderMyHospitals();
+  openHomeModal('hospital');
+}
+
+async function renderMyHospitals(){
+  const box = document.getElementById('hosp-list');
+  const uid = await getUserId();
+  if(!uid){ box.innerHTML = '<div style="color:#94a3b8;font-size:13px">กรุณาลงทะเบียนก่อน</div>'; return; }
+  try {
+    const r = await fetch(MEDTRACK_BACKEND + '/api/users/' + uid + '/hospitals');
+    const d = await r.json();
+    const list = (d.ok && d.hospitals) ? d.hospitals : [];
+    const max = d.max || 3;
+    if(list.length === 0){
+      box.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:8px 0">ยังไม่ได้ผูกโรงพยาบาล</div>';
+    } else {
+      box.innerHTML = list.map(h => `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f7fafc;border-radius:10px;margin-bottom:8px">
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px;color:#12303a">${h.hospital_name || h.short_name || '-'}</div>
+            <div style="font-size:12px;color:#64748b">HN: ${h.hn || '-'}</div>
+          </div>
+          <button onclick="deleteHospitalMapping(${h.mapping_id || h.id})" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">ลบ</button>
+        </div>`).join('');
+    }
+    const addBox = document.getElementById('hosp-add-box');
+    if(addBox) addBox.style.display = (list.length >= max) ? 'none' : 'block';
+  } catch(e){
+    box.innerHTML = '<div style="color:#dc2626;font-size:13px">โหลดไม่สำเร็จ</div>';
+  }
+}
+
+function setupHospitalSearch(){
+  const search = document.getElementById('h-hosp-search');
+  const results = document.getElementById('h-hosp-results');
+  const hidden = document.getElementById('h-hosp-id');
+  if(!search || search._bound) return;
+  search._bound = true;
+
+  function renderList(q){
+    q = (q||'').trim().toLowerCase();
+    let list = _hHospAll;
+    if(q) list = _hHospAll.filter(h =>
+      (h.name && h.name.toLowerCase().includes(q)) ||
+      (h.short_name && h.short_name.toLowerCase().includes(q)) ||
+      (h.hospital_code && h.hospital_code.toLowerCase().includes(q)));
+    list = list.slice(0,15);
+    if(list.length === 0){ results.style.display='none'; return; }
+    results.innerHTML = list.map(h => {
+      const [label,bg,col] = H_HOSP_TAG[h.hospital_type] || ['-','#eee','#666'];
+      return `<div class="h-hopt" data-id="${h.id}" data-name="${h.short_name||h.name}" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #f0f4f6;font-size:14px;display:flex;align-items:center;gap:8px">
+        <span style="font-weight:600;color:#12303a">${h.short_name||h.name}</span>
+        <span style="margin-left:auto;font-size:10px;padding:2px 8px;border-radius:20px;background:${bg};color:${col};font-weight:600">${label}</span>
+      </div>`;
+    }).join('');
+    results.querySelectorAll('.h-hopt').forEach(el => {
+      el.onclick = () => {
+        search.value = el.dataset.name;
+        hidden.value = el.dataset.id;
+        results.style.display = 'none';
+        document.getElementById('h-hn-wrap').style.display = 'block';
+      };
+    });
+    results.style.display = 'block';
+  }
+  search.addEventListener('input', () => { hidden.value=''; renderList(search.value); });
+  search.addEventListener('focus', () => renderList(search.value));
+  document.addEventListener('click', (e) => {
+    if(!search.contains(e.target) && !results.contains(e.target)) results.style.display='none';
+  });
+}
+
+async function addHospitalMapping(){
+  const uid = await getUserId();
+  const hospitalId = document.getElementById('h-hosp-id').value;
+  const hn = document.getElementById('h-hosp-hn').value.trim();
+  if(!hospitalId){ showToast('⚠️ เลือกโรงพยาบาลก่อน'); return; }
+  if(!hn){ showToast('⚠️ กรอกเลข HN'); return; }
+  try {
+    const r = await fetch(MEDTRACK_BACKEND + '/api/users/' + uid + '/hospitals', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ hospital_id: parseInt(hospitalId), hn })
+    });
+    const d = await r.json();
+    if(r.ok){
+      showToast('✅ เพิ่มโรงพยาบาลแล้ว');
+      document.getElementById('h-hosp-search').value='';
+      document.getElementById('h-hosp-id').value='';
+      document.getElementById('h-hosp-hn').value='';
+      document.getElementById('h-hn-wrap').style.display='none';
+      await renderMyHospitals();
+    } else {
+      showToast('⚠️ ' + (d.message || 'เพิ่มไม่สำเร็จ'));
+    }
+  } catch(e){ showToast('⚠️ เครือข่ายติดขัด'); }
+}
+
+async function deleteHospitalMapping(mappingId){
+  const uid = await getUserId();
+  try {
+    const r = await fetch(MEDTRACK_BACKEND + '/api/users/' + uid + '/hospitals/' + mappingId, { method:'DELETE' });
+    if(r.ok){ showToast('ลบแล้ว'); await renderMyHospitals(); }
+    else showToast('⚠️ ลบไม่สำเร็จ');
+  } catch(e){ showToast('⚠️ เครือข่ายติดขัด'); }
+}
+
 </script>
 
 <!-- ── LINE SHEET ── -->
@@ -5576,6 +5706,27 @@ function saveHomeModal(name){
     <div class="mfield"><label>เบอร์โทรนัดหมาย</label><input id="md-phone" type="tel" placeholder="02-xxx-xxxx"></div>
     <div class="mfield"><label>วันนัดครั้งถัดไป</label><input id="md-appt" type="date"></div>
     <button class="modal-save-btn" onclick="saveHomeModal('doctor')">💾 บันทึก</button>
+  </div>
+
+  <!-- 🏥 Modal จัดการโรงพยาบาล (ผูกได้สูงสุด 3 รพ. + HN) -->
+  <div class="modal-box" id="modal-hospital" style="display:none">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🏥 โรงพยาบาลของฉัน <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:12px">ผูกโรงพยาบาลที่รักษา (สูงสุด 3 แห่ง) เพื่อเชื่อมข้อมูลยาอัตโนมัติ</div>
+    <div id="hosp-list" style="margin-bottom:14px"></div>
+    <div id="hosp-add-box">
+      <div class="mfield" style="position:relative">
+        <label>เพิ่มโรงพยาบาล</label>
+        <input id="h-hosp-search" type="text" autocomplete="off" placeholder="🔍 พิมพ์ชื่อ เช่น ประสาท, รามา">
+        <input type="hidden" id="h-hosp-id">
+        <div id="h-hosp-results" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #dce6ec;border-radius:10px;box-shadow:0 4px 14px rgba(0,0,0,.1);max-height:220px;overflow-y:auto;margin-top:2px"></div>
+      </div>
+      <div class="mfield" id="h-hn-wrap" style="display:none">
+        <label>เลข HN ที่โรงพยาบาลนี้</label>
+        <input id="h-hosp-hn" type="text" placeholder="หมายเลขผู้ป่วย">
+      </div>
+      <button class="modal-save-btn" onclick="addHospitalMapping()">➕ เพิ่มโรงพยาบาล</button>
+    </div>
   </div>
 
   <!-- Meal Time Modal -->

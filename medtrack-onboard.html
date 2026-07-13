@@ -246,6 +246,11 @@ textarea.field-input{resize:none;min-height:80px}
 .lang-btn{padding:5px 12px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .2s}
 .lang-btn.sel{background:rgba(255,255,255,.25);border-color:rgba(255,255,255,.6);color:#fff;font-weight:700}
 .lang-btn:active{transform:scale(.94)}
+.hosp-opt .htag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;margin-left:auto;flex-shrink:0}
+.htag-gov{background:#e3f2f2;color:#0d7d84}
+.htag-uni{background:#eae4f5;color:#6b4c9a}
+.htag-priv{background:#fbf0e2;color:#c9761d}
+.hosp-opt.active{background:#e3f2f2}
 </style>
 </head>
 <body>
@@ -485,9 +490,17 @@ textarea.field-input{resize:none;min-height:80px}
       </div>
 
       <div class="sec-div" style="margin-top:12px">ข้อมูลเพิ่มเติม</div>
-      <div class="field">
+      <div class="field" style="position:relative">
         <div class="field-label">โรงพยาบาลประจำ</div>
-        <input class="field-input" id="f_hospital" type="text" placeholder="เช่น โรงพยาบาลรามาธิบดี">
+        <input class="field-input" id="f_hospital_search" type="text" autocomplete="off" placeholder="🔍 พิมพ์ชื่อโรงพยาบาล เช่น ประสาท">
+        <input type="hidden" id="f_hospital_id">
+        <div id="hospitalResults" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:#fff;border:1px solid #dce6ec;border-radius:12px;box-shadow:0 6px 20px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;margin-top:4px"></div>
+        <div class="field-hint">พิมพ์เพื่อค้นหา แล้วเลือกจากรายการ (เพิ่ม รพ.อื่นได้ภายหลังในหน้าหลัก)</div>
+      </div>
+      <div class="field" id="f_hn_wrap" style="display:none">
+        <div class="field-label">เลข HN ที่โรงพยาบาลนี้ (ถ้ามี)</div>
+        <input class="field-input" id="f_hn_hospital" type="text" placeholder="หมายเลขผู้ป่วย">
+        <div class="field-hint">กรอกภายหลังได้</div>
       </div>
       <div class="field">
         <div class="field-label">แพทย์ประจำตัว</div>
@@ -1123,7 +1136,108 @@ let obCurrent = 1;
 let selectedAvatar = '👴';
 let caregivers = [];
 
+// 🏥 โหลด + autocomplete filter โรงพยาบาล (filter + tag สี + keyboard เหมือน Google)
+let _allHospitals = [];
+const _HOSP_TAG = { government:['htag-gov','รัฐ'], university:['htag-uni','มหาลัย'], private:['htag-priv','เอกชน'] };
+let _hospActiveIdx = -1;
+let _hospFiltered = [];
+async function loadHospitals(){
+  const search = document.getElementById('f_hospital_search');
+  const results = document.getElementById('hospitalResults');
+  const hidden = document.getElementById('f_hospital_id');
+  if(!search || !results) return;
+  // โหลดรายชื่อ
+  try {
+    const r = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/hospitals');
+    const d = await r.json();
+    _allHospitals = (d.ok && Array.isArray(d.hospitals)) ? d.hospitals : [];
+  } catch(e){
+    console.warn('[onboard] โหลด รพ.ไม่สำเร็จ:', e);
+    _allHospitals = [];
+  }
+
+  function renderList(filter){
+    const q = (filter||'').trim().toLowerCase();
+    _hospActiveIdx = -1;
+    let list = _allHospitals;
+    if(q) list = _allHospitals.filter(h =>
+      (h.name && h.name.toLowerCase().includes(q)) ||
+      (h.short_name && h.short_name.toLowerCase().includes(q)) ||
+      (h.hospital_code && h.hospital_code.toLowerCase().includes(q))
+    );
+    _hospFiltered = list.slice(0,15);
+    if(_hospFiltered.length === 0){
+      results.innerHTML = '<div style="padding:12px 14px;color:#8299a8;font-size:14px">ไม่พบ</div>' +
+        (q ? `<div class="hosp-opt" data-id="other" data-name="${filter}" style="padding:12px 14px;cursor:pointer;border-top:1px solid #eef2f5;font-size:14px;color:#0d7d84">➕ ใช้ "${filter}" (ไม่อยู่ในรายการ)</div>` : '');
+    } else {
+      results.innerHTML = _hospFiltered.map((h,i) => {
+        const [cls,label] = _HOSP_TAG[h.hospital_type] || ['htag-gov','-'];
+        return `<div class="hosp-opt" data-id="${h.id}" data-idx="${i}" data-name="${h.short_name||h.name}" style="padding:11px 14px;cursor:pointer;border-bottom:1px solid #f0f4f6;font-size:14px;display:flex;align-items:center;gap:8px">
+          <span style="font-weight:600;color:#12303a">${h.short_name||h.name}</span>
+          <span class="htag ${cls}">${label}</span>
+        </div>`;
+      }).join('');
+    }
+    results.querySelectorAll('.hosp-opt').forEach(el => {
+      el.addEventListener('click', () => pickHosp(el.dataset.id, el.dataset.name));
+    });
+    results.style.display = 'block';
+  }
+
+  function pickHosp(id, name){
+    search.value = name;
+    hidden.value = (id === 'other') ? '' : id;
+    hidden.dataset.name = name;
+    results.style.display = 'none';
+    const hnWrap = document.getElementById('f_hn_wrap');
+    if(hnWrap) hnWrap.style.display = (id && id !== 'other') ? 'block' : 'none';
+  }
+
+  function highlight(){
+    results.querySelectorAll('.hosp-opt').forEach((el,i) =>
+      el.classList.toggle('active', i === _hospActiveIdx));
+  }
+
+  search.addEventListener('input', () => { hidden.value=''; renderList(search.value); });
+  search.addEventListener('focus', () => renderList(search.value));
+  // keyboard: ↑ ↓ Enter Esc
+  search.addEventListener('keydown', (e) => {
+    const opts = results.querySelectorAll('.hosp-opt');
+    if(!opts.length) return;
+    if(e.key === 'ArrowDown'){ e.preventDefault(); _hospActiveIdx=Math.min(_hospActiveIdx+1,opts.length-1); highlight(); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); _hospActiveIdx=Math.max(_hospActiveIdx-1,0); highlight(); }
+    else if(e.key === 'Enter'){ e.preventDefault(); if(_hospActiveIdx>=0){ const el=opts[_hospActiveIdx]; pickHosp(el.dataset.id, el.dataset.name); } }
+    else if(e.key === 'Escape'){ results.style.display='none'; }
+  });
+  document.addEventListener('click', (e) => {
+    if(!search.contains(e.target) && !results.contains(e.target)) results.style.display='none';
+  });
+}
+
+// 🏥 ผูกโรงพยาบาล (hospital_id + HN) เข้า hn_mapping ของ user
+// หมายเหตุ: backend บังคับต้องมี HN — ถ้าไม่กรอก HN จะข้าม (ไปผูกทีหลังใน home ได้)
+async function linkHospital(userId, hospitalId, hn){
+  if(!userId || !hospitalId) return; // ไม่เลือก รพ. หรือเลือก "อื่นๆ" → ข้าม
+  if(!hn || !hn.trim()) {
+    console.log('[onboard] เลือก รพ.แล้วแต่ยังไม่กรอก HN — ข้ามการผูก (เพิ่มทีหลังใน home ได้)');
+    return;
+  }
+  try {
+    const r = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/'+userId+'/hospitals', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ hospital_id: hospitalId, hn: hn.trim() })
+    });
+    if(r.ok) console.log('[onboard] ผูก รพ. id='+hospitalId+' + HN สำเร็จ');
+    else console.warn('[onboard] ผูก รพ.ไม่สำเร็จ:', r.status);
+  } catch(e){
+    console.warn('[onboard] ผูก รพ.ไม่สำเร็จ:', e);
+  }
+}
+
 function initOb(){
+  // 🏥 โหลดรายชื่อโรงพยาบาล (dropdown — ไม่ให้พิมพ์เอง เพื่อได้ hospital_id มาตรฐาน)
+  loadHospitals();
   // 🔧 Pre-fill name from LINE Login (if available)
   const storedProfile = JSON.parse(localStorage.getItem(KEY) || '{}');
   if (storedProfile.name) {
@@ -1281,7 +1395,9 @@ async function saveOnboarding(){
     phone:document.getElementById('f_phone').value.trim(),
     hn:document.getElementById('f_hn').value.trim(),
     diseases,
-    hospital:document.getElementById('f_hospital').value.trim(),
+    hospital_id:(()=>{ const h=document.getElementById('f_hospital_id'); return h&&h.value?parseInt(h.value):null; })(),
+    hospital:(()=>{ const h=document.getElementById('f_hospital_id'); const s=document.getElementById('f_hospital_search'); return (h&&h.dataset.name)?h.dataset.name:(s?s.value.trim():''); })(),
+    hn_hospital:document.getElementById('f_hn_hospital')?.value.trim()||'',
     doctor:document.getElementById('f_doctor').value.trim(),
     doctor_phone:document.getElementById('f_doctor_phone')?.value.trim()||'',
     allergy:document.getElementById('f_allergy').value.trim(),
@@ -1339,6 +1455,7 @@ async function saveOnboarding(){
         profile.line_user_id = existingLineUserId;
         console.log('[onboard] ✅ User updated via PATCH:', existingUserId);
         showToast('✅ บันทึกข้อมูลสำเร็จ');
+        await linkHospital(existingUserId, profile.hospital_id, profile.hn_hospital);
       } else if (r.status === 404 && lineUserId && lineUserId.match(/^U[a-f0-9]{32}$/)) {
         // 🛡️ user_id ค้าง (ถูกลบใน DB) → POST สร้างใหม่ด้วย lineUserId
         console.warn('[onboard] PATCH 404 — user ถูกลบ, สร้างใหม่ด้วย POST');
@@ -1406,11 +1523,14 @@ async function saveOnboarding(){
         profile.id = data.user.id;
         profile.line_user_id = lineUserId;
         console.log('[onboard] Backend user created:', data.user.id);
+        // 🏥 ผูกโรงพยาบาล (hospital_id) เข้า hn_mapping
+        await linkHospital(data.user.id, profile.hospital_id, profile.hn_hospital);
       } else if (data.error === 'user_exists') {
         profile.user_id = data.user_id;
         profile.id = data.user_id;
         profile.line_user_id = lineUserId;
         console.log('[onboard] User already exists:', data.user_id);
+        await linkHospital(data.user_id, profile.hospital_id, profile.hn_hospital);
       } else {
         console.error('[onboard] Backend error:', data);
         showToast('⚠️ บันทึก local แล้ว — ระบบ backend ติดขัดเล็กน้อย');
