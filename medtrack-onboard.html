@@ -1401,6 +1401,9 @@ async function saveOnboarding(){
     pdpa:{terms:true,health:true,anonymous:document.getElementById('pdpa3').classList.contains('on')},
     treatment_rights:selectedRights,
     rights:selectedRights,
+    country:document.getElementById('f_country')?.value||'TH',
+    province:(document.getElementById('f_country')?.value==='TH')?(document.getElementById('f_province_th')?.value||''):(document.getElementById('f_province_other')?.value||''),
+    ethnicity:document.getElementById('f_ethnicity')?.value||'',
     disease_duration: (()=>{
       const durs={};
       document.querySelectorAll('#diseaseDurList > div').forEach(row=>{
@@ -1763,31 +1766,8 @@ toggleChip = function(el){
 };
 
 // ── SAVE: country, province, ethnicity, rights, disease_duration ──
-const _origSaveOnboarding = saveOnboarding;
-saveOnboarding = function(){
-  // patch profile before original save
-  const origSave = saveProfile2;
-  saveProfile2 = function(p){
-    p.country = document.getElementById('f_country')?.value||'TH';
-    const isTH = p.country==='TH';
-    p.province = isTH
-      ? document.getElementById('f_province_th')?.value||''
-      : document.getElementById('f_province_other')?.value||'';
-    p.ethnicity = document.getElementById('f_ethnicity')?.value||'';
-    p.treatment_rights = selectedRights;
-    // disease durations
-    const durs = {};
-    document.querySelectorAll('#diseaseDurList > div').forEach((row,i)=>{
-      const dName = row.querySelector('div')?.textContent?.trim();
-      const sel = row.querySelector('.dur-chip.on')?.textContent?.trim();
-      if(dName&&sel) durs[dName]=sel;
-    });
-    p.disease_duration = durs;
-    origSave(p);
-    saveProfile2 = origSave;
-  };
-  _origSaveOnboarding();
-};
+// ✅ country/province/ethnicity/disease_duration ย้ายเข้า profile object ตรงๆ แล้ว
+// (เดิมมี override ที่ไม่ทำงาน + ทำ user_id หาย — ลบออก)
 
 // ── LINE CONNECT (Onboarding Step 4) ──
 function ob4ConnectLine(){
