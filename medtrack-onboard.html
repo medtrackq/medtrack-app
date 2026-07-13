@@ -459,12 +459,6 @@ textarea.field-input{resize:none;min-height:80px}
           </div>
         </div>
       </div>
-
-      <div class="field">
-        <div class="field-label">เลข HN (ถ้ามี)</div>
-        <input class="field-input" id="f_hn" type="text" placeholder="หมายเลขผู้ป่วยจากโรงพยาบาล">
-        <div class="field-hint">สามารถกรอกภายหลังได้</div>
-      </div>
     </div>
 
     <!-- STEP 2: โรคประจำตัว -->
@@ -1393,7 +1387,7 @@ async function saveOnboarding(){
     weight:document.getElementById('f_weight').value,
     height:document.getElementById('f_height').value,
     phone:document.getElementById('f_phone').value.trim(),
-    hn:document.getElementById('f_hn').value.trim(),
+    hn:document.getElementById('f_hn_hospital')?.value.trim()||'',
     diseases,
     hospital_id:(()=>{ const h=document.getElementById('f_hospital_id'); return h&&h.value?parseInt(h.value):null; })(),
     hospital:(()=>{ const h=document.getElementById('f_hospital_id'); const s=document.getElementById('f_hospital_search'); return (h&&h.dataset.name)?h.dataset.name:(s?s.value.trim():''); })(),
