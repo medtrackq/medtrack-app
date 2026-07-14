@@ -1815,37 +1815,47 @@ function ob4SimConnect(){
 
   // ═══════════════════════════════════════════════════════════
   // 🍎 LIFF LOGIN — แก้ปัญหา iPhone PWA (localStorage ว่างถังใหม่)
-  // ทำเฉพาะ: standalone PWA (เปิดจากไอคอน) + URL ไม่มี lineUserId
-  // PC/Android/เบราว์เซอร์ปกติ/callback = ไม่เข้าเงื่อนไขนี้ ไม่โดนแตะ
+  // ทำงาน 2 กรณี:
+  //   A) เปิดจากไอคอน PWA (standalone) + ไม่มี lineUserId → liff.login()
+  //   B) กลับมาจาก LIFF login (อยู่ใน LINE browser, isLoggedIn=true) → ดึง profile + verify
+  // PC/Android ปกติ/callback ที่มี lineUserId ใน URL แล้ว = ไม่แตะ
   // ═══════════════════════════════════════════════════════════
   const LIFF_ID_ONBOARD = '2009969889-ledTsERa';
   const _isStandalone = window.matchMedia('(display-mode: standalone)').matches
                      || window.navigator.standalone === true;
   const _hasLineIdInURL = /^U[a-f0-9]{32}$/.test(params.get('lineUserId') || '');
+  // เปิด LIFF ถ้าอยู่ใน LINE (in-app browser) หรือ standalone PWA — และ URL ยังไม่มี lineUserId
+  const _inLineApp = /Line/i.test(navigator.userAgent);
 
   // 🐞 DEBUG: เปิด ?debug=1 เพื่อดูค่าบนจอ (ลบออกหลังแก้เสร็จ)
   const _DBG = new URLSearchParams(window.location.search).get('debug') === '1';
   const _dbg = (m) => { if(_DBG){ try{ alert('[DEBUG] ' + m); }catch(e){} } console.log('[onboard] ' + m); };
 
-  if (_isStandalone && !_hasLineIdInURL && typeof liff !== 'undefined') {
+  if (!_hasLineIdInURL && (_isStandalone || _inLineApp) && typeof liff !== 'undefined') {
     try {
-      _dbg('standalone=YES, no lineUserId → เริ่ม LIFF init');
+      _dbg('เริ่ม LIFF · standalone=' + _isStandalone + ' inLine=' + _inLineApp);
       await liff.init({ liffId: LIFF_ID_ONBOARD });
       _dbg('liff.init OK · isLoggedIn=' + liff.isLoggedIn());
       if (liff.isLoggedIn()) {
+        // กรณี B: login แล้ว (หรือกลับมาจาก LIFF) → ดึง profile + verify ตรงนี้
         const _lp = await liff.getProfile();
-        _dbg('getProfile OK · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
+        _dbg('getProfile · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
         if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
           const _u = new URL(window.location.href);
           _u.searchParams.set('lineUserId', _lp.userId);
           window.history.replaceState({}, '', _u.toString());
           params.set('lineUserId', _lp.userId);
-          _dbg('ยัด lineUserId ใส่ URL แล้ว → ไป verify by-line-id');
+          _dbg('ยัด lineUserId ใส่ URL → ไป verify by-line-id');
         } else {
-          _dbg('⚠️ userId ไม่ผ่าน regex หรือ null → ตกไป register');
+          _dbg('⚠️ userId ไม่ผ่าน regex/null → ตกไป register');
         }
+      } else if (_isStandalone) {
+        // กรณี A: PWA ครั้งแรก ยังไม่ login → เด้งเข้า LINE
+        _dbg('ยังไม่ login (PWA) → liff.login()');
+        liff.login({ redirectUri: window.location.href });
+        return;
       } else {
-        _dbg('ยังไม่ login → liff.login()');
+        _dbg('อยู่ LINE browser แต่ยังไม่ login → liff.login()');
         liff.login({ redirectUri: window.location.href });
         return;
       }
@@ -1853,7 +1863,7 @@ function ob4SimConnect(){
       _dbg('❌ LIFF error: ' + (e && e.message ? e.message : e));
     }
   } else if (_DBG) {
-    _dbg('ข้าม LIFF · standalone=' + _isStandalone + ' hasLineIdInURL=' + _hasLineIdInURL + ' liffLoaded=' + (typeof liff !== 'undefined'));
+    _dbg('ข้าม LIFF · standalone=' + _isStandalone + ' inLine=' + _inLineApp + ' hasLineIdInURL=' + _hasLineIdInURL + ' liffLoaded=' + (typeof liff !== 'undefined'));
   }
 
   // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
