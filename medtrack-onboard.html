@@ -1823,30 +1823,37 @@ function ob4SimConnect(){
                      || window.navigator.standalone === true;
   const _hasLineIdInURL = /^U[a-f0-9]{32}$/.test(params.get('lineUserId') || '');
 
+  // 🐞 DEBUG: เปิด ?debug=1 เพื่อดูค่าบนจอ (ลบออกหลังแก้เสร็จ)
+  const _DBG = new URLSearchParams(window.location.search).get('debug') === '1';
+  const _dbg = (m) => { if(_DBG){ try{ alert('[DEBUG] ' + m); }catch(e){} } console.log('[onboard] ' + m); };
+
   if (_isStandalone && !_hasLineIdInURL && typeof liff !== 'undefined') {
     try {
-      console.log('[onboard] PWA standalone + ไม่มี lineUserId → เริ่ม LIFF');
+      _dbg('standalone=YES, no lineUserId → เริ่ม LIFF init');
       await liff.init({ liffId: LIFF_ID_ONBOARD });
+      _dbg('liff.init OK · isLoggedIn=' + liff.isLoggedIn());
       if (liff.isLoggedIn()) {
         const _lp = await liff.getProfile();
+        _dbg('getProfile OK · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
         if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
-          // ยัด lineUserId ใส่ URL → ปล่อยให้ block verify เดิมด้านล่างทำงานต่อ
           const _u = new URL(window.location.href);
           _u.searchParams.set('lineUserId', _lp.userId);
           window.history.replaceState({}, '', _u.toString());
           params.set('lineUserId', _lp.userId);
-          console.log('[onboard] LIFF ได้ lineUserId=' + _lp.userId.slice(0,8) + '…');
+          _dbg('ยัด lineUserId ใส่ URL แล้ว → ไป verify by-line-id');
+        } else {
+          _dbg('⚠️ userId ไม่ผ่าน regex หรือ null → ตกไป register');
         }
       } else {
-        // ยังไม่ login → เด้งเข้า LINE ขอ permission แล้วกลับมาที่ Endpoint URL เดิม
-        console.log('[onboard] LIFF ยังไม่ login → liff.login()');
+        _dbg('ยังไม่ login → liff.login()');
         liff.login({ redirectUri: window.location.href });
-        return; // หยุดรอ redirect กลับ
+        return;
       }
     } catch (e) {
-      console.warn('[onboard] LIFF init/login ล้มเหลว:', e);
-      // ล้มเหลว → ปล่อยตกไป flow ปกติ (แสดงฟอร์ม register) ไม่ block ผู้ใช้
+      _dbg('❌ LIFF error: ' + (e && e.message ? e.message : e));
     }
+  } else if (_DBG) {
+    _dbg('ข้าม LIFF · standalone=' + _isStandalone + ' hasLineIdInURL=' + _hasLineIdInURL + ' liffLoaded=' + (typeof liff !== 'undefined'));
   }
 
   // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
@@ -1854,10 +1861,13 @@ function ob4SimConnect(){
   const _urlLineId = _urlParams2.get('lineUserId');
   if(_urlLineId && _urlLineId.match(/^U[a-f0-9]{32}$/)){
     try {
+      if(_DBG) _dbg('verify by-line-id: ' + _urlLineId.slice(0,10) + '…');
       const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/'+_urlLineId);
+      if(_DBG) _dbg('by-line-id status=' + chk.status);
       if(chk.ok){
         const d = await chk.json();
         if(d && d.user && d.user.id && d.user.name){
+          if(_DBG) _dbg('✅ เจอ user id=' + d.user.id + ' → เด้ง home');
           console.log('[onboard] user มีแล้ว (id='+d.user.id+') — เด้ง home');
           const prof = JSON.parse(localStorage.getItem(KEY)||'{}');
           prof.user_id = d.user.id; prof.id = d.user.id; prof.line_user_id = _urlLineId;
@@ -1868,8 +1878,10 @@ function ob4SimConnect(){
           return;
         }
       }
+      if(_DBG) _dbg('⚠️ by-line-id ไม่เจอ user (status=' + chk.status + ') → ให้กรอก onboard');
       console.log('[onboard] lineUserId นี้ยังไม่มี user — ให้กรอก onboard');
     } catch(e){
+      if(_DBG) _dbg('❌ verify error: ' + (e && e.message ? e.message : e));
       console.warn('[onboard] เช็ค by-line-id ล้มเหลว:', e);
     }
   }
