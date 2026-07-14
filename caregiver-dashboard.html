@@ -944,8 +944,11 @@ function renderAppointment(appt) {
 async function checkCaregiverReportButton(patientId, doses){
   if(!patientId) return;
   try {
-    const withDose = (doses||[]).filter(d => d.total_doses != null || d.is_finished != null);
-    const allFinished = (doses||[]).length > 0 && (doses||[]).every(d => d.is_finished);
+    // เงื่อนไขตรงกับ home: เฉพาะยาที่ระบุจำนวน (total_doses != null)
+    // ยาที่ไม่ระบุจำนวน (เรื้อรัง) ไม่นับ — ไม่บล็อกปุ่ม
+    const withDose = (doses||[]).filter(d => d.total_doses != null);
+    const activeWithDose = withDose.filter(d => !d.is_finished);
+    const allFinished = withDose.length > 0 && activeWithDose.length === 0;
 
     const rep = await fetch(`${API_BASE}/api/med-report?user_id=${patientId}`).then(r=>r.json()).catch(()=>null);
     let nearAppt = false, apptDate = null, pct = null;
