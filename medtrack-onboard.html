@@ -7,6 +7,10 @@
 <meta http-equiv="Expires" content="0">
 
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
+<!-- ============ LIFF SDK (สำหรับ iPhone PWA login) ============ -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
 <!-- ============ ICON FOR ALL PLATFORMS ============ -->
 
 <!-- Browser tab favicon -->
@@ -1809,6 +1813,42 @@ function ob4SimConnect(){
     } catch(e){}
   }
 
+  // ═══════════════════════════════════════════════════════════
+  // 🍎 LIFF LOGIN — แก้ปัญหา iPhone PWA (localStorage ว่างถังใหม่)
+  // ทำเฉพาะ: standalone PWA (เปิดจากไอคอน) + URL ไม่มี lineUserId
+  // PC/Android/เบราว์เซอร์ปกติ/callback = ไม่เข้าเงื่อนไขนี้ ไม่โดนแตะ
+  // ═══════════════════════════════════════════════════════════
+  const LIFF_ID_ONBOARD = '2009969889-ledTsERa';
+  const _isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                     || window.navigator.standalone === true;
+  const _hasLineIdInURL = /^U[a-f0-9]{32}$/.test(params.get('lineUserId') || '');
+
+  if (_isStandalone && !_hasLineIdInURL && typeof liff !== 'undefined') {
+    try {
+      console.log('[onboard] PWA standalone + ไม่มี lineUserId → เริ่ม LIFF');
+      await liff.init({ liffId: LIFF_ID_ONBOARD });
+      if (liff.isLoggedIn()) {
+        const _lp = await liff.getProfile();
+        if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
+          // ยัด lineUserId ใส่ URL → ปล่อยให้ block verify เดิมด้านล่างทำงานต่อ
+          const _u = new URL(window.location.href);
+          _u.searchParams.set('lineUserId', _lp.userId);
+          window.history.replaceState({}, '', _u.toString());
+          params.set('lineUserId', _lp.userId);
+          console.log('[onboard] LIFF ได้ lineUserId=' + _lp.userId.slice(0,8) + '…');
+        }
+      } else {
+        // ยังไม่ login → เด้งเข้า LINE ขอ permission แล้วกลับมาที่ Endpoint URL เดิม
+        console.log('[onboard] LIFF ยังไม่ login → liff.login()');
+        liff.login({ redirectUri: window.location.href });
+        return; // หยุดรอ redirect กลับ
+      }
+    } catch (e) {
+      console.warn('[onboard] LIFF init/login ล้มเหลว:', e);
+      // ล้มเหลว → ปล่อยตกไป flow ปกติ (แสดงฟอร์ม register) ไม่ block ผู้ใช้
+    }
+  }
+
   // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
   const _urlParams2 = new URLSearchParams(window.location.search);
   const _urlLineId = _urlParams2.get('lineUserId');
@@ -1878,6 +1918,6 @@ function ob4SimConnect(){
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.13a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14a</div>
 </body>
 </html>
