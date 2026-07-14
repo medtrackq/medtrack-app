@@ -1553,7 +1553,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
     <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
       <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
-      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.13a</span></div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.14a</span></div>
       <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 bluecode.pro. All rights reserved.</div>
     </div>
   </div>
@@ -5110,7 +5110,7 @@ async function openHospitalModal(){
 
 async function renderMyHospitals(){
   const box = document.getElementById('hosp-list');
-  const uid = await getUserId();
+  const uid = getCurrentUserId();
   if(!uid){ box.innerHTML = '<div style="color:#94a3b8;font-size:13px">กรุณาลงทะเบียนก่อน</div>'; return; }
   try {
     const r = await fetch(MEDTRACK_BACKEND + '/api/users/' + uid + '/hospitals');
@@ -5177,7 +5177,7 @@ function setupHospitalSearch(){
 }
 
 async function addHospitalMapping(){
-  const uid = await getUserId();
+  const uid = getCurrentUserId();
   const hospitalId = document.getElementById('h-hosp-id').value;
   const hn = document.getElementById('h-hosp-hn').value.trim();
   if(!hospitalId){ showToast('⚠️ เลือกโรงพยาบาลก่อน'); return; }
@@ -5202,7 +5202,7 @@ async function addHospitalMapping(){
 }
 
 async function deleteHospitalMapping(mappingId){
-  const uid = await getUserId();
+  const uid = getCurrentUserId();
   try {
     const r = await fetch(MEDTRACK_BACKEND + '/api/users/' + uid + '/hospitals/' + mappingId, { method:'DELETE' });
     if(r.ok){ showToast('ลบแล้ว'); await renderMyHospitals(); }
@@ -5820,6 +5820,6 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.13a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14a</div>
 </body>
 </html>
