@@ -1877,6 +1877,8 @@ function ob4SimConnect(){
       await liff.init({ liffId: LIFF_ID_ONBOARD });
       _dbg('liff.init OK · isLoggedIn=' + liff.isLoggedIn());
       if (liff.isLoggedIn()) {
+        // ✅ มี LIFF session อยู่แล้ว → ดึง profile + verify + เด้ง home เงียบๆ
+        // (ไม่เรียก liff.login() → ไม่เด้ง access.line.me)
         const _lp = await liff.getProfile();
         _dbg('getProfile · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
         if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
@@ -1886,12 +1888,12 @@ function ob4SimConnect(){
           params.set('lineUserId', _lp.userId);
           _dbg('ได้ lineUserId → ไป verify by-line-id');
         } else {
-          _dbg('⚠️ userId ไม่ผ่าน regex/null → ตกไป register');
+          _dbg('⚠️ userId ไม่ผ่าน regex/null → แสดง splash');
         }
       } else {
-        _dbg('ยังไม่ login → liff.login() เด้งเข้า LINE');
-        liff.login({ redirectUri: window.location.href });
-        return;
+        // ❌ ยังไม่มี LIFF session → ไม่บังคับ login อัตโนมัติ (กันเด้ง access.line.me ทุกครั้ง)
+        // ให้ผู้ใช้กดปุ่ม "เข้าสู่ระบบ (มีบัญชีแล้ว)" เอง → loginExisting() จะ login ให้
+        _dbg('ยังไม่ login LINE → แสดง splash ให้กดปุ่มเข้าสู่ระบบ');
       }
     } catch (e) {
       _dbg('❌ LIFF error: ' + (e && e.message ? e.message : e));
