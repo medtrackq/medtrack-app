@@ -1115,7 +1115,45 @@ async function loginExisting(){
       setTimeout(()=>{ window.location.href=homeUrl; }, 800);
     }
   } else {
-    // ไม่มี profile หรือไม่มี user_id → ต้องลงทะเบียน
+    // ไม่มี local profile → ใช้ LIFF login ดึง lineUserId → verify DB → เด้ง home
+    // (แก้เคส iPhone PWA/เคลียร์ข้อมูล: localStorage ว่างแต่มี user ใน DB)
+    if (typeof liff !== 'undefined') {
+      try {
+        showToast('⏳ กำลังเชื่อม LINE...');
+        await liff.init({ liffId: '2009969889-ledTsERa' });
+        if (liff.isLoggedIn()) {
+          const lp = await liff.getProfile();
+          if (lp && /^U[a-f0-9]{32}$/.test(lp.userId)) {
+            const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/'+lp.userId);
+            if (chk.ok) {
+              const d = await chk.json();
+              if (d && d.user && d.user.id) {
+                const prof = JSON.parse(localStorage.getItem(KEY)||'{}');
+                prof.user_id=d.user.id; prof.id=d.user.id; prof.line_user_id=lp.userId;
+                if(d.user.name) prof.name=d.user.name;
+                localStorage.setItem(KEY, JSON.stringify(prof));
+                showToast('👋 ยินดีต้อนรับกลับ '+((d.user.name||'').split(' ').slice(-1)[0]||''));
+                setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 900);
+                return;
+              }
+            }
+            // login LINE ได้ แต่ยังไม่มีบัญชีใน DB → ให้ลงทะเบียน
+            showToast('ยังไม่มีบัญชี กรุณาลงทะเบียน');
+            setTimeout(()=>goTo('sOnboard'), 900);
+            return;
+          }
+        } else {
+          // ยังไม่ login LINE → เด้งเข้า LINE แล้วกลับมาที่หน้านี้
+          liff.login({ redirectUri: window.location.href });
+          return;
+        }
+      } catch(e){
+        console.warn('[loginExisting] LIFF ล้มเหลว:', e);
+        showToast('เชื่อม LINE ไม่สำเร็จ ลองใหม่อีกครั้ง');
+        return;
+      }
+    }
+    // ไม่มี LIFF → fallback เดิม
     showToast('กรุณาลงทะเบียนก่อนใช้งาน');
     setTimeout(()=>goTo('sOnboard'), 700);
   }
@@ -1814,30 +1852,31 @@ function ob4SimConnect(){
   }
 
   // ═══════════════════════════════════════════════════════════
-  // 🍎 LIFF LOGIN — แก้ปัญหา iPhone PWA (localStorage ว่างถังใหม่)
-  // ทำงาน 2 กรณี:
-  //   A) เปิดจากไอคอน PWA (standalone) + ไม่มี lineUserId → liff.login()
-  //   B) กลับมาจาก LIFF login (อยู่ใน LINE browser, isLoggedIn=true) → ดึง profile + verify
-  // PC/Android ปกติ/callback ที่มี lineUserId ใน URL แล้ว = ไม่แตะ
+  // 🍎 LIFF LOGIN — แก้ปัญหา iPhone PWA / localStorage ว่าง
+  // หลักการ: เลิกเดา environment (standalone/inLine เปราะเกินไป)
+  // → ถ้า URL ไม่มี lineUserId + ยังไม่เคยมี profile ใน localStorage
+  //   → ให้ LIFF จัดการ (login/getProfile) ไม่ว่าอยู่ context ไหน
+  // กัน PC/เครื่องที่ login แล้ว: มี profile.user_id ใน localStorage = ข้าม
   // ═══════════════════════════════════════════════════════════
   const LIFF_ID_ONBOARD = '2009969889-ledTsERa';
-  const _isStandalone = window.matchMedia('(display-mode: standalone)').matches
-                     || window.navigator.standalone === true;
   const _hasLineIdInURL = /^U[a-f0-9]{32}$/.test(params.get('lineUserId') || '');
-  // เปิด LIFF ถ้าอยู่ใน LINE (in-app browser) หรือ standalone PWA — และ URL ยังไม่มี lineUserId
-  const _inLineApp = /Line/i.test(navigator.userAgent);
+  // เคย login แล้วไหม (มี user_id ค้างใน localStorage)
+  let _hasLocalUser = false;
+  try {
+    const _pp = JSON.parse(localStorage.getItem(KEY) || '{}');
+    _hasLocalUser = !!(_pp && (_pp.user_id || _pp.id));
+  } catch(e){}
 
   // 🐞 DEBUG: เปิด ?debug=1 เพื่อดูค่าบนจอ (ลบออกหลังแก้เสร็จ)
   const _DBG = new URLSearchParams(window.location.search).get('debug') === '1';
   const _dbg = (m) => { if(_DBG){ try{ alert('[DEBUG] ' + m); }catch(e){} } console.log('[onboard] ' + m); };
 
-  if (!_hasLineIdInURL && (_isStandalone || _inLineApp) && typeof liff !== 'undefined') {
+  if (!_hasLineIdInURL && !_hasLocalUser && typeof liff !== 'undefined') {
     try {
-      _dbg('เริ่ม LIFF · standalone=' + _isStandalone + ' inLine=' + _inLineApp);
+      _dbg('เริ่ม LIFF (ไม่มี lineUserId + ไม่มี local user)');
       await liff.init({ liffId: LIFF_ID_ONBOARD });
       _dbg('liff.init OK · isLoggedIn=' + liff.isLoggedIn());
       if (liff.isLoggedIn()) {
-        // กรณี B: login แล้ว (หรือกลับมาจาก LIFF) → ดึง profile + verify ตรงนี้
         const _lp = await liff.getProfile();
         _dbg('getProfile · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
         if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
@@ -1845,17 +1884,12 @@ function ob4SimConnect(){
           _u.searchParams.set('lineUserId', _lp.userId);
           window.history.replaceState({}, '', _u.toString());
           params.set('lineUserId', _lp.userId);
-          _dbg('ยัด lineUserId ใส่ URL → ไป verify by-line-id');
+          _dbg('ได้ lineUserId → ไป verify by-line-id');
         } else {
           _dbg('⚠️ userId ไม่ผ่าน regex/null → ตกไป register');
         }
-      } else if (_isStandalone) {
-        // กรณี A: PWA ครั้งแรก ยังไม่ login → เด้งเข้า LINE
-        _dbg('ยังไม่ login (PWA) → liff.login()');
-        liff.login({ redirectUri: window.location.href });
-        return;
       } else {
-        _dbg('อยู่ LINE browser แต่ยังไม่ login → liff.login()');
+        _dbg('ยังไม่ login → liff.login() เด้งเข้า LINE');
         liff.login({ redirectUri: window.location.href });
         return;
       }
@@ -1863,7 +1897,7 @@ function ob4SimConnect(){
       _dbg('❌ LIFF error: ' + (e && e.message ? e.message : e));
     }
   } else if (_DBG) {
-    _dbg('ข้าม LIFF · standalone=' + _isStandalone + ' inLine=' + _inLineApp + ' hasLineIdInURL=' + _hasLineIdInURL + ' liffLoaded=' + (typeof liff !== 'undefined'));
+    _dbg('ข้าม LIFF · hasLineIdInURL=' + _hasLineIdInURL + ' hasLocalUser=' + _hasLocalUser + ' liffLoaded=' + (typeof liff !== 'undefined'));
   }
 
   // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
