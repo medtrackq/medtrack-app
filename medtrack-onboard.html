@@ -1867,9 +1867,9 @@ function ob4SimConnect(){
     _hasLocalUser = !!(_pp && (_pp.user_id || _pp.id));
   } catch(e){}
 
-  // 🐞 DEBUG: เปิด ?debug=1 เพื่อดูค่าบนจอ (ลบออกหลังแก้เสร็จ)
-  const _DBG = new URLSearchParams(window.location.search).get('debug') === '1';
-  const _dbg = (m) => { if(_DBG){ try{ alert('[DEBUG] ' + m); }catch(e){} } console.log('[onboard] ' + m); };
+  // 🐞 DEBUG: ปิด alert แล้ว (pilot-ready) — เหลือแค่ console.log สำหรับ dev
+  const _DBG = false; // ปิดถาวร: ไม่มี alert เด้งรบกวนคนไข้อีก
+  const _dbg = (m) => { console.log('[onboard] ' + m); };
 
   if (!_hasLineIdInURL && !_hasLocalUser && typeof liff !== 'undefined') {
     try {
@@ -1976,6 +1976,6 @@ function ob4SimConnect(){
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14b</div>
 </body>
 </html>
