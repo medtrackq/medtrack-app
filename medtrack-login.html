@@ -1,334 +1,71 @@
 <!DOCTYPE html>
 <html lang="th">
-<link rel="apple-touch-icon" sizes="180x180" href="/medtrack-app/apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/medtrack-app/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/medtrack-app/favicon-16x16.png">
-<link rel="manifest" href="/medtrack-app/site.webmanifest">
-<meta name="theme-color" content="#1E3A8A">
-  
 <head>
-  
 <meta charset="UTF-8">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1A9E75">
 <title>เข้าสู่ระบบ — MedTrack</title>
 <link rel="icon" type="image/png" href="/medtrack-app/favicon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/medtrack-app/apple-touch-icon.png">
+<link rel="manifest" href="/medtrack-app/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+
+<!-- 🔀 เด้งไป onboard ทันที (เร็วที่สุด ก่อน render) -->
+<script>
+  // เก็บ query string เดิมไว้ (เผื่อมี lineUserId/user_id แนบมา)
+  var _qs = window.location.search || '';
+  window.location.replace('/medtrack-app/medtrack-onboard.html' + _qs);
+</script>
+
 <style>
-:root{
-  --bg:#F7F8FA; --sf:#fff; --bd:#E4EAF0;
-  --ac:#1A9E75; --al:#E1F5EE; --ad:#0F6E56;
-  --t1:#1A2332; --t2:#5A6A7A; --t3:#9AAABB;
-  --line:#06C755;
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{
-  font-family:'Sarabun',sans-serif;
-  background:linear-gradient(135deg,#1A9E75 0%,#0F6E56 100%);
-  min-height:100vh;
-  display:flex;align-items:center;justify-content:center;
-  padding:20px;
-  color:var(--t1);
-}
-.container{
-  width:100%;
-  max-width:400px;
-}
-.card{
-  background:#fff;
-  border-radius:24px;
-  padding:32px 24px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.15);
-  text-align:center;
-}
-.logo{
-  width:80px;height:80px;
-  margin:0 auto 16px;
-  background:linear-gradient(135deg,#1A9E75,#0F6E56);
-  border-radius:20px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:40px;
-}
-h1{
-  font-size:24px;
-  font-weight:700;
-  margin-bottom:6px;
-}
-.subtitle{
-  font-size:14px;
-  color:var(--t2);
-  margin-bottom:28px;
-}
-.welcome{
-  background:var(--al);
-  border-radius:14px;
-  padding:14px 16px;
-  margin-bottom:24px;
-  font-size:13px;
-  color:var(--ad);
-  line-height:1.6;
-}
-.welcome strong{font-weight:600;}
-.line-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  width:100%;
-  padding:14px 20px;
-  background:var(--line);
-  color:#fff;
-  border:none;
-  border-radius:14px;
-  font-size:16px;
-  font-weight:600;
-  font-family:inherit;
-  cursor:pointer;
-  transition:all 0.2s;
-  box-shadow:0 4px 12px rgba(6,199,85,0.3);
-}
-.line-btn:hover{
-  transform:translateY(-1px);
-  box-shadow:0 6px 16px rgba(6,199,85,0.4);
-}
-.line-btn:active{
-  transform:translateY(0);
-}
-.line-btn:disabled{
-  opacity:0.6;
-  cursor:not-allowed;
-}
-.line-icon{
-  width:24px;height:24px;
-  background:#fff;
-  border-radius:6px;
-  display:flex;align-items:center;justify-content:center;
-  color:var(--line);
-  font-weight:700;
-  font-size:14px;
-}
-.divider{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin:20px 0;
-  color:var(--t3);
-  font-size:12px;
-}
-.divider::before,.divider::after{
-  content:'';
-  flex:1;
-  height:1px;
-  background:var(--bd);
-}
-.features{
-  text-align:left;
-  margin-bottom:20px;
-}
-.feature{
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-  font-size:13px;
-  color:var(--t2);
-}
-.feature-icon{
-  font-size:16px;
-}
-.legal{
-  font-size:11px;
-  color:var(--t3);
-  line-height:1.6;
-  margin-top:20px;
-}
-.legal a{
-  color:var(--ac);
-  text-decoration:none;
-}
-.legal a:hover{
-  text-decoration:underline;
-}
-.error-msg{
-  background:#FDEAEA;
-  color:#A03030;
-  border:1px solid #F5C0C0;
-  border-radius:10px;
-  padding:10px 14px;
-  font-size:13px;
-  margin-bottom:16px;
-  display:none;
-}
-.error-msg.show{display:block;}
-.friend-notice{
-  display:flex;
-  gap:10px;
-  align-items:flex-start;
-  text-align:left;
-  background:#FFF7E6;
-  border:1px solid #F5D88A;
-  border-radius:12px;
-  padding:12px 14px;
-  margin-bottom:16px;
-  font-size:13px;
-  color:#8A6A1A;
-  line-height:1.5;
-}
-.friend-notice-icon{
-  font-size:18px;
-  flex:0 0 auto;
-}
-.friend-notice strong{font-weight:700;color:#7A5A0A;}
-.friend-notice-sub{
-  font-size:11.5px;
-  color:#A0853A;
-}
-.loading{
-  display:none;
-  margin:20px 0;
-  font-size:13px;
-  color:var(--t2);
-}
-.loading.show{display:block;}
-.spinner{
-  display:inline-block;
-  width:14px;height:14px;
-  border:2px solid var(--bd);
-  border-top-color:var(--ac);
-  border-radius:50%;
-  animation:spin 0.8s linear infinite;
-  vertical-align:middle;
-  margin-right:6px;
-}
-@keyframes spin{to{transform:rotate(360deg);}}
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    font-family:'Sarabun',sans-serif;
+    background:linear-gradient(135deg,#1A9E75 0%,#0F6E56 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:20px; color:#fff; text-align:center;
+  }
+  .box { max-width:340px; }
+  .logo { font-size:52px; margin-bottom:14px; }
+  h1 { font-size:22px; font-weight:700; margin-bottom:8px; }
+  .sub { font-size:14px; opacity:.9; line-height:1.7; margin-bottom:22px; }
+  .spinner {
+    width:34px; height:34px; margin:0 auto 18px;
+    border:3px solid rgba(255,255,255,.3); border-top-color:#fff;
+    border-radius:50%; animation:spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .btn {
+    display:inline-block; padding:13px 28px; background:#fff; color:#0F6E56;
+    border-radius:12px; font-size:15px; font-weight:700; text-decoration:none;
+  }
 </style>
 </head>
 <body>
-
-<div class="container">
-  <div class="card">
+  <div class="box">
+    <div class="spinner"></div>
     <div class="logo">💊</div>
     <h1>MedTrack</h1>
-    <div class="subtitle">ผู้ช่วยดูแลสุขภาพ</div>
-    
-    <div class="welcome">
-      สวัสดีครับ 👋<br>
-      <strong>เข้าสู่ระบบเพื่อเริ่มดูแลการกินยา</strong>
-    </div>
-    
-    <div id="errorMsg" class="error-msg"></div>
-    
-    <div class="friend-notice">
-      <span class="friend-notice-icon">🔔</span>
-      <div>ตอนเข้าสู่ระบบ กรุณากด <strong>"เพิ่มเพื่อน"</strong> หมอน้อยด้วยนะครับ<br>
-      <span class="friend-notice-sub">การแจ้งเตือนกินยาจะส่งผ่าน LINE — ถ้าไม่เพิ่มเพื่อน จะไม่ได้รับการเตือน</span></div>
-    </div>
-    
-    <button class="line-btn" id="loginBtn" onclick="loginWithLINE()">
-      <div class="line-icon">L</div>
-      <span>เข้าสู่ระบบด้วย LINE</span>
-    </button>
-    
-    <div id="loadingMsg" class="loading">
-      <span class="spinner"></span>
-      กำลังพาไปที่ LINE...
-    </div>
-    
-    <div class="divider">บริการที่ใช้</div>
-    
-    <div class="features">
-      <div class="feature">
-        <span class="feature-icon">📸</span>
-        <div>สแกนซองยาด้วย AI<br><span style="color:var(--t3);font-size:11px">ระบบอ่านชื่อยา + ตารางอัตโนมัติ</span></div>
-      </div>
-      <div class="feature">
-        <span class="feature-icon">⏰</span>
-        <div>แจ้งเตือนถึงเวลากินยา<br><span style="color:var(--t3);font-size:11px">ผ่าน LINE ที่ใช้ทุกวัน</span></div>
-      </div>
-      <div class="feature">
-        <span class="feature-icon">👨‍👩‍👦</span>
-        <div>ผู้ดูแลรับการแจ้งเตือนได้<br><span style="color:var(--t3);font-size:11px">ลูกหลานช่วยดูแลพ่อแม่ได้</span></div>
-      </div>
-    </div>
-    
-    <div class="legal">
-      การเข้าสู่ระบบหมายถึงท่านยอมรับ<br>
-      <a href="/medtrack-app/terms.html" target="_blank">เงื่อนไขการใช้งาน</a> และ
-      <a href="/medtrack-app/privacy.html" target="_blank">นโยบายความเป็นส่วนตัว</a>
-    </div>
+    <div class="sub">กำลังพาไปหน้าเข้าสู่ระบบ...</div>
+    <!-- สำรอง: ถ้า JS ไม่ทำงาน / redirect ช้า -->
+    <a class="btn" id="goBtn" href="/medtrack-app/medtrack-onboard.html">เข้าสู่ระบบ →</a>
   </div>
-</div>
 
 <script>
-const MEDTRACK_BACKEND = 'https://medtrack-backend-production-7731.up.railway.app';
-
-// Check if already logged in
-window.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('mt_session_token');
-  if (token) {
-    // Verify token
-    try {
-      const res = await fetch(`${MEDTRACK_BACKEND}/api/auth/verify`, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({session_token: token})
-      });
-      if (res.ok) {
-        // Already logged in — redirect home
-        window.location.href = '/medtrack-app/medtrack-home.html';
-      } else {
-        // Invalid token — clear
-        localStorage.removeItem('mt_session_token');
-      }
-    } catch(e) {
-      console.warn('verify failed:', e);
-    }
-  }
-});
-
-async function loginWithLINE() {
-  const btn = document.getElementById('loginBtn');
-  const loading = document.getElementById('loadingMsg');
-  const errorDiv = document.getElementById('errorMsg');
-  
-  btn.disabled = true;
-  loading.classList.add('show');
-  errorDiv.classList.remove('show');
-  
-  try {
-    // Step 1: Get auth URL from backend
-    const res = await fetch(`${MEDTRACK_BACKEND}/api/auth/line/login`);
-    if (!res.ok) {
-      throw new Error('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
-    }
-    
-    const data = await res.json();
-    if (!data.ok || !data.auth_url) {
-      throw new Error('ตอบกลับไม่ถูกต้อง');
-    }
-    
-    // Save state for callback — ใช้ localStorage (sessionStorage หายตอน redirect ใน LINE in-app browser!)
-    localStorage.setItem('mt_login_state', data.state);
-    
-    // Step 2: Redirect to LINE OAuth
-    window.location.href = data.auth_url;
-    
-  } catch(e) {
-    console.error('login error:', e);
-    errorDiv.textContent = '❌ ' + (e.message || 'เกิดข้อผิดพลาด');
-    errorDiv.classList.add('show');
-    btn.disabled = false;
-    loading.classList.remove('show');
-  }
-}
+  // สำรองอีกชั้น (เผื่อ script ใน head ไม่ทำงาน)
+  (function(){
+    var qs = window.location.search || '';
+    var target = '/medtrack-app/medtrack-onboard.html' + qs;
+    var btn = document.getElementById('goBtn');
+    if (btn) btn.href = target;
+    setTimeout(function(){ window.location.replace(target); }, 400);
+  })();
 </script>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.06.27</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.15a</div>
 </body>
 </html>

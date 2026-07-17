@@ -1553,7 +1553,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <!-- ข้อมูลแอป / เวอร์ชัน (สำหรับ support — เช็คว่า user ใช้เวอร์ชันล่าสุดไหม) -->
     <div style="text-align:center;padding:20px 16px 8px;color:var(--t3)">
       <div style="font-size:13px;font-weight:600;color:var(--t2)">MedTrack · หมอน้อย</div>
-      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.14a</span></div>
+      <div style="font-size:12px;margin-top:4px">เวอร์ชัน <span style="font-family:monospace" id="settings-version">v2026.07.14c</span></div>
       <div style="font-size:11px;margin-top:6px;color:var(--t3)">© 2026 bluecode.pro. All rights reserved.</div>
     </div>
   </div>
@@ -2163,9 +2163,29 @@ function fmtTablets(n, suffix) {
   
   const token = localStorage.getItem('mt_session_token');
   
-  // No token → go to login
+  // 🔒 กัน redirect loop: ถ้ามี profile ใน localStorage (user_id) → ใช้เลย ไม่ต้องเด้ง
+  // (เคส onboard เด้งมาโดยไม่มี ?user_id= แต่ save profile ไว้แล้ว)
+  let _localUid = null;
+  try {
+    const _p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}');
+    _localUid = _p.user_id || _p.id || null;
+  } catch(e){}
+  if (!token && _localUid) {
+    console.log('[home] ไม่มี token แต่มี profile ใน localStorage (user_id=' + _localUid + ') → ใช้ต่อ');
+    return;
+  }
+
+  // 🔒 กัน loop ชั้น 2: ถ้าเพิ่งเด้งมาจาก onboard ภายใน 3 วินาที → อย่าเด้งกลับ
+  const _lastRedirect = parseInt(sessionStorage.getItem('mt_redirect_ts') || '0');
+  if (Date.now() - _lastRedirect < 3000) {
+    console.warn('[home] ตรวจพบ redirect loop → หยุดเด้ง แสดงหน้าเปล่าแทน');
+    return;
+  }
+
+  // No token → go to onboard (LIFF login)
   if (!token) {
-    window.location.replace('/medtrack-app/medtrack-login.html');
+    sessionStorage.setItem('mt_redirect_ts', Date.now().toString());
+    window.location.replace('/medtrack-app/medtrack-onboard.html');
     return;
   }
   
@@ -2179,7 +2199,7 @@ function fmtTablets(n, suffix) {
     
     if (!res.ok) {
       localStorage.removeItem('mt_session_token');
-      window.location.replace('/medtrack-app/medtrack-login.html');
+      window.location.replace('/medtrack-app/medtrack-onboard.html');
       return;
     }
     
@@ -2222,7 +2242,7 @@ function logoutUser() {
   sessionStorage.clear();
   
   // Redirect to login
-  window.location.href = '/medtrack-app/medtrack-login.html';
+  window.location.href = '/medtrack-app/medtrack-onboard.html';
 }
 
 let currentSheet = null;
@@ -2896,6 +2916,53 @@ function scanAppointmentElderly(){
   window.location.href = 'medtrack-scan.html?type=appointment';
 }
 
+// ────────────────────────────────────────────────────────
+// Med Report Button — ขึ้นเมื่อยาหมดครบ หรือใกล้นัด (≤3 วัน)
+// ────────────────────────────────────────────────────────
+async function checkMedReportButton(userId, doses){
+  try {
+    // เงื่อนไข 1: ยาที่มี dose หมดครบ (ไม่มียา has-dose ที่ยังไม่ finished เหลือ)
+    // ยาที่ไม่มีจำนวนเม็ด (total_doses == null) ไม่นับ — ไม่บล็อกปุ่ม
+    const withDose = (doses||[]).filter(d => d.total_doses != null);
+    const activeWithDose = withDose.filter(d => !d.is_finished);
+    const allDoseFinished = withDose.length > 0 && activeWithDose.length === 0;
+
+    // เงื่อนไข 2: ใกล้นัด (≤3 วัน) — ดึงจาก med-report
+    const rep = await fetch(`${MEDTRACK_BACKEND}/api/med-report?user_id=${userId}`).then(r=>r.json()).catch(()=>null);
+    let nearAppt = false, apptDate = null, pct = null;
+    if(rep && rep.ok){
+      pct = rep.overall_pct;
+      if(rep.next_appointment){
+        const days = Math.ceil((new Date(rep.next_appointment.appointment_date) - new Date())/(1000*60*60*24));
+        if(days >= 0 && days <= 3) nearAppt = true;
+        apptDate = new Date(rep.next_appointment.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+      }
+    }
+
+    const show = allDoseFinished || nearAppt;
+    renderMedReportButton(show, userId, apptDate, pct);
+  } catch(e){ console.warn('checkMedReportButton', e); }
+}
+
+function renderMedReportButton(show, userId, apptDate, pct){
+  let btn = document.getElementById('medReportBtn');
+  if(!show){ if(btn) btn.remove(); return; }
+  if(btn) return; // มีแล้ว ไม่ซ้ำ
+
+  const html = `
+    <div id="medReportBtn" onclick="window.open('med-report.html?user_id=${userId}','_blank')"
+         style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:18px;color:#fff;margin:0 0 16px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
+      <div style="font-size:12px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">สรุป 💊 ก่อนพบหมอ</div>
+      <div style="font-size:12px;opacity:.9">ดูผลการกินยารอบนี้ + คะแนน${pct!=null?' · '+pct+'%':''}</div>
+      <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
+    </div>`;
+
+  // แทรกไว้บนสุดของพื้นที่ยา (elderlyView หรือ todaysDoses)
+  const target = document.getElementById('elderlyView') || document.getElementById('todaysDoses');
+  if(target) target.insertAdjacentHTML('beforebegin', html);
+}
+
 async function loadTodayDoses(userId){
   try {
     const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/today?user_id=${userId}`);
@@ -2906,11 +2973,17 @@ async function loadTodayDoses(userId){
       return;
     }
     
-    _lastDoses = data.doses;
+    // 🎯 เช็คปุ่ม med-report ก่อน filter (ใช้ doses เต็ม — รู้ว่ายาหมดครบไหม)
+    checkMedReportButton(userId, data.doses);
+
+    // 🔵 ซ่อนยาหมด (is_finished) ออกจากยาวันนี้ — ตามที่ตกลง
+    const visibleDoses = data.doses.filter(d => d.is_finished !== true);
+
+    _lastDoses = visibleDoses;
     _lastDate = data.date;
     document.getElementById('viewToggle').style.display = '';
     setViewMode(viewMode);  // apply + render ตาม mode ปัจจุบัน
-    renderStatsBar(data.doses);
+    renderStatsBar(visibleDoses);
   } catch(e) {
     console.warn('loadTodayDoses error:', e);
   }
@@ -5820,6 +5893,6 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14c</div>
 </body>
 </html>
