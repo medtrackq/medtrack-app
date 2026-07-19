@@ -258,6 +258,23 @@ textarea.field-input{resize:none;min-height:80px}
 </style>
 </head>
 <body>
+<!-- 🔒 Overlay กันคนไข้งง/กดมั่ว ตอนกำลัง verify + เด้ง (โดยเฉพาะกลับจาก LINE) -->
+<div id="mtAuthOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0A9C7A,#077A5F);flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;font-family:'Sarabun',sans-serif">
+  <div style="width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:mtSpin .8s linear infinite;margin-bottom:18px"></div>
+  <div style="font-size:18px;font-weight:700">กำลังเข้าสู่ระบบ...</div>
+  <div style="font-size:13px;opacity:.85;margin-top:6px">กรุณารอสักครู่</div>
+</div>
+<style>@keyframes mtSpin{to{transform:rotate(360deg)}}</style>
+<script>
+  // แสดง overlay ทันทีถ้ากลับมาจาก LINE (มี lineUserId ใน URL) — กันเห็นหน้า onboard แวบ
+  (function(){
+    var p = new URLSearchParams(location.search);
+    if (p.get('lineUserId') || p.get('user_id') || p.get('token')) {
+      var ov = document.getElementById('mtAuthOverlay');
+      if (ov) ov.style.display = 'flex';
+    }
+  })();
+</script>
 <div class="phone">
 
 <!-- ═══ SPLASH ═══ -->
@@ -1133,7 +1150,7 @@ async function loginExisting(){
                 if(d.user.name) prof.name=d.user.name;
                 localStorage.setItem(KEY, JSON.stringify(prof));
                 showToast('👋 ยินดีต้อนรับกลับ '+((d.user.name||'').split(' ').slice(-1)[0]||''));
-                setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 900);
+                setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 600);
                 return;
               }
             }
@@ -1272,6 +1289,8 @@ async function linkHospital(userId, hospitalId, hn){
 }
 
 function initOb(){
+  // แสดงฟอร์ม onboard → ซ่อน overlay "กำลังเข้าสู่ระบบ" (ถ้ามี)
+  var _ov = document.getElementById('mtAuthOverlay'); if(_ov) _ov.style.display='none';
   // 🏥 โหลดรายชื่อโรงพยาบาล (dropdown — ไม่ให้พิมพ์เอง เพื่อได้ hospital_id มาตรฐาน)
   loadHospitals();
   // 🔧 Pre-fill name from LINE Login (if available)
@@ -1926,9 +1945,12 @@ function ob4SimConnect(){
       }
       if(_DBG) _dbg('⚠️ by-line-id ไม่เจอ user (status=' + chk.status + ') → ให้กรอก onboard');
       console.log('[onboard] lineUserId นี้ยังไม่มี user — ให้กรอก onboard');
+      // ไม่เจอ user → ต้องกรอกใหม่ → ซ่อน overlay ให้เห็นฟอร์ม
+      var _ov = document.getElementById('mtAuthOverlay'); if(_ov) _ov.style.display='none';
     } catch(e){
       if(_DBG) _dbg('❌ verify error: ' + (e && e.message ? e.message : e));
       console.warn('[onboard] เช็ค by-line-id ล้มเหลว:', e);
+      var _ov2 = document.getElementById('mtAuthOverlay'); if(_ov2) _ov2.style.display='none';
     }
   }
 
@@ -1953,14 +1975,14 @@ function ob4SimConnect(){
         // มีจริง → ต้อนรับกลับ + ไป home
         showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
         const homeUrl = 'medtrack-home.html?user_id='+uid;
-        setTimeout(()=>{ window.location.href=homeUrl; }, 1200);
+        setTimeout(()=>{ window.location.href=homeUrl; }, 600);
         return;
       } catch(e){
         // network error — ไม่ block (ให้เข้า home ด้วย local ไปก่อน)
         console.warn('[onboard] verify ล้มเหลว (network) — ใช้ local:', e);
         showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
         const homeUrl = 'medtrack-home.html?user_id='+uid;
-        setTimeout(()=>{ window.location.href=homeUrl; }, 1200);
+        setTimeout(()=>{ window.location.href=homeUrl; }, 600);
         return;
       }
     }
@@ -1976,6 +1998,6 @@ function ob4SimConnect(){
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14b</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.15a</div>
 </body>
 </html>
