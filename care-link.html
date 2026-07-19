@@ -259,16 +259,24 @@ html, body {
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15b</div>
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
 const LIFF_ID  = '2009969889-vxs5rXVD';  // MedTrack CareLink (Endpoint = care-link.html)
 const DASHBOARD_URL = 'https://app.medtrackq.com/medtrack-app/caregiver-dashboard.html';
 
-// ดึง token จาก URL
+// ดึง token จาก URL — ถ้าไม่มีใน URL ลองดึงจาก sessionStorage (เคสกลับจาก LIFF login)
 const urlParams = new URLSearchParams(window.location.search);
-const TOKEN = urlParams.get('token');
+let TOKEN = urlParams.get('token');
+if (!TOKEN) {
+  // กลับมาจาก LIFF login → URL อาจไม่มี token แล้ว → กู้จาก sessionStorage
+  TOKEN = sessionStorage.getItem('mt_carelink_token');
+  if (TOKEN) console.log('[care-link] กู้ token จาก sessionStorage (กลับจาก LIFF)');
+} else {
+  // มี token ใน URL → เก็บไว้เผื่อ LIFF login ตัดทิ้ง
+  sessionStorage.setItem('mt_carelink_token', TOKEN);
+}
 
 // สถานะ
 let _patientName = '';
@@ -350,7 +358,10 @@ async function acceptInvite() {
     // init LIFF + ดึง line_user_id
     await liff.init({ liffId: LIFF_ID });
     if (!liff.isLoggedIn()) {
-      liff.login({ redirectUri: window.location.href });
+      // เก็บ token ก่อน redirect (กัน LIFF ตัด query ทิ้ง) + ใส่ token ใน redirectUri ด้วย (2 ชั้น)
+      if (TOKEN) sessionStorage.setItem('mt_carelink_token', TOKEN);
+      const redirectBack = window.location.origin + window.location.pathname + '?token=' + encodeURIComponent(TOKEN || '');
+      liff.login({ redirectUri: redirectBack });
       return;
     }
     const profile = await liff.getProfile();
@@ -375,7 +386,8 @@ async function acceptInvite() {
       return;
     }
 
-    // สำเร็จ
+    // สำเร็จ → เคลียร์ token cache
+    sessionStorage.removeItem('mt_carelink_token');
     showState('stateSuccess');
 
   } catch (e) {
@@ -404,7 +416,20 @@ function goToDashboard() {
 
 // เริ่ม
 showState('stateLoading');
-verifyToken();
+// เริ่มต้น: verify token ก่อน
+verifyToken().then(async () => {
+  // ถ้ากลับมาจาก LIFF login แล้ว (logged in) + มี token + ยังไม่ linked
+  // → auto เรียก acceptInvite ต่อ (ผู้ใช้ไม่ต้องกดปุ่มซ้ำ)
+  try {
+    if (typeof liff !== 'undefined' && TOKEN) {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn() && document.getElementById('stateInvite').classList.contains('show')) {
+        console.log('[care-link] กลับจาก LIFF login → auto accept');
+        acceptInvite();
+      }
+    }
+  } catch(e){ console.warn('[care-link] auto-accept check:', e); }
+});
 </script>
 </body>
 </html>
