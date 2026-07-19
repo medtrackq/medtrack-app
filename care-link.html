@@ -259,23 +259,30 @@ html, body {
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15d</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15e</div>
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
 const LIFF_ID  = '2009969889-vxs5rXVD';  // MedTrack CareLink (Endpoint = care-link.html)
 const DASHBOARD_URL = 'https://app.medtrackq.com/medtrack-app/caregiver-dashboard.html';
 
-// ดึง token จาก URL — ถ้าไม่มีใน URL ลองดึงจาก sessionStorage (เคสกลับจาก LIFF login)
+// ดึง token จาก URL — ถ้าไม่มีลองดึงจาก storage (เคสกลับจาก LIFF login)
 const urlParams = new URLSearchParams(window.location.search);
 let TOKEN = urlParams.get('token');
+// LIFF อาจส่ง token มาใน liff.state หรือ hash
+if (!TOKEN && window.location.hash) {
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  TOKEN = hashParams.get('token');
+}
 if (!TOKEN) {
-  // กลับมาจาก LIFF login → URL อาจไม่มี token แล้ว → กู้จาก sessionStorage
-  TOKEN = sessionStorage.getItem('mt_carelink_token');
-  if (TOKEN) console.log('[care-link] กู้ token จาก sessionStorage (กลับจาก LIFF)');
+  // กลับมาจาก LIFF login → URL อาจไม่มี token → กู้จาก storage
+  // ใช้ localStorage (ทนกว่า sessionStorage บน iOS ที่ล้างตอน redirect)
+  TOKEN = localStorage.getItem('mt_carelink_token') || sessionStorage.getItem('mt_carelink_token');
+  if (TOKEN) console.log('[care-link] กู้ token จาก storage (กลับจาก LIFF)');
 } else {
-  // มี token ใน URL → เก็บไว้เผื่อ LIFF login ตัดทิ้ง
-  sessionStorage.setItem('mt_carelink_token', TOKEN);
+  // มี token ใน URL → เก็บทั้ง 2 storage เผื่อ LIFF login ตัดทิ้ง
+  try { localStorage.setItem('mt_carelink_token', TOKEN); } catch(e){}
+  try { sessionStorage.setItem('mt_carelink_token', TOKEN); } catch(e){}
 }
 
 // สถานะ
@@ -367,14 +374,14 @@ async function acceptInvite() {
       if (!liff.isInClient()) {
         // นอก LINE → พาไปเปิดใน LINE app ผ่าน LIFF URL (มี session)
         _d('นอก LINE + ยังไม่ login → เปิดใน LINE app');
-        if (TOKEN) sessionStorage.setItem('mt_carelink_token', TOKEN);
+        if (TOKEN) { try{localStorage.setItem('mt_carelink_token',TOKEN);}catch(e){} try{sessionStorage.setItem('mt_carelink_token',TOKEN);}catch(e){} }
         const liffUrl = 'https://liff.line.me/' + LIFF_ID + '?token=' + encodeURIComponent(TOKEN || '');
         window.location.href = liffUrl;
         return;
       }
       // อยู่ใน LINE แต่ยังไม่ login (พบยาก) → login ปกติ
       _d('ใน LINE แต่ยังไม่ login → liff.login');
-      if (TOKEN) sessionStorage.setItem('mt_carelink_token', TOKEN);
+      if (TOKEN) { try{localStorage.setItem('mt_carelink_token',TOKEN);}catch(e){} try{sessionStorage.setItem('mt_carelink_token',TOKEN);}catch(e){} }
       const redirectBack = window.location.origin + window.location.pathname + '?token=' + encodeURIComponent(TOKEN || '');
       liff.login({ redirectUri: redirectBack });
       return;
@@ -408,8 +415,8 @@ async function acceptInvite() {
 
     // สำเร็จ → เคลียร์ token cache + เก็บ lineUserId ไว้ให้ dashboard
     _d('✅ สำเร็จ!');
-    sessionStorage.removeItem('mt_carelink_token');
-    if (_lineUserId) sessionStorage.setItem('mt_caregiver_lineid', _lineUserId);
+    try{localStorage.removeItem('mt_carelink_token');}catch(e){} try{sessionStorage.removeItem('mt_carelink_token');}catch(e){}
+    if (_lineUserId) { try{localStorage.setItem('mt_caregiver_lineid',_lineUserId);}catch(e){} try{sessionStorage.setItem('mt_caregiver_lineid',_lineUserId);}catch(e){} }
     showState('stateSuccess');
 
   } catch (e) {
@@ -430,8 +437,10 @@ function declineInvite() {
 }
 
 function goToDashboard() {
-  // หา lineUserId: จากตัวแปร หรือ sessionStorage (กัน scope หาย/timing)
-  const lid = _lineUserId || sessionStorage.getItem('mt_caregiver_lineid') || '';
+  // หา lineUserId: ตัวแปร → localStorage → sessionStorage (localStorage ทน iOS redirect)
+  const lid = _lineUserId
+    || localStorage.getItem('mt_caregiver_lineid')
+    || sessionStorage.getItem('mt_caregiver_lineid') || '';
   const url = lid
     ? `${DASHBOARD_URL}?line_user_id=${encodeURIComponent(lid)}`
     : DASHBOARD_URL;
