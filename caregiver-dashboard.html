@@ -683,7 +683,7 @@ h1, h2, h3 {
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
-const LIFF_ID = '';  // TODO: ใส่ LIFF ID หลังสร้างใน LINE Console
+const LIFF_ID = '2009969889-35ERQPQA';  // MedTrack Caregiver (Endpoint = caregiver-dashboard.html)
 
 const TH_MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
@@ -701,15 +701,37 @@ async function resolveLineUserId() {
   const params = new URLSearchParams(location.search);
   const qpLine = params.get('line_user_id');
   const qpToken = params.get('token');
-  if (qpLine) return { line_user_id: qpLine };
+  if (qpLine) {
+    // เก็บไว้ให้ refresh ครั้งหน้าใช้ได้ (กันเปิดตรงๆ แล้ว query หาย)
+    try { sessionStorage.setItem('mt_cg_lineid', qpLine); } catch(e){}
+    return { line_user_id: qpLine };
+  }
   if (qpToken) return { token: qpToken };
+
+  // ไม่มีใน URL → ลองจาก sessionStorage (เคย resolve มาแล้ว)
+  try {
+    const saved = sessionStorage.getItem('mt_cg_lineid');
+    if (saved) { console.log('[dashboard] ใช้ line_user_id จาก sessionStorage'); return { line_user_id: saved }; }
+  } catch(e){}
 
   if (LIFF_ID) {
     try {
       await liff.init({ liffId: LIFF_ID });
-      if (!liff.isLoggedIn()) { liff.login(); return null; }
-      const profile = await liff.getProfile();
-      return { line_user_id: profile.userId };
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        try { sessionStorage.setItem('mt_cg_lineid', profile.userId); } catch(e){}
+        return { line_user_id: profile.userId };
+      }
+      // ยังไม่ login: ถ้าอยู่ใน LINE → login / ถ้านอก LINE → เปิดใน LINE app
+      if (liff.isInClient()) {
+        liff.login();
+        return null;
+      } else {
+        // นอก LINE → เปิด dashboard ผ่าน LIFF URL (เข้า LINE app ที่มี session)
+        console.log('[dashboard] นอก LINE → เปิดใน LINE app');
+        window.location.href = 'https://liff.line.me/' + LIFF_ID;
+        return null;
+      }
     } catch (e) {
       console.error('LIFF error', e);
       showError('เชื่อมต่อ LINE ไม่สำเร็จ', 'กรุณาเปิดหน้านี้ผ่าน LINE');
