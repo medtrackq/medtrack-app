@@ -259,7 +259,7 @@ html, body {
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15b</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15c</div>
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
@@ -351,29 +351,49 @@ async function verifyToken() {
 // STEP 2: ยืนยันรับเชิญ → LIFF login → link-token
 async function acceptInvite() {
   const btn = document.getElementById('btnAccept');
+  const _DBG = new URLSearchParams(location.search).get('debug') === '1';
+  const _d = (m) => { if(_DBG) alert('[care-link] ' + m); console.log('[care-link] ' + m); };
   btn.disabled = true;
   btn.textContent = '⏳ กำลังเชื่อมต่อ...';
 
   try {
-    // init LIFF + ดึง line_user_id
+    _d('เริ่ม liff.init');
     await liff.init({ liffId: LIFF_ID });
+    _d('init OK · isInClient=' + liff.isInClient() + ' · isLoggedIn=' + liff.isLoggedIn());
+
+    // 🔑 ถ้าเปิดนอก LINE (external browser) + ยังไม่ login → เปิดใน LINE แทน
+    // (liff.login ในเบราว์เซอร์ Android/PC ที่ไม่มี LINE session จะค้าง)
     if (!liff.isLoggedIn()) {
-      // เก็บ token ก่อน redirect (กัน LIFF ตัด query ทิ้ง) + ใส่ token ใน redirectUri ด้วย (2 ชั้น)
+      if (!liff.isInClient()) {
+        // นอก LINE → พาไปเปิดใน LINE app ผ่าน LIFF URL (มี session)
+        _d('นอก LINE + ยังไม่ login → เปิดใน LINE app');
+        if (TOKEN) sessionStorage.setItem('mt_carelink_token', TOKEN);
+        const liffUrl = 'https://liff.line.me/' + LIFF_ID + '?token=' + encodeURIComponent(TOKEN || '');
+        window.location.href = liffUrl;
+        return;
+      }
+      // อยู่ใน LINE แต่ยังไม่ login (พบยาก) → login ปกติ
+      _d('ใน LINE แต่ยังไม่ login → liff.login');
       if (TOKEN) sessionStorage.setItem('mt_carelink_token', TOKEN);
       const redirectBack = window.location.origin + window.location.pathname + '?token=' + encodeURIComponent(TOKEN || '');
       liff.login({ redirectUri: redirectBack });
       return;
     }
+
+    _d('login แล้ว → getProfile');
     const profile = await liff.getProfile();
     _lineUserId = profile.userId;
+    _d('getProfile OK · userId=' + (_lineUserId ? _lineUserId.slice(0,8)+'…' : 'NULL'));
 
     // POST link-token
+    _d('POST link-token...');
     const res = await fetch(`${API_BASE}/api/caregivers/link-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: TOKEN, line_user_id: _lineUserId })
     });
     const data = await res.json();
+    _d('link-token status=' + res.status + ' · ok=' + data.ok);
 
     if (!data.ok) {
       btn.disabled = false;
@@ -387,10 +407,12 @@ async function acceptInvite() {
     }
 
     // สำเร็จ → เคลียร์ token cache
+    _d('✅ สำเร็จ!');
     sessionStorage.removeItem('mt_carelink_token');
     showState('stateSuccess');
 
   } catch (e) {
+    _d('❌ error: ' + (e && e.message ? e.message : e));
     console.error('[accept-invite]', e);
     btn.disabled = false;
     btn.textContent = '✅ ยืนยันรับเชิญ';
