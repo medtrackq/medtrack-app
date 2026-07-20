@@ -644,6 +644,17 @@ label.upbtn{cursor:pointer}
         <div class="docav" id="docav">MD</div>
         <div><div class="docnm" id="docnm">—</div><div class="dochp" id="dochp">—</div></div>
       </div>
+      <!-- 📅 วันที่เริ่มกินยา (default = วันสแกน, แก้ได้ — เคสฉลาก "เริ่มทาน dd/mm/yy") -->
+      <div class="refill-card" id="startDateCard" style="margin-top:10px">
+        <div class="rf-title">📅 วันที่เริ่มกินยา</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+          <input type="date" id="startDateInput"
+                 style="flex:1;padding:11px 12px;border:1.5px solid var(--bd);border-radius:10px;font-family:inherit;font-size:15px;color:var(--t1);background:var(--sf)">
+        </div>
+        <div id="startDateHint" style="font-size:12px;color:var(--t3);margin-top:6px">
+          ปกติเริ่มวันนี้ (วันที่สแกน) — ถ้าฉลากระบุ "เริ่มทาน" วันอื่น แก้ได้
+        </div>
+      </div>
       <div class="actrow">
         <button class="btn-sec" id="btnReset" onclick="resetAll()">เริ่มใหม่</button>
         <button class="btn-ok" id="btnSave" onclick="save()">
@@ -2121,6 +2132,41 @@ function renderDoctor(){
    PHOTO POPUP (medicine cabinet)
 ═══════════════════════════ */
 let currentPhotoMed='';
+// ── 📅 วันที่เริ่มกินยา (default = วันสแกน, แก้ได้, จำกัด วันนี้ถึง +90 วัน) ──
+function initStartDateInput(){
+  const el = document.getElementById('startDateInput');
+  if(!el) return;
+  const today = new Date();
+  const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const max = new Date(today); max.setDate(max.getDate() + 90);
+  el.value = fmt(today);       // default = วันนี้ (วันสแกน)
+  el.min   = fmt(today);       // ห้ามย้อนหลัง
+  el.max   = fmt(max);         // ห้ามเกิน 90 วัน (ตรง safety net backend)
+  el.onchange = function(){
+    const hint = document.getElementById('startDateHint');
+    if(!hint) return;
+    if(el.value === fmt(today)){
+      hint.textContent = 'ปกติเริ่มวันนี้ (วันที่สแกน) — ถ้าฉลากระบุ "เริ่มทาน" วันอื่น แก้ได้';
+      hint.style.color = 'var(--t3)';
+    } else {
+      const d = new Date(el.value + 'T00:00:00');
+      hint.textContent = '⏰ ระบบจะเริ่มเตือนวันที่ ' + d.getDate() + '/' + (d.getMonth()+1) + '/' + (d.getFullYear()+543) + ' — ก่อนหน้านั้นจะยังไม่มีการเตือน';
+      hint.style.color = 'var(--ac)';
+    }
+  };
+}
+function getStartDateValue(){
+  const el = document.getElementById('startDateInput');
+  if(!el || !el.value) return null;           // ไม่มีค่า → backend ใช้ CURRENT_DATE
+  const today = new Date(); today.setHours(0,0,0,0);
+  const sel = new Date(el.value + 'T00:00:00');
+  const diff = Math.round((sel - today) / 86400000);
+  if(isNaN(sel.getTime()) || diff < 0 || diff > 90) return null;  // ค่าเพี้ยน → default
+  if(diff === 0) return null;                 // = วันนี้ → ส่ง null ให้ backend ใช้ CURRENT_DATE (พฤติกรรมเดิม)
+  return el.value;                            // วันอนาคต → ส่งจริง
+}
+document.addEventListener('DOMContentLoaded', initStartDateInput);
+
 function save(){
   if(!meds.length){return;}
   const nonDailyMeds = meds.filter(m => {
@@ -3136,6 +3182,7 @@ async function saveToBackend(medsList) {
         doctor_name: m.doctor_name || null,
         hospital_name: m.hospital_name || null,
         dispense_date: m.dispense_date || null,
+        start_date: getStartDateValue(),  // 📅 วันเริ่มกินยา (default = วันสแกน, ผู้ใช้แก้ได้)
         schedules: expandedSchedules
       };
       // ส่งรูปซองยาเฉพาะ high-alert → backend upload R2 (ประหยัด bandwidth)
@@ -3587,6 +3634,6 @@ function drawImageCover(ctx, img, x, y, w, h) {
     </div>
 
   </div><!-- /apptTab -->
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.06.27</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.20a</div>
 </body>
 </html>
