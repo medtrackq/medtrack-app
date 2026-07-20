@@ -644,15 +644,12 @@ label.upbtn{cursor:pointer}
         <div class="docav" id="docav">MD</div>
         <div><div class="docnm" id="docnm">—</div><div class="dochp" id="dochp">—</div></div>
       </div>
-      <!-- 📅 วันที่เริ่มกินยา (default = วันสแกน, แก้ได้ — เคสฉลาก "เริ่มทาน dd/mm/yy") -->
+      <!-- 📅 วันที่เริ่มกินยา รายตัว (default = วันสแกน, แก้เฉพาะตัวที่ฉลากระบุ "เริ่มทาน") -->
       <div class="refill-card" id="startDateCard" style="margin-top:10px">
         <div class="rf-title">📅 วันที่เริ่มกินยา</div>
-        <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
-          <input type="date" id="startDateInput"
-                 style="flex:1;padding:11px 12px;border:1.5px solid var(--bd);border-radius:10px;font-family:inherit;font-size:15px;color:var(--t1);background:var(--sf)">
-        </div>
-        <div id="startDateHint" style="font-size:12px;color:var(--t3);margin-top:6px">
-          ปกติเริ่มวันนี้ (วันที่สแกน) — ถ้าฉลากระบุ "เริ่มทาน" วันอื่น แก้ได้
+        <div id="startDateRows" style="margin-top:8px"></div>
+        <div style="font-size:12px;color:var(--t3);margin-top:8px">
+          💡 ปกติเริ่มวันนี้ (วันที่สแกน) — แก้เฉพาะตัวที่ฉลากระบุ "เริ่มทาน" วันอื่น
         </div>
       </div>
       <div class="actrow">
@@ -1997,6 +1994,7 @@ function rebundleIfReady(){
   }
   const meals=getMeals();
   const{periods,ivMeds,prnMeds,skipMeds}=buildSchedule(meds,meals);
+  renderStartDateRows();  // 📅 วันเริ่มกินรายตัว
   const TL=L[lang],pC=['morning','noon','evening','night'];
   const pg=document.getElementById('pgrid');pg.innerHTML='';
   let totalAlerts=0;
@@ -2132,40 +2130,46 @@ function renderDoctor(){
    PHOTO POPUP (medicine cabinet)
 ═══════════════════════════ */
 let currentPhotoMed='';
-// ── 📅 วันที่เริ่มกินยา (default = วันสแกน, แก้ได้, จำกัด วันนี้ถึง +90 วัน) ──
-function initStartDateInput(){
-  const el = document.getElementById('startDateInput');
-  if(!el) return;
+// ── 📅 วันที่เริ่มกินยา รายตัว (default = วันสแกน, แก้เฉพาะตัวที่ต้องเลื่อน) ──
+function _sdFmt(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function renderStartDateRows(){
+  const box = document.getElementById('startDateRows');
+  if(!box) return;
   const today = new Date();
-  const fmt = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   const max = new Date(today); max.setDate(max.getDate() + 90);
-  el.value = fmt(today);       // default = วันนี้ (วันสแกน)
-  el.min   = fmt(today);       // ห้ามย้อนหลัง
-  el.max   = fmt(max);         // ห้ามเกิน 90 วัน (ตรง safety net backend)
-  el.onchange = function(){
-    const hint = document.getElementById('startDateHint');
-    if(!hint) return;
-    if(el.value === fmt(today)){
-      hint.textContent = 'ปกติเริ่มวันนี้ (วันที่สแกน) — ถ้าฉลากระบุ "เริ่มทาน" วันอื่น แก้ได้';
-      hint.style.color = 'var(--t3)';
-    } else {
-      const d = new Date(el.value + 'T00:00:00');
-      hint.textContent = '⏰ ระบบจะเริ่มเตือนวันที่ ' + d.getDate() + '/' + (d.getMonth()+1) + '/' + (d.getFullYear()+543) + ' — ก่อนหน้านั้นจะยังไม่มีการเตือน';
-      hint.style.color = 'var(--ac)';
-    }
-  };
+  const tStr = _sdFmt(today), mStr = _sdFmt(max);
+  box.innerHTML = meds.map((m, i) => {
+    const val = m._startDate || tStr;
+    const isFuture = val !== tStr;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:600;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(m.drug_name || '')}</div>
+        <div id="sdHint_${i}" style="font-size:11px;color:${isFuture ? 'var(--ac)' : 'var(--t3)'}">${isFuture ? '⏰ เริ่มเตือน ' + _sdThai(val) : 'เริ่มวันนี้'}</div>
+      </div>
+      <input type="date" value="${val}" min="${tStr}" max="${mStr}"
+             onchange="setMedStartDate(${i}, this.value)"
+             style="padding:8px 10px;border:1.5px solid ${isFuture ? 'var(--ac)' : 'var(--bd)'};border-radius:9px;font-family:inherit;font-size:13px;color:var(--t1);background:var(--sf)">
+    </div>`;
+  }).join('');
 }
-function getStartDateValue(){
-  const el = document.getElementById('startDateInput');
-  if(!el || !el.value) return null;           // ไม่มีค่า → backend ใช้ CURRENT_DATE
+function _sdThai(iso){
+  const d = new Date(iso + 'T00:00:00');
+  return d.getDate() + '/' + (d.getMonth()+1) + '/' + (d.getFullYear()+543);
+}
+function setMedStartDate(idx, val){
+  const today = _sdFmt(new Date());
+  if(!val || val === today){ delete meds[idx]._startDate; }
+  else { meds[idx]._startDate = val; }
+  renderStartDateRows();  // อัปเดตสี + hint
+}
+function getStartDateFor(m){
+  if(!m || !m._startDate) return null;        // ไม่ได้แก้ → null → backend ใช้ CURRENT_DATE
   const today = new Date(); today.setHours(0,0,0,0);
-  const sel = new Date(el.value + 'T00:00:00');
+  const sel = new Date(m._startDate + 'T00:00:00');
   const diff = Math.round((sel - today) / 86400000);
-  if(isNaN(sel.getTime()) || diff < 0 || diff > 90) return null;  // ค่าเพี้ยน → default
-  if(diff === 0) return null;                 // = วันนี้ → ส่ง null ให้ backend ใช้ CURRENT_DATE (พฤติกรรมเดิม)
-  return el.value;                            // วันอนาคต → ส่งจริง
+  if(isNaN(sel.getTime()) || diff <= 0 || diff > 90) return null;  // เพี้ยน/วันนี้ → default
+  return m._startDate;
 }
-document.addEventListener('DOMContentLoaded', initStartDateInput);
 
 function save(){
   if(!meds.length){return;}
@@ -3182,7 +3186,7 @@ async function saveToBackend(medsList) {
         doctor_name: m.doctor_name || null,
         hospital_name: m.hospital_name || null,
         dispense_date: m.dispense_date || null,
-        start_date: getStartDateValue(),  // 📅 วันเริ่มกินยา (default = วันสแกน, ผู้ใช้แก้ได้)
+        start_date: getStartDateFor(m),  // 📅 วันเริ่มกินยารายตัว (null = วันสแกน)
         schedules: expandedSchedules
       };
       // ส่งรูปซองยาเฉพาะ high-alert → backend upload R2 (ประหยัด bandwidth)
@@ -3634,6 +3638,6 @@ function drawImageCover(ctx, img, x, y, w, h) {
     </div>
 
   </div><!-- /apptTab -->
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.20a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.20b</div>
 </body>
 </html>
