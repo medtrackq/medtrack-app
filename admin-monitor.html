@@ -150,6 +150,7 @@ async function loadData(isFirst){
     document.getElementById('secretGate').style.display='none';
     document.getElementById('dashboard').style.display='block';
     render(d);
+    loadScanOutcomes();
     document.getElementById('lastUpdate').textContent = 'อัปเดต ' + new Date().toLocaleTimeString('th-TH');
     setupAutoRefresh();
   } catch(e){
@@ -167,14 +168,49 @@ function setupAutoRefresh(){
 document.addEventListener('change', e=>{ if(e.target.id==='autoRefresh') setupAutoRefresh(); });
 
 function fmtTime(iso){
+  // แสดงวันที่+เวลาจริงเสมอ — ไม่ให้ตีความ (เช่น "20 ก.ค. 08:53")
   if(!iso) return '—';
   const d = new Date(iso);
-  const now = new Date();
-  const diff = Math.floor((now-d)/60000); // นาที
-  if(diff < 1) return 'เมื่อกี้';
-  if(diff < 60) return diff+' นาทีที่แล้ว';
-  if(diff < 1440) return Math.floor(diff/60)+' ชม.ที่แล้ว';
-  return d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+  const dateStr = d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+  const timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  return dateStr + ' ' + timeStr;
+}
+
+
+// ═══ ผลลัพธ์รายสแกน — ตอบ "สแกน X เห็น Y" ได้ทันที ═══
+async function loadScanOutcomes(){
+  try{
+    const r = await fetch(`${API}/api/admin/scan-outcomes?secret=${encodeURIComponent(SECRET)}&hours=48`);
+    const d = await r.json();
+    const body = document.getElementById('scanOutcomesBody');
+    const cnt = document.getElementById('soCount');
+    if(!d.ok){ body.innerHTML = '<div class="empty">โหลดไม่สำเร็จ</div>'; return; }
+    cnt.textContent = d.outcomes.length + ' สแกน';
+    const badge = o => o==='saved' ? '<span style="color:#22c55e">✅ บันทึกแล้ว</span>'
+                 : o==='dedup' ? '<span style="color:#eab308">⏭️ ข้าม (ยาซ้ำในระบบ)</span>'
+                 : '<span style="color:#f87171">⚠️ ไม่ได้กดบันทึก</span>';
+    // สรุปต่อ user ก่อน (ตอบเร็วสุด)
+    const sumRows = (d.summary||[]).map(u =>
+      `<tr><td>${u.user_name||('#'+u.user_id)}</td>
+       <td class="mono">${u.scanned}</td>
+       <td class="mono" style="color:#22c55e">${u.saved}</td>
+       <td class="mono" style="color:#eab308">${u.dedup}</td>
+       <td class="mono" style="color:#f87171">${u.not_saved}</td></tr>`).join('');
+    // รายการละเอียด
+    const rows = d.outcomes.slice(0,30).map(o =>
+      `<tr><td class="mono" style="width:110px">${fmtTime(o.scanned_at)}</td>
+       <td>${o.user_name||('#'+o.user_id)}</td>
+       <td>${o.drug_name||'—'}</td>
+       <td style="font-size:12px">${badge(o.outcome)}</td></tr>`).join('');
+    document.getElementById('scanOutcomesBody').innerHTML =
+      `<table><thead><tr><th>ผู้ใช้</th><th>สแกน</th><th>บันทึก</th><th>ข้ามซ้ำ</th><th>ไม่บันทึก</th></tr></thead>
+       <tbody>${sumRows}</tbody></table>
+       <div style="height:10px"></div>
+       <table><thead><tr><th>เวลา</th><th>ผู้ใช้</th><th>ยา</th><th>ผลลัพธ์</th></tr></thead>
+       <tbody>${rows}</tbody></table>`;
+  }catch(e){
+    document.getElementById('scanOutcomesBody').innerHTML = '<div class="empty">โหลดไม่สำเร็จ: '+e.message+'</div>';
+  }
 }
 
 function render(d){
@@ -223,6 +259,14 @@ function render(d){
 
     <div class="grid2">
       <!-- LINE errors -->
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">🔬 ผลลัพธ์รายสแกน (48 ชม.)</span>
+          <span class="panel-count" id="soCount">กำลังโหลด...</span>
+        </div>
+        <div id="scanOutcomesBody"><div class="empty">กำลังโหลด...</div></div>
+      </div>
+
       <div class="panel">
         <div class="panel-head">
           <span class="panel-title">⚠️ LINE ส่งล้มเหลว</span>
