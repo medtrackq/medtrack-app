@@ -168,12 +168,16 @@ function setupAutoRefresh(){
 document.addEventListener('change', e=>{ if(e.target.id==='autoRefresh') setupAutoRefresh(); });
 
 function fmtTime(iso){
-  // แสดงวันที่+เวลาจริงเสมอ — ไม่ให้ตีความ (เช่น "20 ก.ค. 08:53")
+  // DB ตั้ง timezone=Asia/Bangkok → timestamp เป็นเวลาไทยอยู่แล้ว
+  // → อ่านค่าตรงๆ ไม่แปลง timezone (กันบวก +7 ซ้ำ)
   if(!iso) return '—';
-  const d = new Date(iso);
-  const dateStr = d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
-  const timeStr = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
-  return dateStr + ' ' + timeStr;
+  const s = String(iso);
+  // แยกส่วนวันที่-เวลาจาก string ตรงๆ: "2026-07-21 17:13:00" หรือ "2026-07-21T17:13:00"
+  const m = s.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if(!m) return '—';
+  const [, y, mo, dd, hh, mi] = m;
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return parseInt(dd) + ' ' + months[parseInt(mo)-1] + ' ' + hh + ':' + mi;
 }
 
 
