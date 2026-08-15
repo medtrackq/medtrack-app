@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedTrack — เครื่องมือตรวจสอบ LINE เตือนยา</title>
+<style>
+  :root{
+    --green:#0F6E56; --green-d:#0A5343; --mint:#9FE1CB; --amber:#F5A623;
+    --cream:#FDFBF5; --txt:#12303A; --ok:#1D9E75; --warn:#EF9F27; --err:#E05A5A;
+    --gray:#5A6B6A; --line:#e3ebe9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:'Kanit','Sarabun',-apple-system,sans-serif;
+    background:var(--cream); color:var(--txt); line-height:1.6;
+    padding:20px; max-width:820px; margin:0 auto;
+  }
+  h1{font-size:22px; color:var(--green-d); margin-bottom:4px;}
+  .sub{color:var(--gray); font-size:14px; margin-bottom:20px;}
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:18px; margin-bottom:16px;
+  }
+  .card h2{font-size:16px; color:var(--green-d); margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  label{display:block; font-size:13px; color:var(--gray); margin:10px 0 4px;}
+  input{
+    width:100%; padding:10px 12px; border:1px solid var(--line);
+    border-radius:8px; font-family:inherit; font-size:14px;
+  }
+  input:focus{outline:none; border-color:var(--green);}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row > div{flex:1; min-width:180px;}
+  button{
+    background:var(--green); color:#fff; border:none; border-radius:8px;
+    padding:11px 18px; font-family:inherit; font-size:14px; font-weight:600;
+    cursor:pointer; margin-top:12px; transition:.15s;
+  }
+  button:hover{background:var(--green-d);}
+  button:disabled{opacity:.5; cursor:not-allowed;}
+  button.sec{background:#fff; color:var(--green); border:1.5px solid var(--green);}
+  .result{
+    margin-top:14px; padding:14px; border-radius:10px; font-size:14px;
+    white-space:pre-wrap; word-break:break-word; display:none;
+  }
+  .result.show{display:block;}
+  .result.ok{background:#E7F6EF; border:1px solid var(--ok); color:#0A5343;}
+  .result.warn{background:#FEF3E2; border:1px solid var(--warn); color:#7a4a00;}
+  .result.err{background:#FBEAEA; border:1px solid var(--err); color:#8a2020;}
+  .badge{
+    display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px;
+    font-weight:600; margin-left:6px;
+  }
+  .badge.ok{background:var(--ok); color:#fff;}
+  .badge.err{background:var(--err); color:#fff;}
+  .badge.warn{background:var(--warn); color:#fff;}
+  .step{font-size:13px; color:var(--gray); padding:6px 0; border-bottom:1px dashed var(--line);}
+  .step:last-child{border:none;}
+  .step b{color:var(--txt);}
+  .hint{font-size:12px; color:var(--gray); margin-top:4px;}
+  .checklist{list-style:none; font-size:13px;}
+  .checklist li{padding:5px 0; padding-left:24px; position:relative;}
+  .checklist li:before{content:'○'; position:absolute; left:4px; color:var(--gray);}
+  .checklist li.pass:before{content:'✓'; color:var(--ok); font-weight:bold;}
+  .checklist li.fail:before{content:'✕'; color:var(--err); font-weight:bold;}
+  code{background:#f0f5f3; padding:1px 6px; border-radius:4px; font-size:13px;}
+</style>
+</head>
+<body>
+
+<h1>🩺 เครื่องมือตรวจสอบ LINE เตือนยา</h1>
+<p class="sub">ไล่หาสาเหตุ "LINE ไม่เด้ง" ได้เองก่อนถาม user — ตัดปัญหาทีละข้อ</p>
+
+<!-- ═══ Config ═══ -->
+<div class="card">
+  <h2>⚙️ ตั้งค่าการเชื่อมต่อ</h2>
+  <label>API Base URL</label>
+  <input id="baseUrl" placeholder="https://api.medtrackq.com" value="https://api.medtrackq.com">
+  <p class="hint">URL ของ backend บน Railway (ไม่ต้องมี / ท้าย)</p>
+  <label>Scheduler Secret <span style="color:var(--gray)">(สำหรับปุ่มยิง scheduler)</span></label>
+  <input id="secret" type="password" placeholder="ค่า SCHEDULER_TRIGGER_SECRET จาก Railway">
+  <p class="hint">ดูใน Railway → Variables → SCHEDULER_TRIGGER_SECRET (กดที่ ***** เพื่อ reveal)</p>
+</div>
+
+<!-- ═══ Test 1: Server + Quota ═══ -->
+<div class="card">
+  <h2>1️⃣ เช็ก Server + Quota <span id="b1"></span></h2>
+  <p class="hint">ตรวจว่า server ยังรัน และ quota limit ถูกต้อง (ควรเป็น 15000 ไม่ใช่ 500)</p>
+  <button onclick="testServerQuota()">ตรวจ Server + Quota</button>
+  <div id="r1" class="result"></div>
+</div>
+
+<!-- ═══ Test 2: User specific ═══ -->
+<div class="card">
+  <h2>2️⃣ เช็ก User รายคน <span id="b2"></span></h2>
+  <p class="hint">เมื่อ user แจ้งว่าไม่ได้รับเตือน — เช็กว่าผูก LINE ไหม มียาไหม เตือนล่าสุดเมื่อไหร่</p>
+  <div class="row">
+    <div>
+      <label>ค้นด้วย User ID</label>
+      <input id="userId" placeholder="เช่น 28">
+    </div>
+    <div>
+      <label>หรือค้นด้วย LINE User ID</label>
+      <input id="lineId" placeholder="เช่น Ua401152b...">
+    </div>
+  </div>
+  <button onclick="testUser()">ตรวจ User</button>
+  <div id="r2" class="result"></div>
+</div>
+
+<!-- ═══ Test 3: Trigger scheduler ═══ -->
+<div class="card">
+  <h2>3️⃣ ยิง Scheduler เดี๋ยวนี้ <span id="b3"></span></h2>
+  <p class="hint">จำลอง "ถึงเวลารอบ scheduler" ทันที — ส่งการ์ดของมื้อที่ถึงเวลาตอนนี้ (ต้องใส่ Secret ด้านบน)</p>
+  <button onclick="triggerScheduler()">▶ ยิง Scheduler</button>
+  <div id="r3" class="result"></div>
+</div>
+
+<!-- ═══ Diagnostic checklist ═══ -->
+<div class="card">
+  <h2>📋 เช็กลิสต์เมื่อ "LINE ไม่เด้ง"</h2>
+  <ul class="checklist" id="checklist">
+    <li id="ck-server">Server ยังรันอยู่ (Test 1 ผ่าน)</li>
+    <li id="ck-quota">Quota ยังไม่เต็ม + limit = 15000 (Test 1)</li>
+    <li id="ck-line">User มี line_user_id (Test 2)</li>
+    <li id="ck-meds">User มียาที่ยัง active (Test 2)</li>
+    <li id="ck-sent">มี push log ส่งสำเร็จล่าสุด (Test 2)</li>
+  </ul>
+  <p class="hint" style="margin-top:12px">
+    <b>ถ้าทุกข้อผ่านแต่ user ยังไม่ได้รับ:</b> user อาจบล็อก/ลบ OA, ปิดแจ้งเตือน LINE,
+    หรือ line_user_id เปลี่ยน (ลบ+เพิ่มเพื่อนใหม่) — ค่อยถาม user เป็นลำดับสุดท้าย
+  </p>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const base = () => $('baseUrl').value.trim().replace(/\/$/,'');
+
+function show(el, type, msg){
+  el.className = 'result show ' + type;
+  el.textContent = msg;
+}
+function badge(el, type, txt){
+  el.innerHTML = `<span class="badge ${type}">${txt}</span>`;
+}
+function setCheck(id, pass){
+  const el = $(id);
+  el.className = pass ? 'pass' : 'fail';
+}
+
+// ─── Test 1: Server + Quota ───
+async function testServerQuota(){
+  const r = $('r1');
+  show(r, 'warn', 'กำลังตรวจ...');
+  try{
+    // ใช้ push-logs endpoint (คืน quota_limit + monthly count)
+    const res = await fetch(`${base()}/api/push-logs?user_id=1&limit=1`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    const limit = d.quota_limit;
+    const used = d.monthly_push_count;
+    const isNew = limit >= 15000;
+    let msg = `✅ Server ตอบสนอง (รันอยู่)\n`;
+    msg += `Quota limit: ${limit} ${isNew ? '✅ (โค้ดใหม่)' : '⚠️ ยังเป็น '+limit+' — โค้ดเก่ายังรันอยู่!'}\n`;
+    msg += `ใช้ไปเดือนนี้: ${used} ข้อความ\n`;
+    msg += `คงเหลือ: ${limit - used} ข้อความ`;
+    show(r, isNew ? 'ok':'err', msg);
+    badge($('b1'), isNew?'ok':'err', isNew?'ผ่าน':'โค้ดเก่า');
+    setCheck('ck-server', true);
+    setCheck('ck-quota', isNew && used < limit);
+  }catch(e){
+    show(r, 'err', `❌ Server ไม่ตอบสนอง หรือ error\n${e.message}\n\nเช็ก: Railway ยังรันไหม / URL ถูกไหม`);
+    badge($('b1'), 'err', 'ล้มเหลว');
+    setCheck('ck-server', false);
+  }
+}
+
+// ─── Test 2: User ───
+async function testUser(){
+  const r = $('r2');
+  const uid = $('userId').value.trim();
+  const lid = $('lineId').value.trim();
+  if(!uid && !lid){ show(r,'err','กรุณาใส่ User ID หรือ LINE User ID'); return; }
+  show(r, 'warn', 'กำลังตรวจ...');
+  try{
+    let user;
+    if(lid){
+      const res = await fetch(`${base()}/api/users/by-line-id/${lid}`);
+      if(!res.ok) throw new Error(`หา user จาก LINE ID ไม่เจอ (HTTP ${res.status})`);
+      user = await res.json();
+    } else {
+      const res = await fetch(`${base()}/api/users/${uid}`);
+      if(!res.ok) throw new Error(`หา user id=${uid} ไม่เจอ (HTTP ${res.status})`);
+      user = await res.json();
+    }
+    const userId = user.id || uid;
+    const hasLine = !!user.line_user_id;
+
+    // ดึง push log ของ user
+    let pushInfo = '';
+    let hasSent = false;
+    try{
+      const pr = await fetch(`${base()}/api/push-logs?user_id=${userId}&limit=5`);
+      if(pr.ok){
+        const pd = await pr.json();
+        const logs = pd.logs || [];
+        const lastSent = logs.find(l => l.status==='sent');
+        hasSent = !!lastSent;
+        if(lastSent){
+          pushInfo = `\nเตือนล่าสุดสำเร็จ: ${new Date(lastSent.sent_at).toLocaleString('th-TH')}`;
+        } else {
+          pushInfo = `\n⚠️ ไม่มี push log ที่ส่งสำเร็จ (5 รายการล่าสุด)`;
+        }
+        const failed = logs.filter(l=>l.status!=='sent');
+        if(failed.length) pushInfo += `\n❌ มี ${failed.length} รายการที่ส่งไม่สำเร็จ: ${failed[0].error_message||'ไม่ระบุ'}`;
+      }
+    }catch(_){}
+
+    let msg = `User: ${user.display_name||user.name||'(ไม่มีชื่อ)'} (id=${userId})\n`;
+    msg += `line_user_id: ${hasLine ? '✅ '+user.line_user_id.slice(0,12)+'...' : '❌ ไม่มี — ผูก LINE ไม่สำเร็จ!'}`;
+    msg += pushInfo;
+
+    const allOk = hasLine && hasSent;
+    show(r, hasLine ? (hasSent?'ok':'warn') : 'err', msg);
+    badge($('b2'), hasLine?(hasSent?'ok':'warn'):'err', hasLine?(hasSent?'ปกติ':'ไม่มีเตือน'):'ไม่ผูก LINE');
+    setCheck('ck-line', hasLine);
+    setCheck('ck-sent', hasSent);
+    setCheck('ck-meds', hasSent); // ถ้าเคยส่งได้ = มียา
+  }catch(e){
+    show(r, 'err', `❌ ${e.message}`);
+    badge($('b2'), 'err', 'ไม่เจอ');
+  }
+}
+
+// ─── Test 3: Trigger ───
+async function triggerScheduler(){
+  const r = $('r3');
+  const sec = $('secret').value.trim();
+  if(!sec){ show(r,'err','กรุณาใส่ Scheduler Secret ด้านบนก่อน'); return; }
+  show(r, 'warn', 'กำลังยิง scheduler...');
+  try{
+    const res = await fetch(`${base()}/api/scheduler/trigger`, {
+      method:'POST',
+      headers:{'x-scheduler-secret': sec}
+    });
+    const d = await res.json();
+    if(res.status===403){
+      show(r,'err','❌ Secret ไม่ถูกต้อง (403) — เช็กค่าใน Railway'); 
+      badge($('b3'),'err','Secret ผิด'); return;
+    }
+    if(d.ok){
+      show(r,'ok',`✅ ยิง scheduler สำเร็จ\nเวลา: ${new Date(d.triggered_at).toLocaleString('th-TH')}\n\n➡️ ถ้ามีมื้อยาที่ถึงเวลาตอนนี้ การ์ดจะเข้า LINE\n➡️ ดู Railway log ว่าส่งจริง หรือขึ้น "skipping" (=ยังติด quota)\n\nหมายเหตุ: ถ้าตอนนี้ไม่มีมื้อยา due จะไม่ส่งอะไร (ไม่ใช่ error)`);
+      badge($('b3'),'ok','ยิงแล้ว');
+    } else {
+      show(r,'err',`⚠️ ${JSON.stringify(d)}`);
+      badge($('b3'),'err','error');
+    }
+  }catch(e){
+    show(r,'err',`❌ ${e.message}`);
+    badge($('b3'),'err','ล้มเหลว');
+  }
+}
+</script>
+
+</body>
+</html>
