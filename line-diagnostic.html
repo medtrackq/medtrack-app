@@ -186,12 +186,14 @@ async function testUser(){
     let user;
     if(lid){
       const res = await fetch(`${base()}/api/users/by-line-id/${lid}`);
-      if(!res.ok) throw new Error(`หา user จาก LINE ID ไม่เจอ (HTTP ${res.status})`);
-      user = await res.json();
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(`หา user จาก LINE ID ไม่เจอ: ${data.error||('HTTP '+res.status)}`);
+      user = data.user;   // API ห่อไว้ใน { ok, user }
     } else {
       const res = await fetch(`${base()}/api/users/${uid}`);
+      const data = await res.json();
       if(!res.ok) throw new Error(`หา user id=${uid} ไม่เจอ (HTTP ${res.status})`);
-      user = await res.json();
+      user = data.user || data;   // เผื่อ endpoint นี้ไม่ห่อ
     }
     const userId = user.id || uid;
     const hasLine = !!user.line_user_id;
@@ -216,7 +218,7 @@ async function testUser(){
       }
     }catch(_){}
 
-    let msg = `User: ${user.display_name||user.name||'(ไม่มีชื่อ)'} (id=${userId})\n`;
+    let msg = `User: ${user.name||'(ไม่มีชื่อ)'} (id=${userId})\n`;
     msg += `line_user_id: ${hasLine ? '✅ '+user.line_user_id.slice(0,12)+'...' : '❌ ไม่มี — ผูก LINE ไม่สำเร็จ!'}`;
     msg += pushInfo;
 
