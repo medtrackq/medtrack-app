@@ -81,6 +81,19 @@
   .log-filters select, .log-filters input { background:var(--panel); border:1px solid var(--line); color:var(--t1); padding:7px 12px; border-radius:8px; font-size:13px; font-family:inherit; }
   .log-row { cursor:pointer; }
   .log-detail-box { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px; margin-top:8px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--t2); white-space:pre-wrap; word-break:break-all; max-height:300px; overflow-y:auto; }
+  /* 🩺 Diagnostic tab */
+  .dbtn { background:var(--accent); color:#04231a; border:none; border-radius:8px; padding:10px 18px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .dbtn:hover { opacity:.9; }
+  .dinput { background:var(--panel2); border:1px solid var(--line); color:var(--t1); padding:9px 12px; border-radius:8px; font-size:13px; font-family:inherit; flex:1; min-width:160px; }
+  .dinput:focus { outline:none; border-color:var(--accent); }
+  .dres { display:none; }
+  .dchecklist { list-style:none; font-size:13px; padding:0; }
+  .dchecklist li { padding:5px 0 5px 24px; position:relative; color:var(--t2); }
+  .dchecklist li:before { content:'○'; position:absolute; left:4px; color:var(--t2); }
+  .dchecklist li.pass { color:var(--t1); }
+  .dchecklist li.pass:before { content:'✓'; color:#1D9E75; font-weight:bold; }
+  .dchecklist li.fail { color:var(--t1); }
+  .dchecklist li.fail:before { content:'✕'; color:#E05A5A; font-weight:bold; }
 </style>
 </head>
 <body>
@@ -111,11 +124,13 @@
       <button class="tab active" onclick="switchTab('overview',this)">📊 ภาพรวม</button>
       <button class="tab" onclick="switchTab('cost',this)">💰 Cost</button>
       <button class="tab" onclick="switchTab('logs',this)">📜 Logs (ละเอียด)</button>
+      <button class="tab" onclick="switchTab('diag',this)">🩺 ตรวจ LINE</button>
     </div>
 
     <div id="content"><div class="loading"><div class="spinner"></div>กำลังโหลด...</div></div>
     <div id="costContent" style="display:none"></div>
     <div id="logsContent" style="display:none"></div>
+    <div id="diagContent" style="display:none"></div>
   </div>
 
   <!-- User Inspector Modal -->
@@ -398,8 +413,171 @@ function switchTab(tab, btn){
   document.getElementById('content').style.display = tab==='overview'?'block':'none';
   document.getElementById('costContent').style.display = tab==='cost'?'block':'none';
   document.getElementById('logsContent').style.display = tab==='logs'?'block':'none';
+  document.getElementById('diagContent').style.display = tab==='diag'?'block':'none';
   if(tab==='logs') loadLogs();
   if(tab==='cost') loadCost();
+  if(tab==='diag') loadDiag();
+}
+
+// ═══════════════════════════════════════════
+//  🩺 LINE Diagnostic (รวมจาก line-diagnostic.html)
+//  ใช้ API + SECRET เดียวกับ admin-monitor (ไม่ต้องกรอกซ้ำ)
+// ═══════════════════════════════════════════
+function loadDiag(){
+  const box = document.getElementById('diagContent');
+  box.innerHTML = `
+    <div class="panel" style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--accent,#0F6E56);margin-bottom:6px">🩺 ตรวจสอบ LINE เตือนยา</div>
+      <div style="font-size:13px;color:var(--muted,#8aa)">ไล่หาสาเหตุ "LINE ไม่เด้ง" ได้เองก่อนถาม user · ใช้ Secret เดียวกับหน้านี้</div>
+    </div>
+
+    <!-- Test 1: Server + Quota -->
+    <div class="panel" style="margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:8px">1️⃣ เช็ก Server + Quota <span id="db1"></span></div>
+      <div style="font-size:12px;color:var(--muted,#8aa);margin-bottom:8px">ตรวจว่า server รัน + quota limit ถูก (ควร 15000 ไม่ใช่ 500)</div>
+      <button class="dbtn" onclick="diagServerQuota()">ตรวจ Server + Quota</button>
+      <div id="dr1" class="dres"></div>
+    </div>
+
+    <!-- Test 2: User -->
+    <div class="panel" style="margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:8px">2️⃣ เช็ก User รายคน <span id="db2"></span></div>
+      <div style="font-size:12px;color:var(--muted,#8aa);margin-bottom:8px">user แจ้งไม่ได้รับเตือน — เช็กผูก LINE ไหม เตือนล่าสุดเมื่อไหร่</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <input id="dUserId" class="dinput" placeholder="User ID (เช่น 28)">
+        <input id="dLineId" class="dinput" placeholder="หรือ LINE User ID (Ua401...)">
+      </div>
+      <button class="dbtn" onclick="diagUser()">ตรวจ User</button>
+      <div id="dr2" class="dres"></div>
+    </div>
+
+    <!-- Test 3: Trigger -->
+    <div class="panel" style="margin-bottom:14px">
+      <div style="font-weight:700;margin-bottom:8px">3️⃣ ยิง Scheduler เดี๋ยวนี้ <span id="db3"></span></div>
+      <div style="font-size:12px;color:var(--muted,#8aa);margin-bottom:8px">จำลอง "ถึงรอบ scheduler" ทันที — ส่งการ์ดของมื้อที่ถึงเวลาตอนนี้</div>
+      <input id="dSchedSecret" class="dinput" type="password" placeholder="Scheduler Secret (SCHEDULER_TRIGGER_SECRET จาก Railway)" style="width:100%;max-width:420px;margin-bottom:8px">
+      <div style="font-size:11px;color:var(--muted,#8aa);margin-bottom:8px">* คนละตัวกับ admin secret — ดูใน Railway → Variables</div>
+      <button class="dbtn" onclick="diagTrigger()">▶ ยิง Scheduler</button>
+      <div id="dr3" class="dres"></div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="panel">
+      <div style="font-weight:700;margin-bottom:8px">📋 เช็กลิสต์เมื่อ "LINE ไม่เด้ง"</div>
+      <ul class="dchecklist">
+        <li id="dck-server">Server ยังรัน (Test 1)</li>
+        <li id="dck-quota">Quota ไม่เต็ม + limit=15000 (Test 1)</li>
+        <li id="dck-line">User มี line_user_id (Test 2)</li>
+        <li id="dck-sent">มี push ส่งสำเร็จล่าสุด (Test 2)</li>
+      </ul>
+      <div style="font-size:12px;color:var(--muted,#8aa);margin-top:10px">
+        <b>ถ้าทุกข้อผ่านแต่ยังไม่ได้รับ:</b> user อาจบล็อก/ลบ OA, ปิดแจ้งเตือน LINE, หรือ line_user_id เปลี่ยน — ค่อยถาม user เป็นข้อสุดท้าย
+      </div>
+    </div>
+  `;
+}
+
+function dShow(id, type, msg){
+  const el = document.getElementById(id);
+  const colors = {ok:'#1D9E75', warn:'#EF9F27', err:'#E05A5A'};
+  const bg = {ok:'rgba(29,158,117,.12)', warn:'rgba(239,159,39,.12)', err:'rgba(224,90,90,.12)'};
+  el.style.cssText = `display:block;margin-top:10px;padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-word;border:1px solid ${colors[type]};background:${bg[type]};color:${colors[type]}`;
+  el.textContent = msg;
+}
+function dBadge(id, type, txt){
+  const colors = {ok:'#1D9E75', warn:'#EF9F27', err:'#E05A5A'};
+  document.getElementById(id).innerHTML = `<span style="background:${colors[type]};color:#fff;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600;margin-left:6px">${txt}</span>`;
+}
+function dCheck(id, pass){
+  const el = document.getElementById(id);
+  if(el) el.className = pass ? 'pass' : 'fail';
+}
+
+async function diagServerQuota(){
+  dShow('dr1','warn','กำลังตรวจ...');
+  try{
+    const res = await fetch(`${API}/api/push-logs?user_id=1&limit=1`);
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    const limit = d.quota_limit, used = d.monthly_push_count;
+    const isNew = limit >= 15000;
+    let msg = `✅ Server ตอบสนอง (รันอยู่)\n`;
+    msg += `Quota limit: ${limit} ${isNew?'✅ (โค้ดใหม่)':'⚠️ ยังเป็น '+limit+' — โค้ดเก่า!'}\n`;
+    msg += `ใช้ไปเดือนนี้: ${used}\nคงเหลือ: ${limit-used}`;
+    dShow('dr1', isNew?'ok':'err', msg);
+    dBadge('db1', isNew?'ok':'err', isNew?'ผ่าน':'โค้ดเก่า');
+    dCheck('dck-server', true);
+    dCheck('dck-quota', isNew && used<limit);
+  }catch(e){
+    dShow('dr1','err',`❌ Server ไม่ตอบสนอง\n${e.message}\nเช็ก: Railway รันไหม / URL ถูกไหม`);
+    dBadge('db1','err','ล้มเหลว');
+    dCheck('dck-server', false);
+  }
+}
+
+async function diagUser(){
+  const uid = document.getElementById('dUserId').value.trim();
+  const lid = document.getElementById('dLineId').value.trim();
+  if(!uid && !lid){ dShow('dr2','err','ใส่ User ID หรือ LINE User ID'); return; }
+  dShow('dr2','warn','กำลังตรวจ...');
+  try{
+    let user;
+    if(lid){
+      const res = await fetch(`${API}/api/users/by-line-id/${lid}`);
+      const data = await res.json();
+      if(!res.ok || !data.ok) throw new Error(`ไม่เจอ: ${data.error||('HTTP '+res.status)}`);
+      user = data.user;
+    } else {
+      const res = await fetch(`${API}/api/users/${uid}`);
+      const data = await res.json();
+      if(!res.ok) throw new Error(`ไม่เจอ user id=${uid} (HTTP ${res.status})`);
+      user = data.user || data;
+    }
+    const userId = user.id || uid;
+    const hasLine = !!user.line_user_id;
+    let pushInfo = '', hasSent = false;
+    try{
+      const pr = await fetch(`${API}/api/push-logs?user_id=${userId}&limit=5`);
+      if(pr.ok){
+        const pd = await pr.json();
+        const logs = pd.logs||[];
+        const lastSent = logs.find(l=>l.status==='sent');
+        hasSent = !!lastSent;
+        pushInfo = lastSent
+          ? `\nเตือนล่าสุดสำเร็จ: ${new Date(lastSent.sent_at).toLocaleString('th-TH')}`
+          : `\n⚠️ ไม่มี push ที่ส่งสำเร็จ (5 ล่าสุด)`;
+        const failed = logs.filter(l=>l.status!=='sent');
+        if(failed.length) pushInfo += `\n❌ ส่งไม่สำเร็จ ${failed.length} ครั้ง: ${failed[0].error_message||'?'}`;
+      }
+    }catch(_){}
+    let msg = `User: ${user.name||'(ไม่มีชื่อ)'} (id=${userId})\n`;
+    msg += `line_user_id: ${hasLine?'✅ '+user.line_user_id.slice(0,12)+'...':'❌ ไม่มี — ผูก LINE ไม่สำเร็จ!'}`;
+    msg += pushInfo;
+    dShow('dr2', hasLine?(hasSent?'ok':'warn'):'err', msg);
+    dBadge('db2', hasLine?(hasSent?'ok':'warn'):'err', hasLine?(hasSent?'ปกติ':'ไม่มีเตือน'):'ไม่ผูก LINE');
+    dCheck('dck-line', hasLine);
+    dCheck('dck-sent', hasSent);
+  }catch(e){
+    dShow('dr2','err',`❌ ${e.message}`);
+    dBadge('db2','err','ไม่เจอ');
+  }
+}
+
+async function diagTrigger(){
+  const sec = document.getElementById('dSchedSecret').value.trim();
+  if(!sec){ dShow('dr3','err','ใส่ Scheduler Secret ก่อน'); return; }
+  dShow('dr3','warn','กำลังยิง...');
+  try{
+    const res = await fetch(`${API}/api/scheduler/trigger`, {
+      method:'POST', headers:{'x-scheduler-secret':sec}
+    });
+    const d = await res.json();
+    if(res.status===403){ dShow('dr3','err','❌ Secret ไม่ถูก (403)'); dBadge('db3','err','Secret ผิด'); return; }
+    if(d.ok){
+      dShow('dr3','ok',`✅ ยิงสำเร็จ ${new Date(d.triggered_at).toLocaleString('th-TH')}\n\n➡️ ถ้ามีมื้อยา due ตอนนี้ การ์ดจะเข้า LINE\n➡️ ดู Logs tab ว่าส่งจริง หรือ skipping\n\nหมายเหตุ: ถ้าไม่มีมื้อ due จะไม่ส่ง (ไม่ใช่ error)`);
+      dBadge('db3','ok','ยิงแล้ว');
+    } else { dShow('dr3','err',JSON.stringify(d)); dBadge('db3','err','error'); }
+  }catch(e){ dShow('dr3','err',`❌ ${e.message}`); dBadge('db3','err','ล้มเหลว'); }
 }
 
 async function loadCost(){
