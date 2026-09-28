@@ -21,7 +21,7 @@ h1{font-size:26px;font-weight:600;margin:4px 0 0;line-height:1.3;text-wrap:balan
 .tools button[aria-pressed="true"]{background:#1F5FBF;border-color:#1F5FBF;color:#fff}
 button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .hint{position:absolute;right:12px;bottom:10px;font-size:12px;color:#56635E;background:rgba(255,255,255,.8);padding:2px 8px;border-radius:6px;z-index:3}
-.lbl{position:absolute;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;z-index:2;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.lbl{position:absolute;transform:translate(-10px,-100%);pointer-events:auto;cursor:pointer;z-index:2;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .lbl b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#D63B2F;color:#fff;font:600 11px var(--mono)}
 .lbl b.own{background:#1F5FBF}
 .lbl span{display:none;font-size:11.5px;color:#16201D;background:rgba(255,255,255,.88);padding:0 5px;border-radius:4px}
@@ -54,6 +54,17 @@ td{padding:5px 4px;border-bottom:1px solid var(--line)}td.n{text-align:right;fon
 .lang{display:flex;gap:4px;margin-top:10px}
 .lang button{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+
+.lbl b.gapc,.legend b.gapc{background:#B7791F}
+.sel-tbl{overflow-x:auto}
+.sel-tbl table{min-width:760px}
+.sel-tbl th{font-size:12.5px;color:var(--muted);font-weight:600;text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+.sel-tbl td{vertical-align:top}
+.st{display:inline-block;font-size:12px;padding:1px 8px;border-radius:999px;white-space:nowrap}
+.st.ok{background:#E3F2E7;color:#1F6B37}.st.warn{background:var(--assume-soft);color:var(--assume)}.st.bad{background:var(--gap-soft);color:var(--gap)}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:800px){.cols2{grid-template-columns:1fr}}
+.card ul{margin:6px 0 0;padding-left:1.1em;display:grid;gap:4px;font-size:14px}
 </style>
 
 <div class="wrap">
@@ -70,74 +81,134 @@ td{padding:5px 4px;border-bottom:1px solid var(--line)}td.n{text-align:right;fon
 
   <div class="main">
     <div class="stage" id="stage">
-      <div class="tools" role="group" aria-label="มุมมอง">
+      <div class="tools" role="group" aria-label="View">
         <button type="button" id="v3d" aria-pressed="true" data-t="v3d"></button>
         <button type="button" id="vplan" aria-pressed="false" data-t="vplan"></button>
         <button type="button" id="vreset" data-t="vreset"></button>
       </div>
-      <canvas id="c" aria-label="ผังห้องยา OPD แบบ 3 มิติ"></canvas>
+      <canvas id="c" aria-label="OPD pharmacy 3D layout"></canvas>
       <div id="labels"></div>
-      <div class="hint" id="hint">ลากเพื่อหมุน · เลื่อนเพื่อซูม · กดที่เครื่องเพื่อดูรายละเอียด</div>
+      <div class="hint" id="hint"></div>
     </div>
-
     <aside class="side">
       <div class="card" id="info" aria-live="polite"></div>
       <div class="card">
         <div class="legend" id="legend"></div>
-        <div class="key"><span><i style="background:#D63B2F"></i><span data-t="key1"></span></span><span><i style="background:#1F5FBF"></i><span data-t="key2"></span></span></div>
+        <div class="key"><span><i style="background:#D63B2F"></i><span data-t="key1"></span></span><span><i style="background:#B7791F"></i><span data-t="key3"></span></span><span><i style="background:#1F5FBF"></i><span data-t="key2"></span></span></div>
       </div>
     </aside>
   </div>
 
   <div class="card">
-    <h2 style="font-size:16px" data-t="area"></h2>
-    <table id="area" style="margin-top:8px"></table>
-    <p class="note" style="margin:8px 0 0" data-t="note"></p>
+    <h2 style="font-size:16px" data-t="selh"></h2>
+    <p class="note" style="margin:4px 0 8px" data-t="selp"></p>
+    <div class="sel-tbl"><table><thead><tr><th data-t="c1"></th><th data-t="c2"></th><th data-t="c3"></th><th data-t="c4"></th></tr></thead><tbody id="seltbl"></tbody></table></div>
   </div>
+
+  <div class="cols2">
+    <div class="card"><h2 style="font-size:16px" data-t="noth"></h2><ul id="notlist"></ul></div>
+    <div class="card"><h2 style="font-size:16px" data-t="area"></h2><table id="area" style="margin-top:8px"></table></div>
+  </div>
+
+  <div class="card"><p class="note" style="margin:0" data-t="note"></p></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
-const RW=30,RD=14,WZ=4; // room width, depth (m), waiting depth
-const OX=-RW/2,OZ=-(RD+WZ)/2;
+const RW=30,RD=14,WZ=4,OX=-RW/2,OZ=-(RD+WZ)/2;
+// k: 'v' vendor model, 'g' gap (not in catalogue), 'o' our workstation
 const I={
- robot:{n:'1',v:1,th:'หุ่นยนต์จ่ายยาความเร็วสูง',en:'High-Speed Dispensing Machine',size:'9.0 × 2.4 × 2.8 ม.',qty:'1 ชุด หรือ 2 ชุดเล็กเพื่อสำรองกัน',role:'จ่ายยากล่องเต็ม ประมาณ 50% ของรายการ ต้องได้ไม่น้อยกว่า 1,800 กล่องต่อชั่วโมง และเก็บได้ไม่น้อยกว่า 15,000 กล่อง',q:'ขอขนาดจริง น้ำหนักต่อตารางเมตร จำนวนกล่องที่เก็บได้ และกล่องต่อชั่วโมงที่วัดจากใบสั่งจริง ไม่ใช่ค่าสูงสุด'},
- repl:{n:'4',v:1,th:'ชุดเติมยาอัตโนมัติ',en:'Fully Automatic Replenishment Module',size:'3.0 × 2.0 × 2.2 ม.',qty:'1 ชุด',role:'เติมยาเข้าหุ่นยนต์ประมาณ 7,500 กล่องต่อวัน ทำงานนอกช่วงคนไข้มากหรือกลางคืน',q:'อัตราเติมกล่องต่อชั่วโมง อ่าน Lot และวันหมดอายุจาก Barcode ยาไทยได้หรือไม่ ถ้าไม่มีต้องติดฉลากก่อน'},
- recv:{n:'R',v:0,th:'พื้นที่รับยาเข้าและติดฉลาก',en:'Goods receipt & labeling',size:'12 × 1.2 ม.',qty:'1 พื้นที่',role:'รับยาจากคลังหลัก ตรวจนับ ติดฉลาก Lot และวันหมดอายุ ก่อนป้อนเข้าชุดเติมยา',q:'ประตูรับยาควรอยู่ด้านหลัง แยกจากทางเข้าเจ้าหน้าที่และผู้ป่วย'},
- ctrl:{n:'2',v:1,th:'ตู้ควบคุมยาเสพติด',en:'Controlled Substances Cabinet',size:'1.0 × 0.8 × 2.0 ม.',qty:'1 ตู้',role:'เก็บและจ่ายยาเสพติดและวัตถุออกฤทธิ์ บันทึกผู้เบิกทุกครั้ง',q:'รองรับข้อกำหนดการบันทึกและรายงานตามกฎหมายไทยหรือไม่'},
- fridge:{n:'F',v:1,th:'ตู้เย็นยา',en:'Refrigerator',size:'0.9 × 0.8 × 2.0 ม. × 2',qty:'2 ตู้',role:'ยาเย็น เช่น อินซูลิน เชื่อมข้อมูลกับระบบจ่ายยาตามโบรชัวร์',q:'มีระบบบันทึกอุณหภูมิและแจ้งเตือนหรือไม่'},
- shelf:{n:'7',v:1,th:'ชั้นจัดยาอัจฉริยะ (Pick-to-light)',en:'Smart Shelving',size:'3.6 × 0.9 × 2.2 ม. × 4',qty:'4 โซน',role:'ยาแบ่งบรรจุล่วงหน้าและยาที่หุ่นยนต์รับไม่ได้ ประมาณ 45% ของรายการ ต้องรองรับ 675 รายการต่อชั่วโมง',q:'มีไฟชี้ตำแหน่งและจำนวน และสแกนยืนยันทุกรายการหรือไม่'},
- light:{n:'8',v:1,th:'ตู้ยาป้องกันแสง',en:'Smart Light-Protected Medicine Cabinet',size:'2.0 × 0.8 × 2.0 ม.',qty:'1 ตู้',role:'ยาที่ต้องเก็บพ้นแสง',q:'จำเป็นแค่ไหนเมื่อเทียบกับจำนวนรายการยาที่ต้องป้องกันแสงของโรงพยาบาล'},
- smart6:{n:'6',v:1,th:'เครื่องจ่ายยาอัจฉริยะ',en:'Smart Medication Dispenser',size:'2.4 × 1.2 × 1.9 ม. × 2',qty:'2 เครื่อง',role:'สมมติว่าใช้กับยาบรรจุภัณฑ์พิเศษหรือรูปทรงไม่มาตรฐาน',q:'เครื่องนี้ทำอะไรได้บ้าง รองรับขวดและยาน้ำหรือไม่'},
- prepack:{n:'P',v:0,th:'พื้นที่แบ่งบรรจุยาเม็ดล่วงหน้า',en:'Pre-pack station',size:'5.0 × 1.8 ม.',qty:'เครื่องนับเม็ด 2 เครื่อง + โต๊ะ',role:'นับยาเม็ดเป็นจำนวนมาตรฐาน 60/120/180 เม็ด ประมาณ 2,250 ถุงต่อวัน ทำนอกช่วงคนไข้มาก',q:'ไม่เห็นเครื่องนับเม็ดในโบรชัวร์ ถ้าผู้ผลิตไม่มี ต้องหาเพิ่ม เพราะยาเม็ดประมาณ 30% ของรายการ',gap:1},
- screen:{n:'S',v:0,th:'จุดเภสัชกรคัดกรองใบสั่งยา',en:'Pharmacist screening',size:'โต๊ะ 1.4 × 0.7 ม. × 4',qty:'4 จุด',role:'คัดกรองก่อนส่งไปจัดยา ใบสั่งเข้าตั้งแต่แพทย์บันทึก จึงไม่จำเป็นต้องอยู่ติดช่องจ่ายยา',q:'ซอฟต์แวร์ของผู้ผลิตตั้งให้รอเภสัชกรคัดกรองก่อนเริ่มจัดยาได้หรือไม่',gap:1},
- buffer:{n:'3',v:1,th:'จุดพักตะกร้ายาก่อนจ่าย',en:'Pre-dispensing buffer',size:'1.6 × 1.0 × 1.6 ม.',qty:'1 ชุด',role:'พักตะกร้าที่จัดเสร็จ รอตรวจสอบหรือรอผู้ป่วยมาถึงช่อง',q:'จุได้กี่ตะกร้า ขนาดตะกร้ารองรับยา 2 เดือนหรือไม่'},
- conv:{n:'C',v:1,th:'สายลำเลียงยา',en:'Conveyor',size:'กว้าง 0.5 ม.',qty:'ประมาณ 32 ม.',role:'ส่งยาจากหุ่นยนต์ไปยังจุดพักและจุดตรวจสอบ',q:'ความยาวสูงสุด การเลี้ยวโค้ง และการผ่านประตูหรือทางเดิน'},
- check:{n:'V',v:0,th:'จุดตรวจสอบก่อนส่งมอบ',en:'Final verification',size:'โต๊ะ 1.4 × 0.7 ม. × 5',qty:'5 จุด',role:'สแกนยาและฉลากทุกรายการเทียบใบสั่ง รวมยาจากหุ่นยนต์และชั้นจัดยา',q:'ในโบรชัวร์ตรวจสอบที่ช่องจ่ายยา ถ้ารวมไว้ที่ช่อง จะเพิ่มเวลาต่อผู้ป่วยที่ช่องส่งมอบ ซึ่งเป็นคอขวดอยู่แล้ว'},
- counter:{n:'H',v:0,th:'ช่องส่งมอบยาและให้คำปรึกษา',en:'Handover counters',size:'1.6 × 0.7 ม. × 9',qty:'9 ช่อง',role:'เภสัชกรยืนยันตัวผู้ป่วย 2 ตัวบ่งชี้ และให้คำปรึกษา เป็นคอขวดของระบบ ต้องการเภสัชกร 9 คนช่วงชั่วโมงสูงสุด',q:'ควรแยกช่องสำหรับผู้ป่วยยาเดิม กับช่องให้คำปรึกษาเต็มรูปแบบ อย่างน้อย 2 ช่องควรเป็นห้องหรือมุมที่เป็นส่วนตัว'},
- wait:{n:'W',v:0,th:'พื้นที่รอรับยา',en:'Patient waiting area',size:'30 × 4 ม. (นอกห้อง)',qty:'—',role:'ผู้ป่วยรอหน้าช่องส่งมอบ จอเรียกคิว',q:'เส้นทางผู้ป่วยต้องไม่ตัดผ่านเส้นทางยาและเจ้าหน้าที่'}
+robot:{n:'1',k:'v',m:'FY-1200',th:['หุ่นยนต์จ่ายยาความเร็วสูง FY-1200','FY-1200 Rapid Dispensing Machine'],
+ size:['7.6 × 2.2 × 2.85 ม. (ไม่รวมชุดเติมยา)','7.6 × 2.2 × 2.85 m (excl. replenishment module)'],qty:['1 ชุด','1 unit'],
+ role:['จ่ายยากล่องเต็มประมาณ 50% ของรายการ ผู้ผลิตระบุ 380–500 ใบสั่ง/ชม. เก็บได้ ≥30,000 กล่อง ประมาณ 1,200 รายการยา ใช้กล้อง AI ตรวจยาขณะจ่าย ไฟฟ้า 13 kW','Whole packs, about 50% of line items. Rated 380–500 prescriptions/hour, ≥30,000 boxes, about 1,200 drug types, AI camera check while dispensing, 13 kW'],
+ q:['เราต้องการ 1,800 กล่อง/ชม. ช่วงสูงสุด (5 กล่องต่อใบสั่ง) ขอตัวเลขกล่อง/ชม. ที่วัดได้จริง และน้ำหนักเครื่อง ซึ่งแคตตาล็อกไม่ได้ระบุ (รุ่น 6.6 ม. หนักประมาณ 6,500 กก.)','We need 1,800 boxes/hour at peak (5 boxes per prescription). Please give measured boxes/hour and the machine weight, which the catalogue does not state (the 6.6 m model is about 6,500 kg)']},
+repl:{n:'2',k:'v',m:'BY-400',th:['ชุดเติมยาอัตโนมัติ BY-400','BY-400 Automatic Replenishment Module'],
+ size:['7.0 × 0.5 × 1.58 ม.','7.0 × 0.5 × 1.58 m'],qty:['1 ชุด','1 unit'],
+ role:['เทยาลงสายพาน เครื่องอ่านชนิดยาและวันผลิตด้วยกล้อง แล้วเติมเข้าหุ่นยนต์ 500–800 กล่อง/ชม. ถังจุประมาณ 4,800 กล่อง ทำงานได้ข้ามคืน','Pour packs onto the belt; a camera reads drug and date, then loads the robot at 500–800 boxes/hour. Tank holds about 4,800 boxes; runs overnight'],
+ q:['งานเติม 7,500 กล่อง/วัน ใช้เวลา 9–15 ชม. ต่อวัน ต้องเติมถังอย่างน้อยวันละ 2 รอบ กล้องอ่านวันหมดอายุและ Lot จากฉลากยาไทยได้หรือไม่','7,500 boxes/day takes 9–15 hours; the tank must be refilled at least twice a day. Can the camera read expiry and lot from Thai labels?']},
+buffer:{n:'3',k:'v',m:'FL-01',th:['จุดจ่ายตะกร้าและพักยา FL-01','FL-01 Basket Dispenser / Pre-dispensing Buffer'],
+ size:['1.30 × 0.49 × 1.54 ม.','1.30 × 0.49 × 1.54 m'],qty:['1 ชุด','1 unit'],
+ role:['ปล่อยตะกร้าทุก 2 วินาที พิมพ์ข้อมูลผู้ป่วย รับยาจากหุ่นยนต์ แล้วยกตะกร้าไปพักรอตรวจ พักได้ 6 ตะกร้า','Releases a basket every 2 seconds, prints patient data, receives robot output and lifts baskets to a 6-basket buffer'],
+ q:['พักได้แค่ 6 ตะกร้า ช่วงสูงสุดมี 300 ใบสั่ง/ชม. ตะกร้าใหญ่พอสำหรับยา 2 เดือนหรือไม่','Only 6 baskets of buffer at 300 prescriptions/hour peak. Are baskets large enough for a 2-month supply?']},
+zq:{n:'4',k:'v',m:'ZQ-280L',th:['ตู้หมุนจัดยาอัจฉริยะ ZQ-280L','ZQ-280L Smart Storage and Retrieval System'],
+ size:['2.49 × 1.36 × 2.39 ม. × 2','2.49 × 1.36 × 2.39 m × 2'],qty:['2 ตู้','2 units'],
+ role:['เก็บยาแบ่งบรรจุล่วงหน้าและยาที่หุ่นยนต์รับไม่ได้ ตู้หมุนถาดมาหน้าเภสัชกรเมื่อได้รับใบสั่ง ตู้ละ 160 ตำแหน่ง ≥12,000 กล่อง 280–450 ใบสั่ง/ชม. มี Lot และวันหมดอายุ','For pre-packed tablets and items the robot cannot take. Rotates the tray to the operator on each prescription. 160 locations, ≥12,000 boxes, 280–450 prescriptions/hour per unit, lot and expiry tracking'],
+ q:['เราต้องการ 675 รายการ/ชม. จากส่วนนี้ ความเร็ว 280 ครั้ง/ชม. หมายถึงต่อรายการยาหรือต่อใบสั่ง','We need 675 line items/hour here. Is ≥280/hour per line item or per prescription?']},
+shelf:{n:'5',k:'v',m:'ZNHJ-01',th:['ชั้นวางยาอัจฉริยะ ZNHJ-01','ZNHJ-01 Smart Shelving'],
+ size:['1.20 × 0.46 × 1.84 ม. × 8','1.20 × 0.46 × 1.84 m × 8'],qty:['8 ชุด (192 ช่อง)','8 units (192 bins)'],
+ role:['ยาเคลื่อนไหวช้า ขวด ยาน้ำ ไฟที่ช่องบอกตำแหน่ง สแกนยืนยัน เชื่อม HIS ผ่าน Wi-Fi','Slow movers, bottles, liquids. Bin lights show location, scan to confirm, HIS link over Wi-Fi'],
+ q:['จำนวนชุดขึ้นกับจำนวนรายการยาที่ไม่เข้าเครื่อง ต้องได้จากข้อมูลโรงพยาบาล','Number of units depends on non-robot drug items from hospital data']},
+light:{n:'6',k:'v',m:'ZNYG-35',th:['ตู้ยาป้องกันแสง ZNYG-35','ZNYG-35 Smart Light-Proof Cabinet'],
+ size:['1.50 × 0.51 × 1.34 ม. × 2','1.50 × 0.51 × 1.34 m × 2'],qty:['2 ตู้','2 units'],
+ role:['ลิ้นชักทึบแสง จอ 2.8 นิ้วที่ช่องแสดงชื่อยาและจำนวน','Opaque drawers, 2.8-inch display per bay showing name and quantity'],
+ q:['จำนวนตู้ขึ้นกับรายการยาป้องกันแสงของโรงพยาบาล','Quantity depends on the hospital’s light-sensitive items']},
+ctrl:{n:'7',k:'v',m:'DM-08',th:['ตู้ยาเสพติดและวัตถุออกฤทธิ์ DM-08','DM-08 Narcotic & Psychotropic Cabinet'],
+ size:['0.66 × 0.72 × 1.78 ม.','0.66 × 0.72 × 1.78 m'],qty:['1 ตู้','1 unit'],
+ role:['ล็อก 2 คน ลายนิ้วมือ ใบหน้า บัตร บันทึกวิดีโอทุกครั้งที่เปิด UPS 8 ชม.','Dual-user lock, fingerprint, face, card; video on every access; 8-hour UPS'],
+ q:['รายงานและบันทึกตรงตามข้อกำหนดยาเสพติดของไทยหรือไม่','Does its logging meet Thai controlled-drug reporting rules?']},
+fridge:{n:'8',k:'g',m:'—',th:['ตู้เย็นยา (ไม่มีในแคตตาล็อก)','Medical refrigerator (not in catalogue)'],
+ size:['0.9 × 0.8 × 2.0 ม. × 2 (สมมติ)','0.9 × 0.8 × 2.0 m × 2 (assumed)'],qty:['2 ตู้','2 units'],
+ role:['ยาเย็น เช่น อินซูลิน ตู้ 60C/30C ในแคตตาล็อกเป็นตู้ขายยาปลีก ไม่เหมาะกับห้องยาโรงพยาบาล','Cold-chain drugs such as insulin. The 60C/30C units in the catalogue are retail vending cabinets, not suitable here'],
+ q:['จัดหาตู้เย็นยามาตรฐานที่มีบันทึกอุณหภูมิแยก','Source a standard medical refrigerator with temperature logging']},
+prepack:{n:'9',k:'g',m:'—',th:['พื้นที่แบ่งบรรจุยาเม็ดล่วงหน้า (ไม่มีในแคตตาล็อก)','Tablet pre-pack station (not in catalogue)'],
+ size:['6.0 × 2.2 ม. (สมมติ)','6.0 × 2.2 m (assumed)'],qty:['เครื่องนับเม็ด 2 เครื่อง + โต๊ะ','2 tablet counters + bench'],
+ role:['นับยาเม็ดเป็นถุงละ 60/120/180 เม็ด ประมาณ 2,250 ถุงต่อวัน แล้วเก็บในตู้ ZQ-280L','Counts tablets into 60/120/180 bags, about 2,250 bags/day, stored in the ZQ-280L units'],
+ q:['แคตตาล็อกไม่มีเครื่องนับเม็ดหรือแบ่งบรรจุ ยาเม็ดประมาณ 30% ของรายการ ต้องหาจากผู้ผลิตอื่น','No tablet counter or packager in the catalogue. Loose tablets are about 30% of line items; must be sourced elsewhere']},
+conv:{n:'C',k:'v',m:'Floor conveyor',th:['สายลำเลียงตะกร้า','Floor conveyor'],size:['กว้าง 0.5 ม. ยาวประมาณ 34 ม.','0.5 m wide, approx. 34 m'],qty:['1 ชุด','1 set'],
+ role:['ส่งตะกร้าจาก FL-01 ไปยังจุดตรวจสอบ','Carries baskets from the FL-01 to verification'],q:['ความยาวสูงสุดและการเลี้ยวโค้ง','Maximum length and curves']},
+recv:{n:'R',k:'o',m:'—',th:['พื้นที่รับยาเข้าและเติมถัง BY-400','Goods receipt & BY-400 loading'],size:['6 × 1.9 ม.','6 × 1.9 m'],qty:['1 พื้นที่','1 area'],
+ role:['รับยาจากคลังหลัก ติดฉลาก Lot ถ้าจำเป็น แล้วเทลงถังชุดเติมยา','Receives stock, labels lot if needed, loads the BY-400 tank'],q:['ประตูรับยาอยู่ด้านหลัง แยกจากทางผู้ป่วย','Receiving door at the back, away from patient flow']},
+screen:{n:'S',k:'o',m:'—',th:['จุดเภสัชกรคัดกรอง','Pharmacist screening'],size:['โต๊ะ 1.4 × 0.7 ม. × 4','Desk 1.4 × 0.7 m × 4'],qty:['4 จุด','4 stations'],
+ role:['คัดกรองก่อนเริ่มจัดยา','Screening before dispensing starts'],q:['ซอฟต์แวร์ของผู้ผลิตรอให้เภสัชกรคัดกรองก่อนสั่งหุ่นยนต์ได้หรือไม่','Can your software hold dispensing until a pharmacist has screened?']},
+check:{n:'V',k:'o',m:'—',th:['จุดตรวจสอบก่อนส่งมอบ','Final verification'],size:['โต๊ะ 1.4 × 0.7 ม. × 5','Desk 1.4 × 0.7 m × 5'],qty:['5 จุด','5 stations'],
+ role:['รับตะกร้าจากสายลำเลียง รวมยาจากตู้ ZQ-280L และชั้นวาง สแกนทุกรายการ ตรงกับขั้นตอนเภสัชกรตรวจตะกร้าในแคตตาล็อก','Takes baskets from the conveyor, adds ZQ-280L and shelf items, scans every item; matches the basket check step in the catalogue'],q:['','']},
+counter:{n:'H',k:'o',m:'—',th:['ช่องส่งมอบยา','Handover counters'],size:['1.6 × 0.7 ม. × 9','1.6 × 0.7 m × 9'],qty:['9 ช่อง','9 counters'],
+ role:['เภสัชกรยืนยันผู้ป่วยและให้คำปรึกษา เป็นคอขวดของระบบ','Pharmacist confirms identity and counsels; the system bottleneck'],q:['อย่างน้อย 2 ช่องควรเป็นส่วนตัวสำหรับให้คำปรึกษา','At least 2 private counters for counseling']},
+wait:{n:'W',k:'o',m:'—',th:['พื้นที่รอรับยา','Patient waiting'],size:['30 × 4 ม. (นอกห้อง)','30 × 4 m (outside)'],qty:['—','—'],
+ role:['ผู้ป่วยรอหน้าช่องส่งมอบ','Patients wait in front of the counters'],q:['','']}
 };
-const EN={robot:{role:'Whole packs, about 50% of line items. Must deliver at least 1,800 packs/hour and store at least 15,000 packs',qty:'1 unit, or 2 smaller units for redundancy',q:'Please provide actual dimensions, floor load per m², pack storage capacity, and packs/hour measured on real prescriptions (not peak rating)',size:'9.0 × 2.4 × 2.8 m'},repl:{role:'Replenishes the robot with about 7,500 packs/day, running off-peak or overnight',qty:'1 unit',q:'Refill rate in packs/hour. Can it read lot and expiry from Thai drug barcodes? Most carry neither, so labeling may be needed first',size:'3.0 × 2.0 × 2.2 m'},recv:{role:'Receives stock from the main store, counts it, and labels lot and expiry before loading the replenishment module',qty:'1 area',q:'Receiving door at the back, separate from staff and patient entrances',size:'12 × 1.2 m'},ctrl:{role:'Stores and dispenses narcotics and psychotropics with a record of every withdrawal',qty:'1 cabinet',q:'Does it support Thai legal recording and reporting requirements?',size:'1.0 × 0.8 × 2.0 m'},fridge:{role:'Cold-chain drugs such as insulin, linked to the dispensing system as shown in the brochure',qty:'2 units',q:'Temperature logging and alarms?',size:'0.9 × 0.8 × 2.0 m × 2'},shelf:{role:'Pre-packed tablets and items the robot cannot handle, about 45% of line items. Must support 675 line items/hour',qty:'4 zones',q:'Light indication of location and quantity, and scan-to-confirm on every item?',size:'3.6 × 0.9 × 2.2 m × 4'},light:{role:'Drugs that must be protected from light',qty:'1 cabinet',q:'How many light-sensitive items would this hospital need to store here?',size:'2.0 × 0.8 × 2.0 m'},smart6:{role:'Assumed for specially packaged or irregular-shaped items',qty:'2 units',q:'What can this unit handle? Bottles and liquids?',size:'2.4 × 1.2 × 1.9 m × 2'},prepack:{role:'Counts loose tablets into standard quantities of 60/120/180, about 2,250 bags/day, done off-peak',qty:'2 tablet counters + bench',q:'No tablet counting or packaging unit appears in the brochure. If not available, it must be sourced separately; loose tablets are about 30% of line items',size:'5.0 × 1.8 m'},screen:{role:'Pharmacist screens before dispensing starts. Prescriptions arrive when the physician saves them, so this need not sit next to the windows',qty:'4 stations',q:'Can your software hold a prescription until a pharmacist has screened it, and start picking before the patient arrives?',size:'Desk 1.4 × 0.7 m × 4'},buffer:{role:'Holds completed baskets waiting for verification or for the patient to arrive',qty:'1 unit',q:'Basket capacity? Are baskets large enough for a 2-month supply?',size:'1.6 × 1.0 × 1.6 m'},conv:{role:'Carries drugs from the robot to the buffer and verification stations',qty:'approx. 32 m',q:'Maximum length, curves, and crossing doors or walkways',size:'0.5 m wide'},check:{role:'Scans every pack and label against the prescription, merging robot and shelf items',qty:'5 stations',q:'The brochure verifies at the dispensing window. Doing it at the window adds time at the counter, which is already the bottleneck',size:'Desk 1.4 × 0.7 m × 5'},counter:{role:'Pharmacist confirms two patient identifiers and counsels. This is the system bottleneck: 9 pharmacists needed at peak hour',qty:'9 counters',q:'Separate counters for repeat prescriptions and full counseling; at least 2 should be private',size:'1.6 × 0.7 m × 9'},wait:{role:'Patients wait in front of the counters with a queue display',qty:'—',q:'Patient flow must not cross drug or staff flow',size:'30 × 4 m (outside room)'}};
+const ORDER=['robot','repl','buffer','zq','shelf','light','ctrl','fridge','prepack','conv','recv','screen','check','counter','wait'];
+const SEL=[
+ ['หุ่นยนต์: กำลังการจ่ายช่วงสูงสุด','Robot: peak dispensing','1,800 กล่อง/ชม. (1,500 + เผื่อ 20%)','1,800 boxes/h (1,500 + 20%)','FY-1200: 380–500 ใบสั่ง/ชม. ตัวอย่างของผู้ผลิตเทียบ 400–500 ใบสั่ง ≈ 1,500–2,000 กล่อง/ชม.','FY-1200: 380–500 Rx/h; the vendor’s own example equates 400–500 Rx to ≈1,500–2,000 boxes/h','warn','ก้ำกึ่ง ไม่มีเผื่อ','Borderline, no margin'],
+ ['หุ่นยนต์: ความจุ','Robot: storage','≥15,000 กล่อง','≥15,000 boxes','≥30,000 กล่อง ประมาณ 1,200 รายการ','≥30,000 boxes, ~1,200 types','ok','ผ่าน','Meets'],
+ ['หุ่นยนต์: สำรองเมื่อเสีย','Robot: redundancy','จ่ายต่อได้เมื่อเครื่องเสีย','Keep dispensing on failure','เครื่องเดียว ถ้าหยุด ยากล่อง 50% ต้องจัดมือ','Single unit; if it stops, 50% of lines go manual','bad','ความเสี่ยง','Risk'],
+ ['เติมยา','Replenishment','7,500 กล่อง/วัน','7,500 boxes/day','BY-400: 500–800 กล่อง/ชม. = 9–15 ชม./วัน เติมมือได้ 1,500–2,000 กล่อง/ชม.','BY-400: 500–800 boxes/h = 9–15 h/day; manual 1,500–2,000 boxes/h','ok','ผ่าน ถ้าเดินข้ามคืน','Meets if run overnight'],
+ ['ส่วนที่ไม่เข้าหุ่นยนต์','Non-robot picking','675 รายการ/ชม.','675 lines/h','ZQ-280L × 2 (≥280 ครั้ง/ชม. ต่อตู้) + ZNHJ-01 × 8','ZQ-280L × 2 (≥280 cycles/h each) + ZNHJ-01 × 8','warn','ต้องยืนยันหน่วย','Confirm units'],
+ ['ยาเม็ดแบ่งบรรจุ (ยา 2 เดือน)','Loose tablets (2-month supply)','~2,250 ถุง/วัน','~2,250 bags/day','ไม่มีในแคตตาล็อก','Not in catalogue','bad','ช่องว่าง','Gap'],
+ ['ยาเสพติด','Controlled drugs','ตู้ควบคุม บันทึกครบ','Secure cabinet with full log','DM-08','DM-08','ok','ผ่าน ตรวจกฎหมายไทย','Meets; check Thai rules'],
+ ['ยาเย็น','Cold chain','ตู้เย็นยา มีบันทึกอุณหภูมิ','Medical fridge with logging','ไม่มีรุ่นที่เหมาะ','No suitable model','bad','จัดหาแยก','Source separately'],
+ ['น้ำหนักพื้น','Floor load','ต้องรู้น้ำหนัก FY-1200','FY-1200 weight needed','ไม่ระบุ รุ่น 6.6 ม. ≈ 6,500 กก. ≈ 450 กก./ตร.ม.','Not stated; 6.6 m model ≈ 6,500 kg ≈ 450 kg/m²','bad','วิศวกรต้องตรวจ','Engineer check'],
+ ['ไฟฟ้า','Power','วงจรเฉพาะ','Dedicated circuit','FY-1200 13 kW + BY-400 3.2 kW ที่ 220V','FY-1200 13 kW + BY-400 3.2 kW at 220 V','warn','เตรียมระบบไฟ','Plan electrical'],
+ ['เชื่อม HIS','HIS interface','รับใบสั่งและส่งสถานะกลับ','Receive orders, return status','แคตตาล็อกระบุเชื่อม HIS ได้ แต่ตัวอย่างหนึ่งระบุว่าไม่เชื่อมระบบ','Catalogue says HIS-ready; one example states systems not interconnected','warn','ต้องยืนยัน','Confirm']
+];
+const NOT=[
+ ['ZF-100 เครื่องจ่ายยาฉีด: ห้องยา OPD ส่วนใหญ่ไม่จ่ายยาฉีดจากจุดนี้','ZF-100 injection dispenser: most OPD pharmacies do not dispense injections here'],
+ ['ZHYF-S301 / S100 ร้านยาไร้คนขาย: การส่งมอบยาตามใบสั่งต้องผ่านเภสัชกร และแคตตาล็อกเองระบุว่าในจีนใช้กับยา OTC เท่านั้น','ZHYF-S301 / S100 unmanned pharmacy: prescription handover requires a pharmacist; the catalogue itself notes China allows these for OTC only'],
+ ['60C / 30C / 10C / 150C / 300C / 1000C ตู้ขายยาอัตโนมัติ: ออกแบบสำหรับขายปลีก มีระบบชำระเงิน ไม่ใช่งานห้องยาโรงพยาบาล','60C / 30C / 10C / 150C / 300C / 1000C vending cabinets: built for retail with payment, not hospital dispensing'],
+ ['ZNCP / ZNCP-QP01 หุ่นยนต์ผสมยา: ใช้ในงานผสมยาปราศจากเชื้อ (PIVAS) ไม่ใช่ OPD','ZNCP / ZNCP-QP01 compounding robots: for sterile compounding (PIVAS), not OPD'],
+ ['ZNHJ-02 ชั้นวางแบบชั่งน้ำหนัก: ZNHJ-01 เพียงพอ','ZNHJ-02 weighing shelving: ZNHJ-01 is sufficient']
+];
 const T={
 kicker:['LAYOUT CONCEPT · ร่างเพื่อหารือ · ไม่ใช่แบบก่อสร้าง','LAYOUT CONCEPT · Draft for discussion · Not a construction drawing'],
 h1:['ผังห้องยา OPD อัตโนมัติ สำหรับ 1,500 ใบสั่งยาต่อวัน','Automated OPD pharmacy layout for 1,500 prescriptions per day'],
-lead:['หมุนและซูมด้วยเมาส์หรือนิ้ว กดที่เครื่องหรือหมายเลขเพื่อดูบทบาทและคำถามที่ต้องถามผู้ผลิต ห้องสมมติขนาด 30 × 14 เมตร ขนาดเครื่องทุกตัวเป็นสมมติฐาน รอ spec sheet','Rotate and zoom with mouse or touch. Click a machine or number to see its role and our questions for the manufacturer. Assumed room 30 × 14 m; all equipment sizes are placeholders pending spec sheets.'],
+lead:['ใช้เครื่องจากแคตตาล็อก KINGSHELVING ขนาดตามแคตตาล็อก ห้องสมมติ 30 × 14 ม. กดที่เครื่องเพื่อดูสเปกและคำถามถึงผู้ผลิต','Equipment from the KINGSHELVING catalogue at catalogue dimensions, in an assumed 30 × 14 m room. Click a machine for specs and our questions.'],
 v3d:['3 มิติ','3D'],vplan:['แปลนมุมบน','Top plan'],vreset:['รีเซ็ตมุมมอง','Reset view'],
-key1:['เครื่องในโบรชัวร์ผู้ผลิต','Equipment from your brochure'],key2:['จุดงานตามการออกแบบของเรา','Workstations in our design'],
-area:['พื้นที่โดยประมาณ','Approximate areas'],
-note:['เลย์เอาต์นี้ใช้คุยแนวคิดกับโรงพยาบาลและผู้ผลิตเท่านั้น ตำแหน่งจริงต้องปรับตามแปลนห้อง เสา ประตู การรับน้ำหนักพื้น และ Layout requirement ของผู้ผลิต แบบก่อสร้างต้องทำและรับรองโดยสถาปนิกและวิศวกร เครื่องจ่ายยาฉีด (หมายเลข 5 ในภาพผู้ผลิต) ไม่ได้ใส่ เพราะห้องยา OPD ส่วนใหญ่ไม่จ่ายยาฉีดจากจุดนี้ ปรับเพิ่มได้','This layout is for concept discussion with the hospital and manufacturer only. Final positions depend on the actual floor plan, columns, doors, floor load and the manufacturer\'s layout requirements. Construction drawings must be prepared and certified by licensed architects and engineers. The injection dispenser (No. 5 in your layout) is omitted because most OPD pharmacies do not dispense injections here; it can be added.'],
-role:['บทบาท','Role'],qty:['จำนวน','Quantity'],size:['ขนาด','Size'],assumed:['สมมติฐาน','assumed'],
-ask:['ถามผู้ผลิต / โรงพยาบาล','Questions for manufacturer / hospital'],gap:['ช่องว่างที่ต้องปิด','Gap to resolve'],
+key1:['รุ่นจากแคตตาล็อก','Catalogue model'],key3:['ไม่มีในแคตตาล็อก','Not in catalogue'],key2:['จุดงานของเรา','Our workstation'],
+selh:['เครื่องที่เลือก เทียบกับความต้องการ','Selected equipment vs. requirements'],
+selp:['ความต้องการคำนวณจาก 1,500 ใบสั่ง/วัน, 5 รายการต่อใบ, ยา 2 เดือน, ชั่วโมงสูงสุด 300 ใบสั่ง ตัวเลขเครื่องมาจากแคตตาล็อกของผู้ผลิต ยังไม่ได้ทดสอบ','Requirements from 1,500 prescriptions/day, 5 items each, 2-month supply, 300 prescriptions at peak hour. Equipment figures are the manufacturer’s catalogue values, not tested.'],
+c1:['หัวข้อ','Item'],c2:['ต้องการ','Required'],c3:['จากแคตตาล็อก','Catalogue'],c4:['สถานะ','Status'],
+noth:['รุ่นที่ไม่ได้เลือก','Models not selected'],area:['พื้นที่โดยประมาณ','Approximate areas'],
+note:['เลย์เอาต์นี้ใช้คุยแนวคิดเท่านั้น ตำแหน่งจริงต้องปรับตามแปลนห้อง เสา ประตู ความสูงฝ้า (เครื่องสูง 2.85 ม.) การรับน้ำหนักพื้น และ Layout requirement ของผู้ผลิต แบบก่อสร้างต้องทำและรับรองโดยสถาปนิกและวิศวกร','This layout is for concept discussion only. Final positions depend on the actual floor plan, columns, doors, ceiling height (machine is 2.85 m tall), floor load and the manufacturer’s layout requirements. Construction drawings must be prepared and certified by licensed architects and engineers.'],
+role:['บทบาท','Role'],qty:['จำนวน','Quantity'],size:['ขนาด','Size'],ask:['ถามผู้ผลิต / ข้อสังเกต','Question / note'],gap:['ช่องว่างที่ต้องปิด','Gap to resolve'],
 h3d:['ลากเพื่อหมุน · เลื่อนเพื่อซูม · กดที่เครื่องเพื่อดูรายละเอียด','Drag to rotate · scroll to zoom · click a machine for details'],
 hplan:['ลากเพื่อเลื่อน · เลื่อนเพื่อซูม · ตาราง 1 ช่อง = 1 เมตร','Drag to pan · scroll to zoom · 1 grid square = 1 m'],
-a0:['ห้องยาทั้งหมด (สมมติ)','Pharmacy room (assumed)'],a1:['หุ่นยนต์ + ชุดเติมยา','Robot + replenishment'],a2:['ชั้นจัดยา 4 โซน + ตู้ป้องกันแสง','Smart shelving 4 zones + light-protected cabinet'],
-a3:['จุดคัดกรอง ตรวจสอบ ส่งมอบ (18 จุด ไม่รวมทางเดิน)','Screening, verification, handover (18 stations, excl. aisles)'],a4:['แบ่งบรรจุล่วงหน้า','Pre-pack station'],a5:['พื้นที่รอรับยา (นอกห้อง)','Patient waiting (outside room)'],
-sqm:['ตร.ม.','m²'],m:['ม.','m']};
+a0:['ห้องยาทั้งหมด (สมมติ)','Pharmacy room (assumed)'],a1:['FY-1200 + BY-400','FY-1200 + BY-400'],a2:['ZQ-280L × 2','ZQ-280L × 2'],a3:['ZNHJ-01 × 8 + ZNYG-35 × 2','ZNHJ-01 × 8 + ZNYG-35 × 2'],
+a4:['จุดคัดกรอง ตรวจสอบ ส่งมอบ (ไม่รวมทางเดิน)','Screening, verification, handover (excl. aisles)'],a5:['พื้นที่แบ่งบรรจุล่วงหน้า','Pre-pack station'],a6:['พื้นที่รอรับยา (นอกห้อง)','Patient waiting (outside)']};
 let LANG='both';
 const tx=(th,en)=>LANG==='th'?th:LANG==='en'?en:`${th}<span class="tr" lang="en">${en}</span>`;
 const t=k=>tx(T[k][0],T[k][1]);
-const ORDER=['robot','repl','ctrl','buffer','smart6','shelf','light','fridge','conv','recv','prepack','screen','check','counter','wait'];
+const tp=a=>tx(a[0],a[1]);
 
 const stage=document.getElementById('stage'),canvas=document.getElementById('c');
 const R=new THREE.WebGLRenderer({canvas,antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));R.setClearColor(0xF7F9FA,1);
@@ -150,98 +221,83 @@ const ctl=new THREE.OrbitControls(cam,canvas);ctl.enableDamping=true;ctl.maxPola
 const P=(x,z)=>new THREE.Vector3(OX+x,0,OZ+z);
 const pick=[],anchors={};
 const M=c=>new THREE.MeshLambertMaterial({color:c});
-const mat={body:M(0xE8EDF2),blue:M(0x2F6FD6),dark:M(0x2A3136),desk:M(0xE3E7E9),floor:M(0xFAFBFB)};
-function edge(mesh){const e=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:0xAAB4B8}));mesh.add(e)}
+const mat={body:M(0xE8EDF2),blue:M(0x2F6FD6),dark:M(0x2A3136),desk:M(0xE3E7E9),floor:M(0xFAFBFB),glassShelf:M(0xCFE0EE),gapb:M(0xF3E3C4)};
+function edge(mesh){mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:0xAAB4B8})))}
 function box(id,x,z,w,d,h,m,opt={}){
-  const g=new THREE.BoxGeometry(w,h,d),mesh=new THREE.Mesh(g,m||mat.body);
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m||mat.body);
   mesh.position.copy(P(x+w/2,z+d/2));mesh.position.y=(opt.y||0)+h/2;mesh.userData.id=id;edge(mesh);scene.add(mesh);pick.push(mesh);
-  if(opt.strip){const face=opt.face||'front';const s=new THREE.Mesh(new THREE.BoxGeometry(face==='front'?w*0.96:0.04,h*0.55,face==='front'?0.04:d*0.96),mat.blue);
-    s.position.set(0,-h*0.05,face==='front'?d/2+0.02:0);if(face==='left')s.position.x=-w/2-0.02;s.userData.id=id;mesh.add(s);pick.push(s)}
-  if(opt.screen){const s=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.32,0.04),mat.dark);s.position.set(0,h/2+0.2,-d/4);s.userData.id=id;mesh.add(s)}
+  if(opt.strip){const f=opt.face||'front';const s=new THREE.Mesh(new THREE.BoxGeometry(f==='front'?w*0.96:0.04,h*0.55,f==='front'?0.04:d*0.96),mat.blue);
+    s.position.set(f==='left'?-w/2-0.02:0,-h*0.05,f==='front'?d/2+0.02:0);s.userData.id=id;mesh.add(s);pick.push(s)}
+  if(opt.screen){const s=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.32,0.04),mat.dark);s.position.set(0,h/2+0.2,-d/4);mesh.add(s)}
   return mesh}
-function zone(id,x,z,w,d,col,op=0.18){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:op,depthWrite:false}));
-  m.rotation.x=-Math.PI/2;m.position.copy(P(x+w/2,z+d/2));m.position.y=0.015;m.userData.id=id;scene.add(m);pick.push(m);return m}
-function anchor(id,x,z,y){anchors[id]=anchors[id]||[];anchors[id].push(new THREE.Vector3(OX+x,y,OZ+z))}
+function zone(id,x,z,w,d,col,op){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:op,depthWrite:false}));
+  m.rotation.x=-Math.PI/2;m.position.copy(P(x+w/2,z+d/2));m.position.y=0.015;m.userData.id=id;scene.add(m);pick.push(m)}
+function anchor(id,x,z,y){anchors[id]=new THREE.Vector3(OX+x,y,OZ+z)}
 
-// floor & walls
 const fl=new THREE.Mesh(new THREE.PlaneGeometry(RW,RD),mat.floor);fl.rotation.x=-Math.PI/2;fl.position.copy(P(RW/2,RD/2));scene.add(fl);
-const grid=new THREE.GridHelper(40,40,0xDDE3E6,0xE7ECEE);grid.position.set(0,0.005,0);scene.add(grid);
+const grid=new THREE.GridHelper(40,40,0xDDE3E6,0xE7ECEE);grid.position.y=0.005;scene.add(grid);
 const glass=new THREE.MeshLambertMaterial({color:0xD9E6EC,transparent:true,opacity:0.28,depthWrite:false});
 function wall(x,z,w,d,h){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),glass);m.position.copy(P(x+w/2,z+d/2));m.position.y=h/2;
-  const e=new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xB9C6CC}));m.add(e);scene.add(m)}
-wall(0,-0.15,RW,0.15,3.2);wall(-0.15,-0.15,0.15,RD+0.15,3.2);wall(RW,-0.15,0.15,RD+0.15,3.2);
-wall(0,RD,3.2,0.15,1.2);wall(27.4,RD,2.6,0.15,1.2);
+  m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),new THREE.LineBasicMaterial({color:0xB9C6CC})));scene.add(m)}
+wall(0,-0.15,RW,0.15,3.2);wall(-0.15,-0.15,0.15,RD+0.15,3.2);wall(RW,-0.15,0.15,RD+0.15,3.2);wall(0,RD,3.2,0.15,1.2);wall(27.4,RD,2.6,0.15,1.2);
 
-// zones
-zone('recv',1.5,0.2,13,1.2,0x9AA6AB,0.22);
-zone('wait',0,RD+0.3,RW,WZ-0.3,0x8FB3E8,0.16);
-zone('prepack',21.5,7.2,6,2.2,0xE8B75C,0.2);
-// equipment (brochure)
-box('robot',2,1.6,9,2.4,2.8,mat.body,{strip:true});anchor('robot',6.5,2.8,3.1);
-box('repl',11.3,1.7,3,2,2.2,mat.body,{strip:true});anchor('repl',12.8,2.7,2.5);
-box('ctrl',0.3,5.2,0.8,1,2,mat.body,{strip:true,face:'left'});anchor('ctrl',0.7,5.7,2.3);
-box('fridge',0.3,6.6,0.8,0.9,2,mat.desk);box('fridge',0.3,7.7,0.8,0.9,2,mat.desk);anchor('fridge',0.7,7.6,2.3);
-[[17,1.8],[22.2,1.8],[17,4.4],[22.2,4.4]].forEach(([x,z])=>box('shelf',x,z,3.6,0.9,2.2,mat.body,{strip:true}));anchor('shelf',20.9,3.4,2.5);
-box('light',27.3,1.8,2,0.8,2,mat.body,{strip:true});anchor('light',28.3,2.2,2.3);
-box('smart6',17,7.4,2.4,1.2,1.9,mat.body,{strip:true});box('smart6',17,9.0,2.4,1.2,1.9,mat.body,{strip:true});anchor('smart6',18.2,8.6,2.2);
-// conveyor: robot outlet down then along front
-box('conv',6.3,4.0,0.5,6.8,0.9,mat.desk);box('conv',1.8,10.8,26.4,0.5,0.9,mat.desk);anchor('conv',16,11.05,1.2);
-box('buffer',1.8,9.4,1.6,1.0,1.6,mat.body,{strip:true});anchor('buffer',2.6,9.9,1.9);
-// our stations
-for(let k=0;k<2;k++)box('prepack',22+k*2.6,7.5,1.2,0.8,1.3,mat.body,{strip:true});box('prepack',22,8.6,5,0.6,0.85,mat.desk);anchor('prepack',24.5,8.3,1.8);
-for(let k=0;k<4;k++)box('screen',2.2+k*2.2,6.4,1.4,0.7,0.75,mat.desk,{screen:true});anchor('screen',5.5,6.75,1.6);
+zone('recv',9.9,0.2,6,1.9,0x9AA6AB,0.22);zone('wait',0,RD+0.3,RW,WZ-0.3,0x8FB3E8,0.16);zone('prepack',21.5,7.2,6,2.2,0xE8B75C,0.2);
+// FY-1200 7.6 x 2.2 x 2.85 ; BY-400 along the back 7.0 x 0.5 x 1.58
+box('robot',2,1.4,7.6,2.2,2.85,mat.body,{strip:true});anchor('robot',5.8,2.5,2.9);
+box('repl',2.3,0.5,7.0,0.5,1.58,mat.body,{strip:true});anchor('repl',6.5,0.7,1.75);
+box('buffer',1.9,3.8,1.3,0.49,1.54,mat.body,{strip:true});anchor('buffer',2.55,4.05,1.85);
+box('zq',16,1.4,2.49,1.36,2.39,mat.body,{strip:true});box('zq',19.2,1.4,2.49,1.36,2.39,mat.body,{strip:true});anchor('zq',18.8,2.1,2.7);
+for(let k=0;k<8;k++)box('shelf',16+k*1.25,4.4,1.2,0.46,1.84,mat.body,{strip:true});anchor('shelf',21,4.6,2.15);
+box('light',22.9,1.6,1.5,0.51,1.34,mat.body,{strip:true});box('light',24.6,1.6,1.5,0.51,1.34,mat.body,{strip:true});anchor('light',24.4,1.85,1.65);
+box('ctrl',0.3,5.4,0.72,0.66,1.78,mat.body,{strip:true,face:'left'});anchor('ctrl',0.66,5.7,2.1);
+box('fridge',0.3,6.6,0.8,0.9,2,mat.gapb);box('fridge',0.3,7.7,0.8,0.9,2,mat.gapb);anchor('fridge',0.7,7.6,2.3);
+for(let k=0;k<2;k++)box('prepack',22+k*2.6,7.5,1.2,0.8,1.3,mat.gapb);box('prepack',22,8.6,5,0.6,0.85,mat.desk);anchor('prepack',24.5,8.3,1.8);
+box('conv',2.3,4.3,0.5,6.5,0.9,mat.desk);box('conv',1.8,10.8,26.4,0.5,0.9,mat.desk);anchor('conv',16,11.05,1.2);
+for(let k=0;k<4;k++)box('screen',4+k*2.2,6.4,1.4,0.7,0.75,mat.desk,{screen:true});anchor('screen',7.3,6.75,1.6);
 for(let k=0;k<5;k++)box('check',7.6+k*2,9.6,1.4,0.7,0.85,mat.desk,{screen:true});anchor('check',11.8,9.95,1.7);
 for(let k=0;k<9;k++)box('counter',3.8+k*2.6,12.6,1.6,0.7,1.1,mat.body,{strip:true,screen:true});anchor('counter',14.2,12.95,2);
-anchor('recv',8,0.8,0.4);anchor('wait',15,RD+2,0.3);
-// waiting seats
+anchor('recv',12.9,1.2,0.4);anchor('wait',15,RD+2,0.3);
 for(let r=0;r<2;r++)for(let k=0;k<8;k++){const s=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.45,0.5),mat.desk);s.position.copy(P(3+k*3.2,RD+1.6+r*1.3));s.position.y=0.22;s.userData.id='wait';scene.add(s);pick.push(s)}
 
-// labels
-const LB=document.getElementById('labels'),lblEls={};
-ORDER.forEach(id=>{const d=document.createElement('div');d.className='lbl';d.addEventListener('click',()=>select(id));LB.appendChild(d);lblEls[id]=d});
+const LB=document.getElementById('labels'),lblEls={},leg=document.getElementById('legend'),info=document.getElementById('info');
+const cls=id=>I[id].k==='v'?'':I[id].k==='g'?'gapc':'own';
+ORDER.forEach(id=>{const d=document.createElement('div');d.className='lbl';d.addEventListener('click',()=>select(id));LB.appendChild(d);lblEls[id]=d;
+  const b=document.createElement('button');b.type='button';b.dataset.id=id;b.addEventListener('click',()=>select(id));leg.appendChild(b)});
 const dims=[[30,RW/2,-0.9],[14,-1.1,3]].map(([n,x,z])=>{const d=document.createElement('div');d.className='dim';d.dataset.n=n;LB.appendChild(d);return {d,v:new THREE.Vector3(OX+x,0,OZ+z)}});
-
-// info + legend
-const info=document.getElementById('info'),leg=document.getElementById('legend');
-ORDER.forEach(id=>{const b=document.createElement('button');b.type='button';b.dataset.id=id;b.addEventListener('click',()=>select(id));leg.appendChild(b)});
 let sel=null;const hi=new THREE.Color(0xFFD27A);
-function select(id){sel=id;const d=I[id],e=EN[id];
-  info.innerHTML=`<div class="en">${I[id].n}</div><h2>${tx(d.th,d.en)}</h2><dl><dt>${t('role')}</dt><dd>${tx(d.role,e.role)}</dd><dt>${t('qty')}</dt><dd>${tx(d.qty,e.qty)}</dd><dt>${t('size')}</dt><dd>${tx(d.size,e.size)} <span class="en">${LANG==='en'?T.assumed[1]:T.assumed[0]}</span></dd></dl><div class="q ${d.gap?'gap':''}"><b>${d.gap?t('gap'):t('ask')}</b>${tx(d.q,e.q)}</div>`;
+function select(id){sel=id;const d=I[id];
+  info.innerHTML=`<div class="en">${d.m!=='—'?d.m:I[id].n}</div><h2>${tp(d.th)}</h2><dl><dt>${t('role')}</dt><dd>${tp(d.role)}</dd><dt>${t('qty')}</dt><dd>${tp(d.qty)}</dd><dt>${t('size')}</dt><dd>${tp(d.size)}</dd></dl>${d.q[0]?`<div class="q ${d.k==='g'?'gap':''}"><b>${d.k==='g'?t('gap'):t('ask')}</b>${tp(d.q)}</div>`:''}`;
+  leg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.id===id?'true':'false'));
   Object.entries(lblEls).forEach(([k,e])=>e.classList.toggle('sel',k===id));
-  pick.forEach(m=>{if(!m.material.emissive)return;m.material=m.userData.base||m.material});
-  pick.forEach(m=>{if(!m.material.emissive)return;if(!m.userData.base)m.userData.base=m.material;if(m.userData.id===id){m.material=m.userData.base.clone();m.material.color=hi.clone()}});
+  pick.forEach(m=>{if(!m.material.emissive)return;if(!m.userData.base)m.userData.base=m.material;m.material=m.userData.id===id?Object.assign(m.userData.base.clone(),{color:hi.clone()}):m.userData.base});
 }
-// area table
-const A=[['ห้องยาทั้งหมด (สมมติ)',RW*RD],['หุ่นยนต์ + ชุดเติมยา',9*2.4+3*2],['ชั้นจัดยา 4 โซน + ตู้ป้องกันแสง',4*3.6*0.9+1.6],['จุดคัดกรอง ตรวจสอบ ส่งมอบ (18 จุด ไม่รวมทางเดิน)',4*1+5*1+9*1.12],['แบ่งบรรจุล่วงหน้า',6*2.2],['พื้นที่รอรับยา (นอกห้อง)',RW*WZ]];
-function areaTbl(){document.getElementById('area').innerHTML=A.map((r,k)=>`<tr><td>${t('a'+k)}</td><td class="n">${r[1].toFixed(0)} ${LANG==='en'?'m²':'ตร.ม.'}</td></tr>`).join('')}
-
-// views
+const A=[['a0',RW*RD],['a1',7.6*2.2+7*0.5],['a2',2*2.49*1.36],['a3',8*1.2*0.46+2*1.5*0.51],['a4',4+5+9*1.12],['a5',6*2.2],['a6',RW*WZ]];
+function tables(){
+  document.getElementById('area').innerHTML=A.map(r=>`<tr><td>${t(r[0])}</td><td class="n">${r[1].toFixed(0)} ${LANG==='en'?'m²':'ตร.ม.'}</td></tr>`).join('');
+  document.getElementById('seltbl').innerHTML=SEL.map(r=>`<tr><td><b>${tx(r[0],r[1])}</b></td><td>${tx(r[2],r[3])}</td><td>${tx(r[4],r[5])}</td><td><span class="st ${r[6]}">${LANG==='en'?r[8]:r[7]}</span>${LANG==='both'?`<span class="tr">${r[8]}</span>`:''}</td></tr>`).join('');
+  document.getElementById('notlist').innerHTML=NOT.map(r=>`<li>${tx(r[0],r[1])}</li>`).join('');
+}
 let mode='3d';
 function setCam(){const w=stage.clientWidth,h=stage.clientHeight,a=w/h,v=VIEW*(a<1.2?1.35:1);
   cam.left=-v*a/2;cam.right=v*a/2;cam.top=v/2;cam.bottom=-v/2;cam.updateProjectionMatrix();R.setSize(w,h,false)}
-function view3d(){mode='3d';cam.up.set(0,1,0);VIEW=28;setCam();cam.position.set(-16,24,32);cam.zoom=1;ctl.target.set(0,0,1);ctl.enableRotate=true;cam.updateProjectionMatrix();ctl.update();btn()}
+function btn(){document.getElementById('v3d').setAttribute('aria-pressed',mode==='3d');document.getElementById('vplan').setAttribute('aria-pressed',mode==='plan');document.getElementById('hint').innerHTML=t(mode==='3d'?'h3d':'hplan')}
+function view3d(){mode='3d';VIEW=28;setCam();cam.up.set(0,1,0);cam.position.set(-14,22,34);cam.zoom=1.02;ctl.target.set(0,0,1.5);ctl.enableRotate=true;cam.updateProjectionMatrix();ctl.update();btn()}
 function viewPlan(){mode='plan';VIEW=24;setCam();cam.position.set(0,60,0.001);cam.up.set(0,0,-1);cam.zoom=1;ctl.target.set(0,0,0);ctl.enableRotate=false;cam.lookAt(0,0,0);cam.updateProjectionMatrix();ctl.update();btn()}
-function btn(){document.getElementById('v3d').setAttribute('aria-pressed',mode==='3d');document.getElementById('vplan').setAttribute('aria-pressed',mode==='plan');
-  document.getElementById('hint').innerHTML=t(mode==='3d'?'h3d':'hplan')}
 document.getElementById('v3d').onclick=view3d;document.getElementById('vplan').onclick=viewPlan;document.getElementById('vreset').onclick=()=>mode==='3d'?view3d():viewPlan();
-
-// picking
 const ray=new THREE.Raycaster(),mv=new THREE.Vector2();let down=null;
 canvas.addEventListener('pointerdown',e=>down=[e.clientX,e.clientY]);
 canvas.addEventListener('pointerup',e=>{if(!down||Math.hypot(e.clientX-down[0],e.clientY-down[1])>5)return;const r=canvas.getBoundingClientRect();
   mv.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);ray.setFromCamera(mv,cam);const h=ray.intersectObjects(pick,false);if(h.length)select(h[0].object.userData.id)});
-
 const tmp=new THREE.Vector3();
 function place(){const w=stage.clientWidth,h=stage.clientHeight;
-  ORDER.forEach(id=>{const v=anchors[id][0];tmp.copy(v).project(cam);const e=lblEls[id];e.style.left=((tmp.x+1)/2*w)+'px';e.style.top=((1-tmp.y)/2*h)+'px';e.style.display=(Math.abs(tmp.x)>1.05||Math.abs(tmp.y)>1.05)?'none':'flex'});
+  ORDER.forEach(id=>{tmp.copy(anchors[id]).project(cam);const e=lblEls[id];e.style.left=((tmp.x+1)/2*w)+'px';e.style.top=((1-tmp.y)/2*h)+'px';e.style.display=(Math.abs(tmp.x)>1.05||Math.abs(tmp.y)>1.05)?'none':'flex'});
   dims.forEach(o=>{tmp.copy(o.v).project(cam);o.d.style.left=((tmp.x+1)/2*w)+'px';o.d.style.top=((1-tmp.y)/2*h)+'px';o.d.style.display=mode==='plan'?'block':'none'})}
-function loop(){ctl.update();R.render(scene,cam);place();requestAnimationFrame(loop)}
 function render(){document.documentElement.lang=LANG==='en'?'en':'th';
   document.querySelectorAll('[data-t]').forEach(el=>el.innerHTML=t(el.dataset.t));
-  ORDER.forEach(id=>{const o=`<b class="${I[id].v?'':'own'}">${I[id].n}</b>`;lblEls[id].innerHTML=o+`<span>${tx(I[id].th,I[id].en)}</span>`;
-    leg.querySelector(`[data-id="${id}"]`).innerHTML=o+`<span>${tx(I[id].th,I[id].en)}</span>`});
-  dims.forEach(o=>o.d.textContent=o.d.dataset.n+(LANG==='en'?' m':' ม.'));areaTbl();btn();if(sel)select(sel);
+  ORDER.forEach(id=>{const o=`<b class="${cls(id)}">${I[id].n}</b>`,nm=`<span>${tp(I[id].th)}</span>`;lblEls[id].innerHTML=o+nm;leg.querySelector(`[data-id="${id}"]`).innerHTML=o+nm});
+  dims.forEach(o=>o.d.textContent=o.d.dataset.n+(LANG==='en'?' m':' ม.'));tables();btn();if(sel)select(sel);
   document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG))}
 document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{LANG=b.dataset.lang;render()}));
+function loop(){ctl.update();R.render(scene,cam);place();requestAnimationFrame(loop)}
 new ResizeObserver(setCam).observe(stage);setCam();view3d();select('robot');render();loop();
 </script>
