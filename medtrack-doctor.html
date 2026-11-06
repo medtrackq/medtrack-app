@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สรุปการกินยาให้หมอ · MedTrack</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F7;--card:#fff;--t1:#14202E;--t2:#475467;--t3:#667085;--bd:#E3E7EE;--ok:#0B7A5C;--okl:#E6F6F0;--warn:#B35C00;--warnl:#FFF4E6;--bad:#C92A2A;--badl:#FEF0F0;--navy:#1E2B4D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font-family:'Noto Sans Thai',system-ui,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px 18px}
+.head{background:var(--navy);color:#fff;border:none}
+.head .kicker{font-size:13px;color:#C9D3EA}
+.head h1{margin:2px 0 4px;font-size:22px;line-height:1.3}
+.head .place{font-size:17px;font-weight:600}
+.head .meta{font-size:14px;color:#C9D3EA;margin-top:4px}
+.big{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.big .pct{font-size:52px;font-weight:700;line-height:1}
+.big .lbl{font-size:15px;color:var(--t2)}
+h2{margin:0 0 10px;font-size:17px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:12.5px;font-weight:600;color:var(--t3);padding:6px 6px;border-bottom:1px solid var(--bd)}
+td{padding:10px 6px;border-bottom:1px solid var(--bd);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;white-space:nowrap}
+.drug{font-weight:600}
+.sub{font-size:12.5px;color:var(--t3)}
+.pill{display:inline-block;font-size:13px;font-weight:700;padding:2px 10px;border-radius:999px}
+.p-ok{background:var(--okl);color:var(--ok)} .p-warn{background:var(--warnl);color:var(--warn)} .p-bad{background:var(--badl);color:var(--bad)} .p-na{background:var(--bg);color:var(--t3)}
+.list{margin:0;padding-left:20px} .list li{margin:4px 0}
+.note{font-size:12.5px;color:var(--t3);line-height:1.6}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+.btn{flex:1;min-width:140px;height:46px;border-radius:12px;border:1px solid var(--bd);background:var(--card);font:inherit;font-size:15px;font-weight:600;color:var(--t1);cursor:pointer}
+.btn.primary{background:var(--ok);border-color:var(--ok);color:#fff}
+.center{text-align:center;padding:40px 16px;color:var(--t2)}
+@media print{
+  body{background:#fff;font-size:12pt}
+  .bar,.noprint{display:none!important}
+  .card{border:1px solid #ccc;break-inside:avoid}
+  .head{background:#fff;color:#000;border:2px solid #000}
+  .head .kicker,.head .meta{color:#333}
+  .wrap{max-width:none;padding:0}
+}
+</style>
+</head>
+<body>
+<main class="wrap" id="root"><div class="center">กำลังโหลด...</div></main>
+<script>
+(function(){
+  const API = 'https://medtrack-backend-production-7731.up.railway.app';
+  const qs = new URLSearchParams(location.search);
+  const root = document.getElementById('root');
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const TH_M = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const thDate = iso => { if (!iso) return ''; const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number); return d + ' ' + TH_M[m - 1] + ' ' + (y + 543); };
+  const dose = m => m.dose_mg ? ' ' + (Number(m.dose_mg) % 1 === 0 ? Number(m.dose_mg) : Number(m.dose_mg)) + ' ' + (m.dose_unit || 'mg') : '';
+  const pill = p => p == null ? '<span class="pill p-na">—</span>' : '<span class="pill ' + (p >= 80 ? 'p-ok' : p >= 50 ? 'p-warn' : 'p-bad') + '">' + p + '%</span>';
+  const days = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5) + 1;
+
+  let userId = parseInt(qs.get('user_id'));
+  if (!userId) { try { const p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}'); userId = parseInt(p.user_id || p.id); } catch (e) {} }
+
+  function url(extra){
+    const p = new URLSearchParams({ user_id: String(userId) });
+    if (qs.get('appointment_id')) p.set('appointment_id', qs.get('appointment_id'));
+    Object.entries(extra || {}).forEach(([k, v]) => v == null ? p.delete(k) : p.set(k, v));
+    return p;
+  }
+
+  async function load(){
+    if (!userId) { root.innerHTML = '<div class="center">ไม่พบบัญชีผู้ใช้ กรุณาเปิดจากแอป MedTrack</div>'; return; }
+    const params = url(qs.get('scope') === 'all' ? { scope: 'all', appointment_id: null } : {});
+    let j;
+    try {
+      const r = await fetch(API + '/api/doctor-summary?' + params.toString());
+      j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(j.error || 'load failed');
+    } catch (e) {
+      root.innerHTML = '<div class="center">โหลดข้อมูลไม่สำเร็จ<br><button class="btn" style="max-width:200px;margin-top:12px" onclick="location.reload()">ลองใหม่</button></div>';
+      return;
+    }
+    render(j);
+  }
+
+  function render(j){
+    const a = j.appointment;
+    const place = a ? [a.department, a.hospital_name].filter(Boolean).join(' · ') : 'ทุกคลินิก';
+    const per = j.period;
+    const perTxt = thDate(per.start) + ' – ' + thDate(per.end) + ' (' + days(per.start, per.end) + ' วัน' + (per.from_previous_visit ? ' · ตั้งแต่พบแพทย์คลินิกนี้ครั้งก่อน' : ' · 30 วันล่าสุด') + ')';
+    const s = j.summary;
+    let h = '';
+    h += '<section class="card head"><div class="kicker">สรุปการกินยาสำหรับแพทย์ · MedTrack</div>' +
+         '<h1>' + esc(j.patient_name || 'ผู้ป่วย') + '</h1>' +
+         '<div class="place">' + esc(place) + (a && a.doctor_name ? ' · ' + esc(a.doctor_name) : '') + '</div>' +
+         '<div class="meta">ช่วงเวลา ' + esc(perTxt) + '</div></section>';
+
+    h += '<section class="card"><div class="big"><div class="pct" style="color:' + (s.adherence_pct == null ? 'var(--t3)' : s.adherence_pct >= 80 ? 'var(--ok)' : s.adherence_pct >= 50 ? 'var(--warn)' : 'var(--bad)') + '">' +
+         (s.adherence_pct == null ? '—' : s.adherence_pct + '%') + '</div>' +
+         '<div class="lbl">กินยาตรงตามมื้อ' + (s.total ? '<br><b>' + s.taken + ' จาก ' + s.total + ' มื้อ</b>' : '<br>ยังไม่มีมื้อที่บันทึกในช่วงนี้') + '</div></div></section>';
+
+    if (j.main_meds.length) {
+      h += '<section class="card"><h2>' + (a ? 'ยาของคลินิกนี้' : 'ยาที่ใช้อยู่') + ' (' + j.main_meds.length + ')</h2><table><thead><tr><th>ยา</th><th class="num">กิน/มื้อ</th><th class="num">%</th><th class="num">เหลือ</th></tr></thead><tbody>' +
+        j.main_meds.map(m => '<tr><td><div class="drug">' + esc(m.drug_name) + esc(dose(m)) + '</div>' +
+          '<div class="sub">' + (m.times ? 'เวลา ' + esc(m.times) : '') + (m.origin_unknown ? (m.times ? ' · ' : '') + 'ไม่ทราบคลินิกที่สั่ง' : '') + '</div></td>' +
+          '<td class="num">' + ((m.taken + m.missed) ? m.taken + '/' + (m.taken + m.missed) : '—') + '</td>' +
+          '<td class="num">' + pill(m.adherence_pct) + '</td>' +
+          '<td class="num">' + (m.est_remaining != null ? '~' + Math.round(m.est_remaining) : '—') + '</td></tr>').join('') +
+        '</tbody></table></section>';
+    }
+
+    if (j.most_missed.length) {
+      h += '<section class="card"><h2>มื้อที่ลืมบ่อย</h2><ul class="list">' +
+        j.most_missed.map(x => '<li><b>' + esc(x.drug_name) + '</b> มื้อ ' + esc(x.time) + ' น. · พลาด ' + x.missed + ' ครั้ง</li>').join('') + '</ul></section>';
+    }
+
+    if (j.last_changes && j.last_changes.items.length) {
+      const rec = j.last_changes.items.filter(i => i.kind === 'received');
+      const clo = j.last_changes.items.filter(i => i.kind === 'closed');
+      h += '<section class="card"><h2>การเปลี่ยนยาเมื่อพบแพทย์ครั้งก่อน (' + esc(thDate(j.last_changes.visit_date)) + ')</h2>' +
+        (rec.length ? '<div class="sub" style="font-weight:600;color:var(--t2)">ได้รับ</div><ul class="list">' + rec.map(i => '<li>' + esc(i.drug_name) + esc(dose(i)) + '</li>').join('') + '</ul>' : '') +
+        (clo.length ? '<div class="sub" style="font-weight:600;color:var(--t2);margin-top:6px">ปิด</div><ul class="list">' + clo.map(i => '<li>' + esc(i.drug_name) + esc(dose(i)) +
+          ' <span class="sub">(' + (i.archive_reason === 'new_visit_refill' ? 'ได้ยาใหม่แทน' : 'ผู้ป่วยแจ้งว่าหยุด') + ')</span></li>').join('') + '</ul>' : '') +
+        '</section>';
+    }
+
+    if (j.other_meds.length) {
+      h += '<section class="card"><h2>ยาจากคลินิก/โรงพยาบาลอื่น (' + j.other_meds.length + ')</h2><div class="sub" style="margin-bottom:6px">สำหรับตรวจยาซ้ำซ้อนและยาตีกัน</div><ul class="list">' +
+        j.other_meds.map(m => '<li><b>' + esc(m.drug_name) + esc(dose(m)) + '</b>' + (m.origin ? ' <span class="sub">· ' + esc(m.origin) + '</span>' : '') + '</li>').join('') + '</ul></section>';
+    }
+
+    h += '<p class="note">% กินตรง = มื้อที่ผู้ป่วยกดยืนยันว่ากินแล้ว ÷ มื้อที่ถึงเวลาแล้ว ในช่วงเวลาข้างบน (มื้อที่ยังไม่ถึงเวลาไม่นับ) · จำนวนเม็ดที่เหลือประมาณจากการกดยืนยัน ไม่ใช่การนับเม็ดจริง · ข้อมูลจากผู้ป่วยบันทึกเอง ใช้ประกอบการซักประวัติ · สร้างเมื่อ ' +
+         esc(new Date(j.generated_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })) + '</p>';
+
+    h += '<div class="bar noprint">' +
+         (a ? '<button class="btn" id="bAll">ดูทุกคลินิก</button>' : (qs.get('scope') === 'all' && qs.get('appointment_id') ? '<button class="btn" id="bClinic">กลับไปเฉพาะคลินิกนี้</button>' : '')) +
+         '<button class="btn primary" onclick="window.print()">พิมพ์ / บันทึก PDF</button></div>';
+    root.innerHTML = h;
+    const bAll = document.getElementById('bAll'); if (bAll) bAll.onclick = () => { location.search = url({ scope: 'all', appointment_id: String(a.id) }).toString(); };
+    const bC = document.getElementById('bClinic'); if (bC) bC.onclick = () => { location.search = url({ scope: null }).toString(); };
+  }
+  load();
+})();
+</script>
+</body>
+</html>
