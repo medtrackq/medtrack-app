@@ -1302,15 +1302,30 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
     </div>
 
+    <!-- 🩺 รอบพบแพทย์ที่ทำค้าง -->
+    <div id="visitDraftBanner" onclick="navTo('medtrack-scan.html?visit=new')" style="display:none;margin:4px 0 10px;padding:12px 14px;border-radius:14px;background:#E6F6F0;border:1.5px solid var(--teal);cursor:pointer;align-items:center;gap:10px">
+      <div style="font-size:22px">🩺</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:#0B5C45">พบแพทย์ใหม่ยังไม่เสร็จ</div>
+        <div id="visitDraftSub" style="font-size:12px;color:#3C4658">แตะเพื่อทำต่อ</div>
+      </div>
+      <div style="font-size:20px;color:#0B5C45">›</div>
+    </div>
+
     <!-- Quick actions -->
     <div class="sec-hdr" style="margin-top:4px">
       <span>ทำด่วน</span>
     </div>
     <div class="quick-scroll">
+      <div class="quick-card" onclick="navTo('medtrack-scan.html?visit=new')" style="border:2px solid var(--teal)">
+        <div class="quick-card-ico">🩺</div>
+        <div class="quick-card-title">พบแพทย์ใหม่</div>
+        <div class="quick-card-sub">ได้ยาชุดใหม่</div>
+      </div>
       <div class="quick-card" onclick="navTo('medtrack-scan.html')">
         <div class="quick-card-ico">📸</div>
-        <div class="quick-card-title">สแกนซองยา</div>
-        <div class="quick-card-sub">ถ่ายรูปเพิ่มยาใหม่</div>
+        <div class="quick-card-title">สแกนยาเพิ่ม</div>
+        <div class="quick-card-sub">ยาที่ลืมสแกน</div>
       </div>
       <div class="quick-card" onclick="openSheet('appt')">
         <div class="quick-card-ico">📋</div>
@@ -1427,7 +1442,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="bnav-ico">💊</div>
       <div class="bnav-lbl">ยาของฉัน</div>
     </div>
-    <div class="bnav-item" onclick="navTo('medtrack-scan.html')" style="position:relative">
+    <div class="bnav-item" onclick="openSheet('scan')" style="position:relative">
       <div style="position:absolute;top:-18px;width:52px;height:52px;background:var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 16px rgba(10,156,122,.4);border:3px solid white">📸</div>
       <div style="height:34px"></div>
       <div class="bnav-lbl" style="color:var(--teal)">สแกน</div>
@@ -1922,11 +1937,19 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
+    <div class="sheet-item" onclick="navTo('medtrack-scan.html?visit=new')" style="border:2px solid var(--teal)">
+      <div class="sheet-item-ico ic-teal" style="border-radius:13px">🩺</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title">พบแพทย์ใหม่</div>
+        <div class="sheet-item-sub">ได้ยาชุดใหม่จาก รพ. — ระบบช่วยจัดการยาเดิมให้</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>
     <div class="sheet-item" onclick="navTo('medtrack-scan.html')">
       <div class="sheet-item-ico ic-teal" style="border-radius:13px">💊</div>
       <div class="sheet-item-info">
-        <div class="sheet-item-title">สแกนซองยา</div>
-        <div class="sheet-item-sub">AI อ่านภาษาไทย → ตั้งตารางยาอัตโนมัติ</div>
+        <div class="sheet-item-title">สแกนยาเพิ่มเติม</div>
+        <div class="sheet-item-sub">ยาที่ลืมสแกน หรือยาจากร้านยา — ยาเดิมไม่เปลี่ยน</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -5893,6 +5916,27 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.14c</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.04v</div>
+<script>
+// 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
+(function(){
+  async function checkVisitDraft(){
+    try {
+      let uid = parseInt(new URLSearchParams(location.search).get('user_id'));
+      if (!uid) { const p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}'); uid = p.user_id || p.id; }
+      if (!uid) return;
+      const r = await fetch(MEDTRACK_BACKEND + '/api/visits/draft?user_id=' + uid);
+      if (!r.ok) return;
+      const j = await r.json();
+      const b = document.getElementById('visitDraftBanner');
+      if (!b || !j.draft) return;
+      document.getElementById('visitDraftSub').textContent =
+        'สแกนยาชุดใหม่แล้ว ' + (j.scanned_count || 0) + ' ตัว · แตะเพื่อทำต่อ (ยกเลิกอัตโนมัติใน 3 วัน)';
+      b.style.display = 'flex';
+    } catch (e) { console.warn('[home] visit draft check:', e.message); }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', checkVisitDraft); else checkVisitDraft();
+})();
+</script>
 </body>
 </html>
