@@ -1383,10 +1383,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
         <div class="icon-lbl">แต้มรางวัล</div>
       </div>
 
-      <div class="icon-btn" onclick="openSheet('dashboard')">
-        <div class="icon-face ic-navy">🖥️</div>
-        <div class="icon-lbl">Dashboard</div>
-      </div>
 
       <div class="icon-btn" onclick="navTo('medtrack-scan.html')">
         <div class="icon-face ic-orange">📸</div>
@@ -1649,7 +1645,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="apf-btn-row">
         <button class="apf-btn" onclick="document.getElementById('apfFileCam').click()">📸 ถ่ายรูป</button>
         <button class="apf-btn" onclick="document.getElementById('apfFileG').click()">🖼️ แกลเลอรี</button>
-        <button class="apf-btn" onclick="apfDemo()">📋 ตัวอย่าง</button>
       </div>
       <input type="file" id="apfFileG" accept="image/*" onchange="apfLoad(event)" style="display:none">
       <input type="file" id="apfFileCam" accept="image/*" capture="environment" onchange="apfLoad(event)" style="display:none">
@@ -1750,6 +1745,28 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 </div>
 
 <!-- ── HISTORY SHEET ── -->
+<div class="sheet" id="sheet-doselog">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-header-ico" style="border-radius:14px;background:#FEF2F2">💊</div>
+    <div>
+      <div class="sheet-header-title">ประวัติการกินยา</div>
+      <div class="sheet-header-sub" id="doselogSub">รายวัน · จากการกดยืนยัน</div>
+    </div>
+    <button class="sheet-close" onclick="closeSheet()" aria-label="ปิด">✕</button>
+  </div>
+  <div style="display:flex;gap:8px;padding:12px 16px 0" role="group" aria-label="ช่วงเวลา">
+    <button type="button" class="dl-range" data-days="30" onclick="loadDoseLog(30)">30 วัน</button>
+    <button type="button" class="dl-range" data-days="90" onclick="loadDoseLog(90)">90 วัน</button>
+    <button type="button" class="dl-range" data-days="180" onclick="loadDoseLog(180)">180 วัน</button>
+  </div>
+  <div id="doselogList" style="padding:12px 16px 28px;display:flex;flex-direction:column;gap:8px"></div>
+</div>
+<style>
+.dl-range{flex:1;padding:8px 0;border-radius:10px;border:1px solid var(--bd);background:var(--card);font-family:var(--sans);font-size:13px;font-weight:600;color:var(--t2);cursor:pointer}
+.dl-range.on{background:var(--teal);border-color:var(--teal);color:#fff}
+</style>
+
 <div class="sheet" id="sheet-visits">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
@@ -1783,7 +1800,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
-    <div class="sheet-item" onclick="toast('🗂️ Coming soon — Phase 2')">
+    <div class="sheet-item" onclick="switchSheet('doselog')">
       <div class="sheet-item-ico" style="background:#FEF2F2">💊</div>
       <div class="sheet-item-info">
         <div class="sheet-item-title">ประวัติการกินยา</div>
@@ -1796,22 +1813,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="sheet-item-info">
         <div class="sheet-item-title">ประวัติพบแพทย์</div>
         <div class="sheet-item-sub">นัดที่ผ่านมาทั้งหมด</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📈 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F0FFF4">📈</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">บันทึกค่าสุขภาพ</div>
-        <div class="sheet-item-sub">ความดัน น้ำตาล น้ำหนัก</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📄 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FFFBEB">📄</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">เอกสารทางการแพทย์</div>
-        <div class="sheet-item-sub">ผลแล็บ ใบสั่งยา รูปซองยา</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -1830,35 +1831,11 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
-    <div class="sheet-item" onclick="toast('📄 Coming soon — Phase 2')">
+    <div class="sheet-item" onclick="closeSheet();window.open('med-report.html?user_id='+getCurrentUserId(),'_blank')">
       <div class="sheet-item-ico" style="background:#F0FFF4">📄</div>
       <div class="sheet-item-info">
-        <div class="sheet-item-title">สร้าง PDF Report</div>
-        <div class="sheet-item-sub">สรุปการกินยา 30 วันล่าสุด</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="switchSheet('line')">
-      <div class="sheet-item-ico" style="background:#F0FFF4">💬</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ส่งผ่าน LINE</div>
-        <div class="sheet-item-sub">แชร์ให้แพทย์ก่อนวันนัด</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📧 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#EFF6FF">📧</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ส่ง Email</div>
-        <div class="sheet-item-sub">ส่งไฟล์ให้แพทย์ประจำตัว</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📲 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F5F3FF">📲</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">QR Code โรงพยาบาล</div>
-        <div class="sheet-item-sub">ให้พยาบาล scan ข้อมูลได้เลย</div>
+        <div class="sheet-item-title">รายงานสรุปให้หมอ</div>
+        <div class="sheet-item-sub">ยาที่กินอยู่ · การกินยาตรงเวลา · เปิดให้หมอดูหรือพิมพ์ได้</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -1953,14 +1930,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="sheet-item-info">
         <div class="sheet-item-title">ถ่ายรูปยืนยัน</div>
         <div class="sheet-item-sub">ได้แต้มเพิ่ม +60 ⭐ พิเศษ</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('⏪ Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F9FAFB">⏪</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">บันทึกย้อนหลัง</div>
-        <div class="sheet-item-sub">ถ้าลืมกด confirm ตอนนั้น</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -2207,6 +2176,7 @@ function openSheet(name) {
   // Load dynamic data based on sheet
   if (name === 'medicine') loadMealMeds();
   if (name === 'visits') loadVisitHistory();
+  if (name === 'doselog') loadDoseLog(30);
   if (name === 'stats') loadStatsSheet();
   if (name === 'reward') loadRewardSheet();
   if (name === 'confirm') renderConfirmSheet();
@@ -6038,6 +6008,45 @@ function renderNotifSheet(){
     : '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">ไม่มีการแจ้งเตือนใหม่<br><span style="font-size:12px;color:var(--t3)">หมอน้อยส่งเตือนกินยาทาง LINE ตามเวลา</span></div>';
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _loadRefillAlert); else _loadRefillAlert();
+
+// 💊 ประวัติการกินยารายวัน (ระดับ 2)
+async function loadDoseLog(days){
+  const box = document.getElementById('doselogList');
+  if (!box) return;
+  document.querySelectorAll('.dl-range').forEach(b => b.classList.toggle('on', Number(b.dataset.days) === days));
+  box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">กำลังโหลด...</div>';
+  const TH_M = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const TH_D = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  const lbl = iso => { const [y, m, d] = iso.split('-').map(Number); const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay(); return TH_D[wd] + ' ' + d + ' ' + TH_M[m - 1]; };
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/stats/daily?user_id=${getCurrentUserId()}&days=${days}`);
+    const j = await r.json();
+    if (!r.ok || !j.ok) throw new Error(j.error || 'load failed');
+    if (!j.rows.length) {
+      box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">ยังไม่มีประวัติในช่วงนี้</div>';
+      return;
+    }
+    let T = 0, M = 0;
+    j.rows.forEach(x => { T += x.taken; M += x.missed; });
+    const sub = document.getElementById('doselogSub');
+    if (sub) sub.textContent = (T + M) ? ('กินตรง ' + Math.round(100 * T / (T + M)) + '% (' + T + '/' + (T + M) + ' มื้อ) ใน ' + days + ' วัน') : 'รายวัน · จากการกดยืนยัน';
+    box.innerHTML = j.rows.map(x => {
+      const tot = x.taken + x.missed;
+      const pct = tot ? Math.round(100 * x.taken / tot) : null;
+      const col = pct == null ? 'var(--t3)' : (pct === 100 ? '#0B7A5C' : (pct >= 50 ? '#B35C00' : '#C92A2A'));
+      const bar = tot ? '<div style="height:6px;border-radius:3px;background:var(--bd);overflow:hidden;margin-top:6px"><div style="height:100%;width:' + pct + '%;background:' + col + '"></div></div>' : '';
+      const miss = x.missed_items.length ? '<div style="font-size:11.5px;color:#C92A2A;margin-top:4px">พลาด: ' + x.missed_items.map(_escH).join(' · ') + '</div>' : '';
+      const pend = x.pending ? '<span style="color:var(--t3)"> · รอ ' + x.pending + '</span>' : '';
+      return '<div style="background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 12px">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px"><b style="color:var(--t1)">' + lbl(x.date) + '</b>' +
+        '<span style="color:' + col + ';font-weight:700">' + (tot ? x.taken + '/' + tot + ' มื้อ' : '—') + '<span style="font-weight:400">' + pend + '</span></span></div>' +
+        bar + miss + '</div>';
+    }).join('');
+  } catch (e) {
+    console.warn('[doselog]', e);
+    box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">โหลดไม่สำเร็จ <button type="button" onclick="loadDoseLog(' + days + ')" style="margin-left:6px;border:none;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;font-family:inherit;cursor:pointer">ลองใหม่</button></div>';
+  }
+}
 
 // 🗂️ แสดง/ซ่อนยาเดิมที่ปิด ตัวที่ 6 เป็นต้นไป
 function toggleVisitClosed(visitId, btn){
