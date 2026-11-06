@@ -1831,11 +1831,19 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
-    <div class="sheet-item" onclick="closeSheet();window.open('med-report.html?user_id='+getCurrentUserId(),'_blank')">
-      <div class="sheet-item-ico" style="background:#F0FFF4">📄</div>
+    <div class="sheet-item" onclick="closeSheet();window.open('medtrack-doctor.html?user_id='+getCurrentUserId(),'_blank')">
+      <div class="sheet-item-ico" style="background:#F0FFF4">🩺</div>
       <div class="sheet-item-info">
-        <div class="sheet-item-title">รายงานสรุปให้หมอ</div>
-        <div class="sheet-item-sub">ยาที่กินอยู่ · การกินยาตรงเวลา · เปิดให้หมอดูหรือพิมพ์ได้</div>
+        <div class="sheet-item-title">เปิดสรุปให้หมอดู</div>
+        <div class="sheet-item-sub">ถ้ามีใบนัดวันนี้ จะสรุปเฉพาะคลินิกนั้นให้เอง · พิมพ์ได้</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>
+    <div class="sheet-item" onclick="closeSheet();window.open('med-report.html?user_id='+getCurrentUserId(),'_blank')">
+      <div class="sheet-item-ico" style="background:#EFF6FF">📊</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title">สรุปผลของฉัน</div>
+        <div class="sheet-item-sub">เกรด แต้ม และวันติดต่อกันของรอบนี้</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -2874,11 +2882,11 @@ function renderMedReportButton(show, userId, apptDate, pct){
   if(btn) return; // มีแล้ว ไม่ซ้ำ
 
   const html = `
-    <div id="medReportBtn" onclick="window.open('med-report.html?user_id=${userId}','_blank')"
+    <div id="medReportBtn" onclick="window.open('medtrack-doctor.html?user_id=${userId}','_blank')"
          style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:18px;color:#fff;margin:0 0 16px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
-      <div style="font-size:12px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
-      <div style="font-size:18px;font-weight:800;margin-bottom:4px">สรุป 💊 ก่อนพบหมอ</div>
-      <div style="font-size:12px;opacity:.9">ดูผลการกินยารอบนี้ + คะแนน${pct!=null?' · '+pct+'%':''}</div>
+      <div style="font-size:12px;opacity:.9;margin-bottom:3px">${apptDate?'🩺 นัดพบหมอ '+apptDate:'🎉 รอบยาจบแล้ว'}</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:4px">เปิดสรุปให้หมอดู</div>
+      <div style="font-size:12px;opacity:.9">ตอนพบหมอ กดแล้วยื่นมือถือให้หมอดูได้เลย</div>
       <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
     </div>`;
 
