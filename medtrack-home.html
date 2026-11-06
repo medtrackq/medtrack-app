@@ -5960,6 +5960,15 @@ async function deleteHospitalMapping(mappingId){
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', checkVisitDraft); else checkVisitDraft();
 })();
 
+// 🗂️ แสดง/ซ่อนยาเดิมที่ปิด ตัวที่ 6 เป็นต้นไป
+function toggleVisitClosed(visitId, btn){
+  const rows = document.querySelectorAll('#visitHistoryList [data-vh-more="' + visitId + '"]');
+  const open = btn.dataset.open === '1';
+  rows.forEach(r => { r.style.display = open ? 'none' : 'flex'; });
+  btn.dataset.open = open ? '0' : '1';
+  btn.textContent = open ? ('ดูอีก ' + btn.dataset.n + ' ตัว ▾') : 'ย่อ ▴';
+}
+
 // 🗂️ ประวัติรอบพบแพทย์ (รอบ 2)
 async function loadVisitHistory(){
   const box = document.getElementById('visitHistoryList');
@@ -5996,13 +6005,17 @@ async function loadVisitHistory(){
       const closed = v.closed.length
         ? '<div style="font-size:12px;font-weight:700;color:var(--t2);margin-top:6px">ยาเดิมที่ปิดในรอบนี้ ' + v.closed.length + ' ตัว' +
             (v.closed_adherence_pct != null ? ' · กินตรง <span style="color:' + pctColor(v.closed_adherence_pct) + '">' + v.closed_adherence_pct + '%</span> (' + v.closed_taken + '/' + (v.closed_taken + v.closed_missed) + ' มื้อ)' : '') + '</div>' +
-          v.closed.map(m => {
+          // เรียงตัวที่กินตรงต่ำสุดขึ้นก่อน (ไม่มีข้อมูลไว้ท้าย) แล้วแสดงแค่ 5 ตัวแรก
+          v.closed.slice().sort((a, b) => (a.adherence_pct == null ? 999 : a.adherence_pct) - (b.adherence_pct == null ? 999 : b.adherence_pct)).map((m, k) => {
             const left = (m.remaining_at_archive != null && m.remaining_at_archive > 0) ? ' · เหลือ ~' + Math.round(m.remaining_at_archive) + ' เม็ด' : '';
-            return '<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:var(--bg)">' +
+            return '<div data-vh-more="' + (k >= 5 ? v.id : '') + '" style="display:' + (k >= 5 ? 'none' : 'flex') + ';justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:var(--bg)">' +
               '<div style="min-width:0"><div style="font-size:13px;font-weight:600;color:var(--t1)">' + esc(m.drug_name) + esc(dose(m)) + '</div>' +
               '<div style="font-size:11.5px;color:var(--t2)">' + reasonTxt(m.archive_reason) + left + '</div></div>' +
               '<div style="font-size:13px;font-weight:700;color:' + pctColor(m.adherence_pct) + ';white-space:nowrap">' + (m.adherence_pct != null ? m.adherence_pct + '%' : '—') + '</div></div>';
-          }).join('')
+          }).join('') +
+          (v.closed.length > 5
+            ? '<button type="button" onclick="toggleVisitClosed(' + v.id + ', this)" data-n="' + (v.closed.length - 5) + '" style="border:none;background:none;color:var(--teal);font-family:inherit;font-size:13px;font-weight:600;padding:6px 0;cursor:pointer;text-align:left">ดูอีก ' + (v.closed.length - 5) + ' ตัว ▾</button>'
+            : '')
         : '';
       return '<div style="background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px">' + head + received + closed + '</div>';
     }).join('') +
