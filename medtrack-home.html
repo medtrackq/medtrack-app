@@ -1110,7 +1110,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="hdr-notif" onclick="openSheet('notif')">
         🔔
-        <div class="notif-dot"></div>
+        <div class="notif-dot" id="notifDot" style="display:none"></div>
       </div>
     </div>
     <div class="greeting">
@@ -1335,7 +1335,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="quick-card" onclick="openSheet('confirm')">
         <div class="quick-card-ico">✅</div>
         <div class="quick-card-title">บันทึกกินยา</div>
-        <div class="quick-card-sub">ยืนยันมื้อเที่ยง</div>
+        <div class="quick-card-sub">ยืนยันมื้อยาวันนี้</div>
       </div>
     </div>
 
@@ -1358,7 +1358,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
         <div class="icon-lbl">นัดแพทย์</div>
       </div>
 
-      <div class="icon-btn" onclick="openSheet('record')">
+      <div class="icon-btn" onclick="openSheet('confirm')">
         <div class="icon-face ic-amber">✏️</div>
         <div class="icon-lbl">บันทึกกินยา</div>
       </div>
@@ -1401,7 +1401,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
         <div class="icon-lbl">LINE หมอน้อย</div>
       </div>
 
-      <div class="icon-btn" onclick="openSheet('refills')">
+      <div class="icon-btn" onclick="openRefillSetup()">
         <div class="icon-face" style="background:linear-gradient(145deg,#f87171,#ef4444);position:relative">
           🔄
           <div class="icon-badge" id="refillBadge" style="display:none">0</div>
@@ -1740,44 +1740,12 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <div class="sheet-header-ico ic-purple" style="border-radius:14px">📊</div>
     <div>
       <div class="sheet-header-title">สถิติการกินยา</div>
-      <div class="sheet-header-sub">เดือนเมษายน 2026</div>
+      <div class="sheet-header-sub"><span id="statsSub">ข้อมูลจริงจากการกดยืนยันกินยา</span></div>
     </div>
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
-    <div class="sheet-sec">ภาพรวม</div>
-    <div class="sheet-item" onclick="toast('📊 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F5F3FF">📅</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">สถิติรายสัปดาห์</div>
-        <div class="sheet-item-sub">กินครบ 5 จาก 7 วัน — 71%</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📊 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F5F3FF">📆</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">สถิติรายเดือน</div>
-        <div class="sheet-item-sub">Adherence rate 78% เดือนนี้</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('📊 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FEF2F2">⚠️</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ยาที่ลืมบ่อย</div>
-        <div class="sheet-item-sub">Metformin มื้อเที่ยง ลืม 4 ครั้ง</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('🔥 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FFFBEB">🔥</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">Streak ต่อเนื่อง</div>
-        <div class="sheet-item-sub">5 วันติดต่อกัน สถิติสูงสุด 12 วัน</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
+    <div id="statsBody" style="padding:4px 0 8px"></div>
   </div>
 </div>
 
@@ -1904,45 +1872,20 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <div class="sheet-header-ico ic-pink" style="border-radius:14px">🏆</div>
     <div>
       <div class="sheet-header-title">แต้มรางวัล</div>
-      <div class="sheet-header-sub">คุณมี 320 ⭐ MedPoints</div>
+      <div class="sheet-header-sub" id="rewardSub">กำลังโหลด...</div>
     </div>
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
     <div class="sheet-sec">สะสมแต้ม</div>
-    <div class="sheet-item" onclick="toast('⭐ Coming soon — Phase 2')">
+    <div class="sheet-item" style="cursor:default">
       <div class="sheet-item-ico" style="background:#FDF2F8">⭐</div>
       <div class="sheet-item-info">
-        <div class="sheet-item-title">ประวัติการได้แต้ม</div>
-        <div class="sheet-item-sub">วันนี้ได้ +40 แต้มจากมื้อเช้า</div>
+        <div class="sheet-item-title">แต้มวันนี้</div>
+        <div class="sheet-item-sub" id="rewardTodaySub">—</div>
       </div>
-      <div class="sheet-item-arrow">›</div>
     </div>
-    <div class="sheet-item" onclick="toast('🏅 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FDF2F8">🏅</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">Badge ของฉัน</div>
-        <div class="sheet-item-sub">ได้แล้ว 3 / 10 badges</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-sec">แลกรางวัล</div>
-    <div class="sheet-item" onclick="toast('💊 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FFFBEB">💊</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ส่วนลดค่ายา 50 บาท</div>
-        <div class="sheet-item-sub">ใช้ได้ที่ร้านยาคู่สัญญา · 500 ⭐</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('🔬 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#EFF6FF">🔬</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ตรวจน้ำตาลในเลือดฟรี</div>
-        <div class="sheet-item-sub">โรงพยาบาล partner · 1,000 ⭐</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
+    <div style="padding:6px 20px 4px;font-size:12px;color:var(--t3);line-height:1.6">ได้แต้มทุกครั้งที่กดยืนยันกินยา · การแลกรางวัลจะเปิดเมื่อมีร้านยาหรือโรงพยาบาลร่วมโครงการ</div>
   </div>
 </div>
 
@@ -1979,14 +1922,6 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="sheet-item-info">
         <div class="sheet-item-title">สแกนใบนัดแพทย์</div>
         <div class="sheet-item-sub">บันทึกวันนัดและแจ้งเตือนล่วงหน้า</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="switchSheet('confirm')">
-      <div class="sheet-item-ico ic-amber" style="border-radius:13px">✅</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ยืนยันกินยา (ถ่ายรูป)</div>
-        <div class="sheet-item-sub">ถ่ายรูปยาก่อนกิน รับ +60 แต้ม</div>
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
@@ -2086,32 +2021,12 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <div class="sheet-header-ico" style="background:var(--coral-l);border-radius:14px">🔔</div>
     <div>
       <div class="sheet-header-title">การแจ้งเตือน</div>
-      <div class="sheet-header-sub">3 รายการใหม่</div>
+      <div class="sheet-header-sub"><span id="notifSub">—</span></div>
     </div>
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
-    <div class="sheet-item" onclick="switchSheet('confirm')">
-      <div class="sheet-item-ico" style="background:var(--teal-l)">💊</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ถึงเวลากินยามื้อเที่ยงแล้วครับ</div>
-        <div class="sheet-item-sub">หมอน้อย · เมื่อกี้</div>
-      </div>
-    </div>
-    <div class="sheet-item" onclick="switchSheet('appt')">
-      <div class="sheet-item-ico" style="background:var(--blue-l)">📅</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">อีก 14 วันจะถึงนัดแพทย์แล้วนะครับ</div>
-        <div class="sheet-item-sub">หมอน้อย · เมื่อเช้า</div>
-      </div>
-    </div>
-    <div class="sheet-item" onclick="switchSheet('reward')">
-      <div class="sheet-item-ico" style="background:var(--amber-l)">⭐</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ได้รับ +40 แต้มจากมื้อเช้า!</div>
-        <div class="sheet-item-sub">MedPoints · 07:15 น.</div>
-      </div>
-    </div>
+    <div id="notifBody"></div>
   </div>
 </div>
 
@@ -2122,22 +2037,11 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <div class="sheet-header-ico ic-teal" style="border-radius:14px">✅</div>
     <div>
       <div class="sheet-header-title">บันทึกกินยา</div>
-      <div class="sheet-header-sub">มื้อเที่ยง 12:00 น.</div>
+      <div class="sheet-header-sub"><span id="confirmSub">มื้อยาที่ยังไม่ได้ยืนยันวันนี้</span></div>
     </div>
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
-  <div style="padding:16px 20px">
-    <div style="background:var(--teal-l);border-radius:14px;padding:14px;margin-bottom:14px;border:1px solid rgba(10,156,122,.2)">
-      <div style="font-size:13px;font-weight:600;color:var(--teal2);margin-bottom:6px">💊 ยามื้อเที่ยง</div>
-      <div style="font-size:13px;color:var(--teal2)">• Metformin 500mg × 1 เม็ด<br>• Omeprazole 20mg × 1 เม็ด</div>
-    </div>
-    <button onclick="toast('✅ บันทึกแล้ว! +40 ⭐ แต้ม');closeSheet()" style="width:100%;padding:14px;background:var(--teal);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-bottom:8px">
-      ✅ กินยาแล้ว (+40 ⭐)
-    </button>
-    <button onclick="toast('📷 เปิดกล้อง +60 ⭐');closeSheet()" style="width:100%;padding:14px;background:var(--amber);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--sans)">
-      📷 ถ่ายรูปยืนยัน (+60 ⭐)
-    </button>
-  </div>
+  <div id="confirmBody" style="padding:12px 20px 20px;display:flex;flex-direction:column;gap:12px"></div>
 </div>
 
 <!-- ── TOAST ── -->
@@ -2303,6 +2207,10 @@ function openSheet(name) {
   // Load dynamic data based on sheet
   if (name === 'medicine') loadMealMeds();
   if (name === 'visits') loadVisitHistory();
+  if (name === 'stats') loadStatsSheet();
+  if (name === 'reward') loadRewardSheet();
+  if (name === 'confirm') renderConfirmSheet();
+  if (name === 'notif') renderNotifSheet();
 }
 
 // 🍽️ Load real meal medications (replace mock data)
@@ -2519,8 +2427,9 @@ function loadMedsFromStorage(){
     if(!schedule[meal].length) return;
     const mealMin = toMin(meals[meal]||'07:00');
     const isPast = curHour > mealMin+30;
+    // โหมดสำรอง (ไม่มีข้อมูลจาก server) ไม่รู้ว่ากินจริงไหม → ไม่แสดง "กินแล้ว" ตามเวลา
     const status = isPast
-      ? '<span style="color:#059669;font-size:11px">✓ กินแล้ว</span>'
+      ? ''
       : curHour > mealMin-30
         ? '<span style="color:#F59E0B;font-size:11px">⏰ รอ</span>'
         : '';
@@ -3029,6 +2938,7 @@ async function loadTodayDoses(userId){
     document.getElementById('viewToggle').style.display = '';
     setViewMode(viewMode);  // apply + render ตาม mode ปัจจุบัน
     renderStatsBar(visibleDoses);
+    try { updateNotifDot(); } catch(_) {}
   } catch(e) {
     console.warn('loadTodayDoses error:', e);
   }
@@ -5959,6 +5869,175 @@ async function deleteHospitalMapping(mappingId){
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', checkVisitDraft); else checkVisitDraft();
 })();
+
+// ═══════════════════════════════════════════════════════
+// ระดับ 1: หน้าเหล่านี้แสดงข้อมูลจริงเท่านั้น (เดิมเป็นข้อความตัวอย่าง)
+// ═══════════════════════════════════════════════════════
+const _escH = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const _TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+let _statsCache = null;
+
+async function fetchStats(){
+  const r = await fetch(`${MEDTRACK_BACKEND}/api/stats/adherence?user_id=${getCurrentUserId()}`);
+  const j = await r.json();
+  if (!r.ok || !j.ok) throw new Error(j.error || 'stats failed');
+  _statsCache = j;
+  return j;
+}
+
+function _statRow(icon, bg, title, sub){
+  return '<div class="sheet-item" style="cursor:default"><div class="sheet-item-ico" style="background:' + bg + '">' + icon + '</div>' +
+    '<div class="sheet-item-info"><div class="sheet-item-title">' + title + '</div><div class="sheet-item-sub">' + sub + '</div></div></div>';
+}
+
+async function loadStatsSheet(){
+  const box = document.getElementById('statsBody');
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">กำลังโหลด...</div>';
+  try {
+    const j = await fetchStats();
+    const m = Number(j.today.slice(5, 7));
+    const sub = document.getElementById('statsSub');
+    if (sub) sub.textContent = 'เดือน' + _TH_MONTHS[m - 1] + ' ' + (Number(j.today.slice(0, 4)) + 543);
+    const pctTxt = r => r.pct == null ? 'ยังไม่มีข้อมูล' : ('กินตรง ' + r.pct + '% (' + r.taken + '/' + r.total + ' มื้อ)');
+    const missed = j.most_missed.length
+      ? j.most_missed.map(x => _escH(x.drug_name) + (x.dose_mg ? ' ' + _escH(fmtDose(x.dose_mg, x.dose_unit)) : '') + ' · มื้อ ' + _escH(x.time) + ' · พลาด ' + x.missed + ' ครั้ง').join('<br>')
+      : 'ไม่มีมื้อที่พลาดใน 30 วันล่าสุด';
+    box.innerHTML =
+      '<div class="sheet-sec">ภาพรวม</div>' +
+      _statRow('📅', '#F5F3FF', '7 วันล่าสุด', pctTxt(j.week) + (j.week.pct != null ? ' · ครบทุกมื้อ ' + j.week.full_days + ' วัน' : '')) +
+      _statRow('📆', '#F5F3FF', 'เดือนนี้', pctTxt(j.month)) +
+      _statRow('⚠️', '#FEF2F2', 'ยาที่ลืมบ่อย (30 วัน)', missed) +
+      _statRow('🔥', '#FFFBEB', 'กินครบต่อเนื่อง', j.streak.current + ' วันติดต่อกัน · สูงสุด ' + j.streak.best + ' วัน') +
+      '<div style="padding:8px 20px;font-size:11.5px;color:var(--t3);line-height:1.6">นับจากมื้อที่กดยืนยันหรือที่ระบบบันทึกว่าพลาด · มื้อที่ยังไม่ถึงเวลาไม่นับ</div>';
+  } catch (e) {
+    console.warn('[stats] load:', e);
+    box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">โหลดสถิติไม่สำเร็จ <button type="button" onclick="loadStatsSheet()" style="margin-left:6px;border:none;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;font-family:inherit;cursor:pointer">ลองใหม่</button></div>';
+  }
+}
+
+async function loadRewardSheet(){
+  const sub = document.getElementById('rewardSub'), today = document.getElementById('rewardTodaySub');
+  try {
+    const j = await fetchStats();
+    if (sub) sub.textContent = 'คุณมี ' + j.points.total.toLocaleString('th-TH') + ' ⭐ แต้ม';
+    if (today) today.textContent = j.points.today ? ('วันนี้ได้ +' + j.points.today + ' แต้ม') : 'วันนี้ยังไม่ได้แต้ม · กดยืนยันกินยาเพื่อรับแต้ม';
+  } catch (e) {
+    if (sub) sub.textContent = 'โหลดแต้มไม่สำเร็จ';
+  }
+}
+
+// มื้อที่ยังรอยืนยันวันนี้ จัดกลุ่มตามเวลา (ข้อมูลจาก loadTodayDoses)
+//   ยืนยันได้เฉพาะมื้อที่มี log แล้ว (ระบบสร้าง log ตอนส่งเตือน) — มื้อที่ยังไม่ถึงเวลาเตือนไม่มี id
+function _pendingGroups(upcoming){
+  const groups = {};
+  (_lastDoses || []).filter(d => upcoming ? (!d.status && !d.id) : (d.status === 'pending' && d.id)).forEach(d => {
+    const t = (d.scheduled_time || '').substring(0, 5) || '--:--';
+    (groups[t] = groups[t] || []).push(d);
+  });
+  return Object.keys(groups).sort().map(t => ({ time: t, doses: groups[t] }));
+}
+function _nowHM(){ const n = new Date(); return String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0'); }
+
+function renderConfirmSheet(){
+  const box = document.getElementById('confirmBody');
+  if (!box) return;
+  const groups = _pendingGroups();
+  if (!(_lastDoses || []).length) {
+    box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:13px">ยังไม่มียาวันนี้ · เพิ่มยาด้วยการสแกนซองยา</div>';
+    return;
+  }
+  // มื้อที่ยังไม่มี log: แสดงเฉพาะที่เวลายังไม่ถึง (มื้อที่เลยเวลาแต่ไม่มี log = ไม่ได้ส่งเตือน เช่นยาที่เพิ่มหลังเวลานั้น)
+  const later = _pendingGroups(true).filter(g => g.time > _nowHM());
+  const laterHtml = later.length
+    ? '<div style="font-size:12.5px;color:var(--t2);line-height:1.7;padding:4px 2px"><b>มื้อถัดไปวันนี้:</b> ' + later.map(g => g.time + ' น. (' + g.doses.length + ' ตัว)').join(' · ') +
+      '<br><span style="color:var(--t3)">ยืนยันได้เมื่อถึงเวลาเตือน</span></div>'
+    : '';
+  if (!groups.length) {
+    box.innerHTML = (later.length
+      ? '<div style="text-align:center;padding:12px;color:var(--t2);font-size:14px">ตอนนี้ไม่มีมื้อที่ต้องยืนยัน</div>'
+      : '<div style="text-align:center;padding:20px;color:#059669;font-size:14px;font-weight:600">ยืนยันครบทุกมื้อของวันนี้แล้ว</div>') + laterHtml;
+    return;
+  }
+  const now = _nowHM();
+  box.innerHTML = groups.map(g => {
+    const due = g.time <= now;
+    const names = g.doses.map(d => '• ' + _escH(d.drug_name_raw || d.drug_name || 'ไม่ระบุ') + (d.dose_mg ? ' ' + _escH(fmtDose(d.dose_mg, d.dose_unit)) : '') +
+      (d.tablets_per_dose ? ' × ' + _escH(fmtTablets(d.tablets_per_dose)) : '')).join('<br>');
+    const ids = g.doses.map(d => d.id).join(',');
+    return '<div style="background:' + (due ? 'var(--teal-l)' : 'var(--bg)') + ';border-radius:14px;padding:14px;border:1px solid ' + (due ? 'rgba(10,156,122,.25)' : 'var(--bd)') + '">' +
+      '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">มื้อ ' + _escH(g.time) + ' น.' + (due ? ' <span style="font-size:11px;color:#B45309">ถึงเวลาแล้ว</span>' : '') + '</div>' +
+      '<div style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:10px">' + names + '</div>' +
+      '<button type="button" onclick="confirmDoseGroup(\'' + ids + '\', this)" style="width:100%;padding:12px;background:' + (due ? 'var(--teal)' : '#fff') + ';color:' + (due ? '#fff' : 'var(--teal)') + ';border:' + (due ? 'none' : '1.5px solid var(--teal)') + ';border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">✅ กินแล้ว ' + g.doses.length + ' ตัว</button></div>';
+  }).join('') + laterHtml;
+}
+
+async function confirmDoseGroup(idsCsv, btn){
+  const ids = String(idsCsv).split(',').map(Number).filter(Boolean);
+  if (!ids.length) return;
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+  let ok = 0, fail = 0;
+  for (const id of ids) {
+    try {
+      const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/${id}/confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok || j.error === 'not_found_or_already_confirmed') ok++; else fail++;
+    } catch (e) { fail++; }
+  }
+  toast(fail ? ('⚠️ บันทึกได้ ' + ok + ' จาก ' + ids.length + ' ตัว ลองใหม่อีกครั้ง') : '✅ บันทึกแล้ว');
+  try { if ('vibrate' in navigator) navigator.vibrate(50); } catch (_) {}
+  await loadTodayDoses(getCurrentUserId());
+  renderConfirmSheet();
+}
+
+// แจ้งเตือนจากข้อมูลจริง: มื้อที่ถึงเวลาแล้ว + นัดภายใน 14 วัน + ยาใกล้หมด
+let _refillAlert = null;
+function _buildNotifs(){
+  const items = [];
+  const now = _nowHM();
+  const due = _pendingGroups().filter(g => g.time <= now);
+  if (due.length) {
+    const n = due.reduce((s, g) => s + g.doses.length, 0);
+    items.push({ icon: '💊', bg: 'var(--teal-l)', title: 'ยังไม่ได้ยืนยันยา ' + n + ' ตัว', sub: 'มื้อ ' + due.map(g => g.time).join(', ') + ' น.', go: "switchSheet('confirm')" });
+  }
+  try {
+    const appts = JSON.parse(localStorage.getItem('mt_appts') || '[]');
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const next = appts.map(a => ({ a, d: new Date(a.date_iso || a.date) })).filter(x => !isNaN(x.d) && x.d >= t0).sort((x, y) => x.d - y.d)[0];
+    if (next) {
+      const days = Math.round((new Date(next.d).setHours(0, 0, 0, 0) - t0) / 864e5);
+      if (days <= 14) items.push({ icon: '📅', bg: 'var(--blue-l)', title: days === 0 ? 'วันนี้มีนัดพบแพทย์' : ('อีก ' + days + ' วันถึงนัดพบแพทย์'),
+        sub: _escH(next.a.hospital_name || next.a.hospital || next.a.place || ''), go: "switchSheet('appt')" });
+    }
+  } catch (_) {}
+  if (_refillAlert) items.push(_refillAlert);
+  return items;
+}
+function updateNotifDot(){
+  const dot = document.getElementById('notifDot');
+  if (dot) dot.style.display = _buildNotifs().length ? '' : 'none';
+}
+async function _loadRefillAlert(){
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/medications/refill-status?user_id=${getCurrentUserId()}`);
+    const j = await r.json();
+    if (!j.ok) return;
+    const n = (j.summary.critical || 0) + (j.summary.expired || 0);
+    _refillAlert = n ? { icon: '📦', bg: '#FEF2F2', title: 'ยาใกล้หมด ' + n + ' ตัว', sub: 'ตรวจจำนวนยาที่เหลือ', go: 'closeSheet();openRefillSetup()' } : null;
+    updateNotifDot();
+  } catch (_) {}
+}
+function renderNotifSheet(){
+  const box = document.getElementById('notifBody'), sub = document.getElementById('notifSub');
+  const items = _buildNotifs();
+  if (sub) sub.textContent = items.length ? (items.length + ' รายการ') : 'ไม่มีรายการใหม่';
+  if (!box) return;
+  box.innerHTML = items.length
+    ? items.map(it => '<div class="sheet-item" onclick="' + it.go + '"><div class="sheet-item-ico" style="background:' + it.bg + '">' + it.icon + '</div>' +
+        '<div class="sheet-item-info"><div class="sheet-item-title">' + it.title + '</div><div class="sheet-item-sub">' + it.sub + '</div></div><div class="sheet-item-arrow">›</div></div>').join('')
+    : '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">ไม่มีการแจ้งเตือนใหม่<br><span style="font-size:12px;color:var(--t3)">หมอน้อยส่งเตือนกินยาทาง LINE ตามเวลา</span></div>';
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _loadRefillAlert); else _loadRefillAlert();
 
 // 🗂️ แสดง/ซ่อนยาเดิมที่ปิด ตัวที่ 6 เป็นต้นไป
 function toggleVisitClosed(visitId, btn){
