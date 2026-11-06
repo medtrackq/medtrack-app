@@ -2256,6 +2256,15 @@ async function showSuccessScreen(){
     catch(e){ console.error('[showSuccessScreen] saveToBackend error:', e); }
   }
 
+  // 🩺 โหมดพบแพทย์ใหม่: สแกนเสร็จ → ไปขั้น 4 จัดการยาเดิม (แทนหน้าสรุปปกติ)
+  if (window.MT_VISIT && window.MT_VISIT.id) {
+    if (saveResult && saveResult.errorCount > 0) {
+      alert('⚠️ บันทึกยาไม่สำเร็จ ' + saveResult.errorCount + ' ตัว\nลองสแกนตัวนั้นอีกครั้งได้ในหน้าถัดไป');
+    }
+    visitOpenReview();
+    return;
+  }
+
   // แสดงผลจริงตาม dedup
   const newCount = saveResult ? saveResult.newCount : meds.length;
   const dedupCount = saveResult ? saveResult.dedupCount : 0;
@@ -3189,6 +3198,8 @@ async function saveToBackend(medsList) {
         start_date: getStartDateFor(m),  // 📅 วันเริ่มกินยารายตัว (null = วันสแกน)
         schedules: expandedSchedules
       };
+      // 🩺 โหมดพบแพทย์ใหม่: ผูกยากับรอบนี้ (backend บันทึกเป็น inactive รอยืนยันขั้น 4)
+      if (window.MT_VISIT && window.MT_VISIT.id) body.visit_id = window.MT_VISIT.id;
       // ส่งรูปซองยาเฉพาะ high-alert → backend upload R2 (ประหยัด bandwidth)
       if (m.is_high_alert === true && m._imageBase64) {
         body.image_base64 = m._imageBase64;
@@ -3638,6 +3649,277 @@ function drawImageCover(ctx, img, x, y, w, h) {
     </div>
 
   </div><!-- /apptTab -->
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.20b</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.04v</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     🩺 FLOW พบแพทย์ใหม่ — เปิดด้วย ?visit=new หรือ ?visit=<id>
+     ขั้น 1 ข้อมูลพบแพทย์ → (ขั้น 2 ใบเสร็จ: ข้ามอัตโนมัติในรอบ 1)
+     → ขั้น 3 สแกนยา (หน้าสแกนเดิม) → ขั้น 4 จัดการยาเดิม → ขั้น 5 พร้อมกินยา
+     ═══════════════════════════════════════════════════════════ -->
+<style>
+#visitOv{position:fixed;inset:0;z-index:9990;background:var(--bg);display:none;flex-direction:column;overflow-y:auto;font-family:inherit;color:var(--t1)}
+#visitOv.on{display:flex}
+.vo-head{background:var(--sf);padding:14px 16px 12px;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:2}
+.vo-title{font-size:17px;font-weight:700;margin:0 0 10px}
+.vo-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.vo-steps div{display:flex;flex-direction:column;gap:5px;font-size:10.5px;color:var(--t2)}
+.vo-steps i{display:block;height:4px;border-radius:2px;background:var(--bd)}
+.vo-steps .done i,.vo-steps .cur i{background:var(--ac)}
+.vo-steps .done,.vo-steps .cur{color:var(--ad)}
+.vo-steps .cur{font-weight:700}
+.vo-body{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:120px}
+.vo-card{background:var(--sf);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.vo-card.warn{border:2px solid var(--wn)}
+.vo-h{font-size:15px;font-weight:700}
+.vo-sub{font-size:12.5px;color:var(--t2);line-height:1.5}
+.vo-label{font-size:14px;font-weight:600}
+.vo-input{height:48px;border:1px solid #C9D0DB;border-radius:12px;padding:0 14px;font-size:15px;font-family:inherit;color:var(--t1);background:var(--sf);width:100%;box-sizing:border-box}
+.vo-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--al)}
+.vo-row .nm{font-size:14px;font-weight:600}
+.vo-row .rs{font-size:12px;color:var(--t2)}
+.vo-um{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--s2)}
+.vo-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vo-seg button{height:44px;border-radius:10px;border:1px solid #C9D0DB;background:var(--sf);font-weight:600;font-size:14px;font-family:inherit;color:var(--t1);cursor:pointer}
+.vo-seg button.on{background:#1E2B4D;border-color:#1E2B4D;color:#fff}
+.vo-foot{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--bd);padding:12px 16px 24px;display:flex;flex-direction:column;gap:6px;z-index:3}
+.vo-btn{height:52px;border-radius:14px;border:none;background:var(--ac);color:#fff;font-size:16.5px;font-weight:700;font-family:inherit;cursor:pointer;width:100%}
+.vo-btn:disabled{background:#D5DAE3;color:#5A6A7A;cursor:default}
+.vo-btn2{height:44px;border:none;background:none;color:var(--t2);font-size:14px;font-family:inherit;cursor:pointer;width:100%}
+.vo-btn3{height:46px;border-radius:12px;border:1px solid #C9D0DB;background:var(--sf);font-size:14px;font-weight:600;font-family:inherit;color:var(--t1);cursor:pointer;width:100%}
+.vo-status{font-size:12px;color:var(--t2);text-align:center}
+#visitBanner{display:none;margin:8px 12px 0;padding:10px 12px;border-radius:12px;background:var(--al);color:var(--ad);font-size:13px;font-weight:600;align-items:center;gap:8px}
+#visitBanner.on{display:flex}
+#visitBanner button{margin-left:auto;border:none;background:var(--ac);color:#fff;border-radius:8px;padding:6px 10px;font-weight:600;font-size:12.5px;font-family:inherit;cursor:pointer}
+</style>
+<div id="visitOv" role="dialog" aria-modal="true" aria-labelledby="voTitle">
+  <div class="vo-head">
+    <h1 class="vo-title" id="voTitle">พบแพทย์ใหม่</h1>
+    <div class="vo-steps" id="voSteps"></div>
+  </div>
+  <div class="vo-body" id="voBody"></div>
+  <div class="vo-foot" id="voFoot"></div>
+</div>
+<script>
+(function(){
+  const API = 'https://medtrack-backend-production-7731.up.railway.app';
+  const STEP_NAMES = ['พบแพทย์','ใบเสร็จ','สแกนยา','ยาเดิม','พร้อมกินยา'];
+  const esc = s => (typeof escapeHtml === 'function') ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const params = new URLSearchParams(location.search);
+  const visitParam = params.get('visit');
+  if (!visitParam) return;   // โหมดสแกนยาเพิ่มเติมแบบเดิม — ไม่ทำอะไร
+
+  window.MT_VISIT = { id: null, userId: null, review: null, choice: {} };
+  const V = window.MT_VISIT;
+  const ov = () => document.getElementById('visitOv');
+  const $ = id => document.getElementById(id);
+
+  function steps(cur){
+    $('voSteps').innerHTML = STEP_NAMES.map((n, i) => {
+      const k = i + 1, cls = k < cur ? 'done' : (k === cur ? 'cur' : '');
+      return '<div class="' + cls + '"><i></i>' + k + ' ' + n + '</div>';
+    }).join('');
+  }
+  function show(title, cur){ $('voTitle').textContent = title; steps(cur); ov().classList.add('on'); ov().scrollTop = 0; }
+  function hide(){ ov().classList.remove('on'); }
+  function todayISO(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+  function thaiDate(iso){ if(!iso) return ''; const d = new Date(String(iso).slice(0,10) + 'T00:00:00'); const m = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate() + ' ' + m[d.getMonth()] + ' ' + (d.getFullYear() + 543); }
+  function setVisitInUrl(id){
+    try { const p = new URLSearchParams(location.search); p.set('visit', String(id)); history.replaceState(null, '', location.pathname + '?' + p.toString()); } catch(e){}
+  }
+  async function api(path, opts){
+    const r = await fetch(API + path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts || {}));
+    let j = {}; try { j = await r.json(); } catch(e){}
+    return { ok: r.ok, status: r.status, j };
+  }
+  function homeUrl(){ const u = params.get('user_id'); return 'medtrack-home.html' + (u ? '?user_id=' + encodeURIComponent(u) : ''); }
+  function scanMoreUrl(){ const p = new URLSearchParams(location.search); p.set('visit', String(V.id)); return 'medtrack-scan.html?' + p.toString(); }
+
+  // ── แถบบอกสถานะบนหน้าสแกน (ขั้น 3) ──
+  function banner(count){
+    let b = $('visitBanner');
+    if (!b) {
+      b = document.createElement('div'); b.id = 'visitBanner';
+      const app = document.querySelector('.app'); const hdr = app && app.firstElementChild;
+      if (hdr && hdr.nextSibling) app.insertBefore(b, hdr.nextElementSibling); else document.body.prepend(b);
+    }
+    b.innerHTML = '<span>พบแพทย์ใหม่ · ขั้น 3 สแกนยาชุดใหม่' + (count ? ' (สแกนแล้ว ' + count + ' ตัว)' : '') + '</span>' +
+      (count ? '<button type="button" id="voGoReview">ไปขั้นถัดไป</button>' : '');
+    b.classList.add('on');
+    const g = $('voGoReview'); if (g) g.onclick = () => window.visitOpenReview();
+  }
+
+  // ── ขั้น 1 ──
+  async function step1(){
+    V.userId = (typeof resolveUserId === 'function') ? await resolveUserId() : null;
+    if (!V.userId) { alert('ไม่พบบัญชีผู้ใช้ กรุณาเข้าหน้าหลักก่อน'); location.href = homeUrl(); return; }
+    show('พบแพทย์ใหม่', 1);
+    $('voBody').innerHTML = '<div class="vo-card"><div class="vo-sub">กำลังโหลด...</div></div>'; $('voFoot').innerHTML = '';
+    const d = await api('/api/visits/draft?user_id=' + V.userId);
+    const draft = d.ok ? d.j.draft : null;
+    const scanned = d.ok ? d.j.scanned_count : 0;
+    const hosp = draft && draft.hospital_name || (d.ok ? d.j.last_hospital_name : '') || '';
+    const doc = draft && draft.doctor_name || '';
+    const vdate = draft ? String(draft.visit_date).slice(0,10) : todayISO();
+    const min = new Date(); min.setDate(min.getDate() - 30);
+    const minISO = min.getFullYear() + '-' + String(min.getMonth()+1).padStart(2,'0') + '-' + String(min.getDate()).padStart(2,'0');
+    $('voBody').innerHTML =
+      (draft ? '<div class="vo-card warn"><div class="vo-h">มีรอบพบแพทย์ที่ยังทำไม่เสร็จ</div><div class="vo-sub">เริ่มไว้วันที่ ' + esc(thaiDate(draft.created_at)) + ' · สแกนยาแล้ว ' + scanned + ' ตัว · ถ้าไม่ทำต่อภายใน 3 วัน ระบบจะยกเลิกให้</div>' +
+        (scanned ? '<button type="button" class="vo-btn3" id="voResumeReview">ไปขั้นจัดการยาเดิมเลย</button>' : '') +
+        '<button type="button" class="vo-btn3" id="voCancel">ยกเลิกรอบนี้</button></div>' : '') +
+      '<div class="vo-card">' +
+        '<label class="vo-label" for="voDate">วันที่พบแพทย์ <span style="color:var(--dg)">*</span></label>' +
+        '<input class="vo-input" id="voDate" type="date" value="' + esc(vdate) + '" min="' + minISO + '" max="' + todayISO() + '">' +
+        '<label class="vo-label" for="voHosp">โรงพยาบาล</label>' +
+        '<input class="vo-input" id="voHosp" value="' + esc(hosp) + '" placeholder="เช่น สถาบันประสาทวิทยา">' +
+        (hosp ? '<div class="vo-sub">ใส่ให้จากครั้งก่อน แก้ได้</div>' : '') +
+        '<label class="vo-label" for="voDoc">แพทย์ <span style="font-weight:400;color:var(--t2)">(ไม่บังคับ)</span></label>' +
+        '<input class="vo-input" id="voDoc" value="' + esc(doc) + '" placeholder="เช่น นพ.สมชาย">' +
+      '</div>' +
+      '<div class="vo-card"><div class="vo-sub">ขั้นถัดไป: สแกนซองยาชุดใหม่ให้ครบทุกตัว แล้วระบบจะถามว่ายาเดิมจะกินต่อหรือหยุด ยาเดิมยังเตือนตามปกติจนกว่าคุณจะยืนยัน</div></div>';
+    $('voFoot').innerHTML = '<button type="button" class="vo-btn" id="voNext1">ถัดไป: สแกนยาชุดใหม่</button><button type="button" class="vo-btn2" id="voBack">กลับหน้าหลัก</button>';
+    $('voBack').onclick = () => { location.href = homeUrl(); };
+    const rr = $('voResumeReview'); if (rr) rr.onclick = async () => { V.id = draft.id; setVisitInUrl(V.id); window.visitOpenReview(); };
+    const cc = $('voCancel'); if (cc) cc.onclick = async () => {
+      if (!confirm('ยกเลิกรอบพบแพทย์นี้? ยาที่สแกนไว้ในรอบนี้จะถูกลบ ยาเดิมไม่เปลี่ยน')) return;
+      const r = await api('/api/visits/' + draft.id + '/cancel', { method: 'POST', body: JSON.stringify({ user_id: V.userId }) });
+      if (!r.ok) { alert('ยกเลิกไม่สำเร็จ ลองใหม่อีกครั้ง'); return; }
+      const p = new URLSearchParams(location.search); p.set('visit', 'new'); location.href = 'medtrack-scan.html?' + p.toString();
+    };
+    $('voNext1').onclick = async (ev) => {
+      const date = $('voDate').value;
+      if (!date) { alert('กรุณาเลือกวันที่พบแพทย์'); return; }
+      ev.target.disabled = true; ev.target.textContent = 'กำลังบันทึก...';
+      const r = await api('/api/visits', { method: 'POST', body: JSON.stringify({
+        user_id: V.userId, visit_date: date,
+        hospital_name: $('voHosp').value.trim() || null, doctor_name: $('voDoc').value.trim() || null }) });
+      if (!r.ok) { alert((r.j && r.j.message) || 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); ev.target.disabled = false; ev.target.textContent = 'ถัดไป: สแกนยาชุดใหม่'; return; }
+      V.id = r.j.visit.id; setVisitInUrl(V.id);
+      hide(); banner(r.j.scanned_count);
+    };
+  }
+
+  // ── ขั้น 4 ──
+  window.visitOpenReview = async function(){
+    if (!V.id) return;
+    if (!V.userId) V.userId = await resolveUserId();
+    show('ยาเดิมของคุณ จะทำอย่างไรต่อ?', 4);
+    $('voBody').innerHTML = '<div class="vo-card"><div class="vo-sub">กำลังเทียบกับยาเดิม...</div></div>'; $('voFoot').innerHTML = '';
+    const r = await api('/api/visits/' + V.id + '/review?user_id=' + V.userId);
+    if (!r.ok) { $('voBody').innerHTML = '<div class="vo-card"><div class="vo-sub">โหลดไม่สำเร็จ ลองใหม่อีกครั้ง</div><button type="button" class="vo-btn3" onclick="visitOpenReview()">ลองใหม่</button></div>'; return; }
+    V.review = r.j; V.choice = {};
+    renderReview();
+  };
+
+  function remainingTxt(o){ return (o.est_remaining != null && o.est_remaining > 0) ? 'ยาเดิมเหลือประมาณ ' + Math.round(o.est_remaining) + ' เม็ด · ' : ''; }
+  function doseTxt(m){ return m.dose_mg ? ' ' + (Number(m.dose_mg) % 1 === 0 ? Number(m.dose_mg) : m.dose_mg) + ' ' + (m.dose_unit || 'mg') : ''; }
+
+  function renderReview(){
+    const R = V.review;
+    const nNew = R.new_meds.length;
+    let html = '<div class="vo-card"><div class="vo-h">สแกนยาชุดใหม่แล้ว ' + nNew + ' ตัว</div>' +
+      '<div class="vo-sub">' + R.new_meds.map(m => esc(m.drug_name) + esc(doseTxt(m))).join(' · ') + '</div>' +
+      '<button type="button" class="vo-btn3" id="voScanMore">ยังไม่ครบ สแกนเพิ่ม</button></div>';
+    if (nNew === 0) {
+      $('voBody').innerHTML = html + '<div class="vo-card"><div class="vo-sub">ยังไม่มียาชุดใหม่ในรอบนี้ กรุณาสแกนซองยาก่อน</div></div>';
+      $('voFoot').innerHTML = '';
+      $('voScanMore').onclick = () => { location.href = scanMoreUrl(); };
+      return;
+    }
+    if (R.unmatched.length) html += '<button type="button" class="vo-btn3" id="voStopAll">หยุดยาเดิมทั้งหมด (ใช้เฉพาะชุดใหม่)</button>';
+    if (R.matched.length) {
+      html += '<div class="vo-card"><div><div class="vo-h">ได้ยาตัวนี้มาใหม่แล้ว</div><div class="vo-sub">ตัวเดิมจะย้ายไปประวัติการรักษา</div></div>' +
+        R.matched.map(m => '<div class="vo-row"><span aria-hidden="true" style="color:var(--ad);font-weight:700">✓</span><span style="display:flex;flex-direction:column;gap:2px">' +
+          '<span class="nm">' + esc(m.old.drug_name) + esc(doseTxt(m.old)) + '</span>' +
+          '<span class="rs">' + remainingTxt(m.old) + 'ปิดเพราะได้ยาใหม่หลังพบแพทย์</span></span></div>').join('') + '</div>';
+    }
+    if (R.unmatched.length) {
+      html += '<div class="vo-card warn"><div><div class="vo-h">ไม่มีในยาชุดใหม่ — กรุณาเลือก</div><div class="vo-sub">หมอสั่งหยุด หรือคุณยังต้องกินต่อ?</div></div>' +
+        R.unmatched.map(u => {
+          const id = u.old.id, c = V.choice[id] || {};
+          const dc = u.dose_changed_to ? '<div class="vo-sub" style="color:#8A4700">ชุดใหม่มียานี้ขนาด' + esc(doseTxt(u.dose_changed_to)) + ' — ถ้าหมอเปลี่ยนขนาด ควรเลือก "หยุดแล้ว" เพื่อไม่กินซ้อน</div>' : '';
+          const est = (u.old.est_remaining != null) ? Math.round(u.old.est_remaining) : '';
+          return '<div class="vo-um"><span class="nm" style="font-size:14px;font-weight:600">' + esc(u.old.drug_name) + esc(doseTxt(u.old)) + '</span>' + dc +
+            '<div class="vo-seg"><button type="button" data-id="' + id + '" data-a="stop" class="' + (c.action === 'stop' ? 'on' : '') + '" aria-pressed="' + (c.action === 'stop') + '">หยุดแล้ว</button>' +
+            '<button type="button" data-id="' + id + '" data-a="keep" class="' + (c.action === 'keep' ? 'on' : '') + '" aria-pressed="' + (c.action === 'keep') + '">ยังกินต่อ</button></div>' +
+            (c.action === 'keep' ? '<div style="display:flex;align-items:center;gap:8px"><label for="voLeft' + id + '" style="font-size:13px;flex:1">เหลืออยู่ประมาณ</label>' +
+              '<input id="voLeft' + id + '" data-left="' + id + '" inputmode="numeric" class="vo-input" style="width:80px;height:40px;text-align:center" value="' + esc(c.remaining != null ? c.remaining : est) + '"><span style="font-size:13px">เม็ด</span></div>' +
+              '<div class="vo-sub" style="font-size:11px">' + (est !== '' ? 'ระบบประมาณจากการกดกินยา แก้ได้' : 'ไม่ทราบจำนวน ใส่ตามที่เหลือจริง หรือเว้นว่างได้') + '</div>' : '') +
+            '</div>';
+        }).join('') + '</div>';
+    }
+    $('voBody').innerHTML = html;
+    $('voScanMore').onclick = () => { location.href = scanMoreUrl(); };
+    const sa = $('voStopAll'); if (sa) sa.onclick = () => { R.unmatched.forEach(u => { V.choice[u.old.id] = { action: 'stop' }; }); renderReview(); };
+    document.querySelectorAll('#voBody .vo-seg button').forEach(b => b.onclick = () => {
+      const id = Number(b.dataset.id); const prev = V.choice[id] || {};
+      V.choice[id] = { action: b.dataset.a, remaining: prev.remaining };
+      renderReview();
+    });
+    document.querySelectorAll('#voBody input[data-left]').forEach(inp => inp.oninput = () => {
+      const id = Number(inp.dataset.left); V.choice[id] = Object.assign({}, V.choice[id], { remaining: inp.value });
+    });
+    const pending = R.unmatched.filter(u => !V.choice[u.old.id]).length;
+    $('voFoot').innerHTML = '<div class="vo-status">' + (pending ? 'ยังเหลืออีก ' + pending + ' ตัวที่ต้องเลือก' : 'ยาเดิมจะเตือนต่อจนกว่าจะกดยืนยัน') + '</div>' +
+      '<button type="button" class="vo-btn" id="voConfirm"' + (pending ? ' disabled' : '') + '>ยืนยัน</button>';
+    $('voConfirm').onclick = confirmVisit;
+  }
+
+  async function confirmVisit(ev){
+    const R = V.review;
+    const decisions = R.unmatched.map(u => {
+      const c = V.choice[u.old.id] || {};
+      const d = { medication_id: u.old.id, action: c.action };
+      if (c.action === 'keep' && c.remaining !== undefined && String(c.remaining).trim() !== '') {
+        const n = Number(String(c.remaining).trim()); if (Number.isFinite(n) && n >= 0) d.remaining_tablets = n;
+      } else if (c.action === 'keep' && c.remaining === undefined && u.old.est_remaining != null) {
+        d.remaining_tablets = Math.round(u.old.est_remaining);
+      }
+      return d;
+    });
+    ev.target.disabled = true; ev.target.textContent = 'กำลังบันทึก...';
+    const r = await api('/api/visits/' + V.id + '/complete', { method: 'POST', body: JSON.stringify({ user_id: V.userId, decisions }) });
+    if (!r.ok) {
+      const msg = r.j && r.j.error === 'visit_not_open' ? 'รอบนี้ถูกปิดหรือยกเลิกไปแล้ว' : ((r.j && r.j.message) || 'บันทึกไม่สำเร็จ ยาเดิมยังเตือนตามปกติ ลองใหม่อีกครั้ง');
+      alert(msg); ev.target.disabled = false; ev.target.textContent = 'ยืนยัน'; return;
+    }
+    step5(r.j);
+  }
+
+  // ── ขั้น 5 ──
+  function step5(res){
+    // หน้าหลักอ่าน cache ยาจาก localStorage → ล้าง ให้โหลดชุดใหม่จาก backend
+    try { localStorage.removeItem('mt_medications'); } catch(e){}
+    const s = res.summary || {}, nd = res.next_dose;
+    show('พร้อมกินยา', 5);
+    const when = nd ? ((nd.day === 'today' ? 'วันนี้ ' : 'พรุ่งนี้ ') + nd.time + ' น.') : '';
+    $('voBody').innerHTML =
+      '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:12px 0">' +
+        '<div aria-hidden="true" style="width:72px;height:72px;border-radius:50%;background:var(--ac);color:#fff;font-size:38px;display:flex;align-items:center;justify-content:center">✓</div>' +
+        '<div style="font-size:21px;font-weight:700">เรียบร้อยครับ!</div>' +
+        (when ? '<div style="font-size:15px;color:var(--t2);line-height:1.6">หมอน้อยจะเตือนมื้อถัดไป<br><b style="color:var(--ad);font-size:18px">' + esc(when) + '</b></div>' : '') +
+      '</div>' +
+      '<div class="vo-card"><div class="vo-h">สรุปรอบการรักษา · ' + esc(thaiDate(res.visit && res.visit.visit_date)) + '</div>' +
+        row('ยาชุดใหม่ (ในตู้ยา)', (s.new_count || 0) + ' ตัว') +
+        row('ยาเดิมที่ย้ายไปประวัติ', ((s.replaced_count || 0) + (s.stopped_count || 0)) + ' ตัว') +
+        row('ยาเดิมที่ยังกินต่อ', (s.kept_count || 0) + ' ตัว') +
+      '</div>';
+    $('voFoot').innerHTML = '<button type="button" class="vo-btn" id="voHome">กลับหน้าหลัก</button>';
+    $('voHome').onclick = () => { location.href = homeUrl(); };
+    function row(a, b){ return '<div style="display:flex;justify-content:space-between;font-size:14px"><span>' + a + '</span><b>' + b + '</b></div>'; }
+  }
+
+  async function init(){
+    if (visitParam === 'new') { step1(); return; }
+    // ?visit=<id> → กลับมาสแกนเพิ่มในรอบเดิม
+    V.id = parseInt(visitParam) || null;
+    V.userId = (typeof resolveUserId === 'function') ? await resolveUserId() : null;
+    if (!V.id || !V.userId) { step1(); return; }
+    const d = await api('/api/visits/draft?user_id=' + V.userId);
+    if (!d.ok || !d.j.draft || d.j.draft.id !== V.id) { V.id = null; step1(); return; }  // รอบปิด/ยกเลิกแล้ว → เริ่มใหม่
+    banner(d.j.scanned_count);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
 </body>
 </html>
