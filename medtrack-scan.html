@@ -3757,8 +3757,11 @@ function drawImageCover(ctx, img, x, y, w, h) {
     const d = await api('/api/visits/draft?user_id=' + V.userId);
     const draft = d.ok ? d.j.draft : null;
     const scanned = d.ok ? d.j.scanned_count : 0;
-    const hosp = draft && draft.hospital_name || (d.ok ? d.j.last_hospital_name : '') || '';
-    const doc = draft && draft.doctor_name || '';
+    const appt = d.ok ? d.j.today_appointment : null;   // ใบนัดวันนี้/เมื่อวาน → เติมให้เลย
+    const hosp = draft && draft.hospital_name || (appt && appt.hospital_name) || (d.ok ? d.j.last_hospital_name : '') || '';
+    const doc = draft && draft.doctor_name || (appt && appt.doctor_name) || '';
+    const dept = draft && draft.department || (appt && appt.department) || '';
+    V.appointmentId = (draft && draft.appointment_id) || (appt && appt.id) || null;
     const vdate = draft ? String(draft.visit_date).slice(0,10) : todayISO();
     const min = new Date(); min.setDate(min.getDate() - 30);
     const minISO = min.getFullYear() + '-' + String(min.getMonth()+1).padStart(2,'0') + '-' + String(min.getDate()).padStart(2,'0');
@@ -3769,9 +3772,13 @@ function drawImageCover(ctx, img, x, y, w, h) {
       '<div class="vo-card">' +
         '<label class="vo-label" for="voDate">วันที่พบแพทย์ <span style="color:var(--dg)">*</span></label>' +
         '<input class="vo-input" id="voDate" type="date" value="' + esc(vdate) + '" min="' + minISO + '" max="' + todayISO() + '">' +
+        (appt ? '<div class="vo-sub" style="color:var(--ad);font-weight:600">ข้อมูลจากใบนัดวันที่ ' + esc(thaiDate(appt.appointment_date)) + ' · แก้ได้</div>' : '') +
         '<label class="vo-label" for="voHosp">โรงพยาบาล</label>' +
         '<input class="vo-input" id="voHosp" value="' + esc(hosp) + '" placeholder="เช่น สถาบันประสาทวิทยา">' +
-        (hosp ? '<div class="vo-sub">ใส่ให้จากครั้งก่อน แก้ได้</div>' : '') +
+        (hosp && !appt ? '<div class="vo-sub">ใส่ให้จากครั้งก่อน แก้ได้</div>' : '') +
+        '<label class="vo-label" for="voDept">คลินิก <span style="font-weight:400;color:var(--t2)">(ไม่บังคับ)</span></label>' +
+        '<input class="vo-input" id="voDept" value="' + esc(dept) + '" placeholder="เช่น ประสาท, หัวใจ, ตา">' +
+        '<div class="vo-sub">ใช้แยกยา: ยาจากโรงพยาบาลหรือคลินิกอื่นจะไม่ถูกเปลี่ยน</div>' +
         '<label class="vo-label" for="voDoc">แพทย์ <span style="font-weight:400;color:var(--t2)">(ไม่บังคับ)</span></label>' +
         '<input class="vo-input" id="voDoc" value="' + esc(doc) + '" placeholder="เช่น นพ.สมชาย">' +
       '</div>' +
@@ -3791,7 +3798,8 @@ function drawImageCover(ctx, img, x, y, w, h) {
       ev.target.disabled = true; ev.target.textContent = 'กำลังบันทึก...';
       const r = await api('/api/visits', { method: 'POST', body: JSON.stringify({
         user_id: V.userId, visit_date: date,
-        hospital_name: $('voHosp').value.trim() || null, doctor_name: $('voDoc').value.trim() || null }) });
+        hospital_name: $('voHosp').value.trim() || null, doctor_name: $('voDoc').value.trim() || null,
+        department: $('voDept').value.trim() || null, appointment_id: V.appointmentId || null }) });
       if (!r.ok) { alert((r.j && r.j.message) || 'บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); ev.target.disabled = false; ev.target.textContent = 'ถัดไป: สแกนยาชุดใหม่'; return; }
       V.id = r.j.visit.id; setVisitInUrl(V.id);
       hide(); banner(r.j.scanned_count);
@@ -3807,6 +3815,8 @@ function drawImageCover(ctx, img, x, y, w, h) {
     const r = await api('/api/visits/' + V.id + '/review?user_id=' + V.userId);
     if (!r.ok) { $('voBody').innerHTML = '<div class="vo-card"><div class="vo-sub">โหลดไม่สำเร็จ ลองใหม่อีกครั้ง</div><button type="button" class="vo-btn3" onclick="visitOpenReview()">ลองใหม่</button></div>'; return; }
     V.review = r.j; V.choice = {};
+    // ยาที่ไม่รู้ว่ามาจากคลินิกไหน → ตั้ง "ยังกินต่อ" ไว้ก่อน (กันปิดยาคลินิกอื่นผิด)
+    (r.j.unmatched || []).forEach(u => { if (!u.origin_known) V.choice[u.old.id] = { action: 'keep' }; });
     renderReview();
   };
 
@@ -3825,7 +3835,9 @@ function drawImageCover(ctx, img, x, y, w, h) {
       $('voScanMore').onclick = () => { location.href = scanMoreUrl(); };
       return;
     }
-    if (R.unmatched.length) html += '<button type="button" class="vo-btn3" id="voStopAll">หยุดยาเดิมทั้งหมด (ใช้เฉพาะชุดใหม่)</button>';
+    const known = R.unmatched.filter(u => u.origin_known);
+    const placeTxt = [R.visit_department, R.visit_hospital].filter(Boolean).join(' · ');
+    if (known.length) html += '<button type="button" class="vo-btn3" id="voStopAll">หยุดยาเดิมของ' + (placeTxt ? esc(placeTxt) : 'ที่นี่') + 'ทั้งหมด (' + known.length + ' ตัว)</button>';
     if (R.matched.length) {
       html += '<div class="vo-card"><div><div class="vo-h">ได้ยาตัวนี้มาใหม่แล้ว</div><div class="vo-sub">ตัวเดิมจะย้ายไปประวัติการรักษา</div></div>' +
         R.matched.map(m => '<div class="vo-row"><span aria-hidden="true" style="color:var(--ad);font-weight:700">✓</span><span style="display:flex;flex-direction:column;gap:2px">' +
@@ -3838,7 +3850,11 @@ function drawImageCover(ctx, img, x, y, w, h) {
           const id = u.old.id, c = V.choice[id] || {};
           const dc = u.dose_changed_to ? '<div class="vo-sub" style="color:#8A4700">ชุดใหม่มียานี้ขนาด' + esc(doseTxt(u.dose_changed_to)) + ' — ถ้าหมอเปลี่ยนขนาด ควรเลือก "หยุดแล้ว" เพื่อไม่กินซ้อน</div>' : '';
           const est = (u.old.est_remaining != null) ? Math.round(u.old.est_remaining) : '';
-          return '<div class="vo-um"><span class="nm" style="font-size:14px;font-weight:600">' + esc(u.old.drug_name) + esc(doseTxt(u.old)) + '</span>' + dc +
+          const src = [u.old.origin_department, u.old.origin_hospital].filter(Boolean).join(' · ');
+          const srcTxt = u.origin_known
+            ? (src ? '<div class="vo-sub" style="font-size:11.5px">จาก ' + esc(src) + '</div>' : '')
+            : '<div class="vo-sub" style="font-size:11.5px">ไม่ทราบว่ายานี้มาจากคลินิกไหน · ตั้งเป็น "ยังกินต่อ" ไว้ก่อน เปลี่ยนได้</div>';
+          return '<div class="vo-um"><span class="nm" style="font-size:14px;font-weight:600">' + esc(u.old.drug_name) + esc(doseTxt(u.old)) + '</span>' + srcTxt + dc +
             '<div class="vo-seg"><button type="button" data-id="' + id + '" data-a="stop" class="' + (c.action === 'stop' ? 'on' : '') + '" aria-pressed="' + (c.action === 'stop') + '">หยุดแล้ว</button>' +
             '<button type="button" data-id="' + id + '" data-a="keep" class="' + (c.action === 'keep' ? 'on' : '') + '" aria-pressed="' + (c.action === 'keep') + '">ยังกินต่อ</button></div>' +
             (c.action === 'keep' ? '<div style="display:flex;align-items:center;gap:8px"><label for="voLeft' + id + '" style="font-size:13px;flex:1">เหลืออยู่ประมาณ</label>' +
@@ -3847,9 +3863,18 @@ function drawImageCover(ctx, img, x, y, w, h) {
             '</div>';
         }).join('') + '</div>';
     }
+    if (R.others && R.others.length) {
+      html += '<div class="vo-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div><div class="vo-h">ยาจากโรงพยาบาลหรือคลินิกอื่น ' + R.others.length + ' ตัว</div>' +
+        '<div class="vo-sub">ไม่เปลี่ยน · เตือนตามเดิม</div></div><button type="button" class="vo-btn2" id="voOthersToggle" style="width:auto;color:var(--ad);font-weight:600">ดูรายชื่อ ▾</button></div>' +
+        '<div id="voOthersList" style="display:none;flex-direction:column;gap:6px">' +
+        R.others.map(o => '<div class="vo-sub" style="color:var(--t1)">• ' + esc(o.old.drug_name) + esc(doseTxt(o.old)) +
+          ' <span style="color:var(--t2)">· ' + esc([o.old.origin_department, o.old.origin_hospital].filter(Boolean).join(' · ')) + '</span></div>').join('') +
+        '</div></div>';
+    }
     $('voBody').innerHTML = html;
     $('voScanMore').onclick = () => { location.href = scanMoreUrl(); };
-    const sa = $('voStopAll'); if (sa) sa.onclick = () => { R.unmatched.forEach(u => { V.choice[u.old.id] = { action: 'stop' }; }); renderReview(); };
+    const sa = $('voStopAll'); if (sa) sa.onclick = () => { R.unmatched.filter(u => u.origin_known).forEach(u => { V.choice[u.old.id] = { action: 'stop' }; }); renderReview(); };
+    const ot = $('voOthersToggle'); if (ot) ot.onclick = () => { const l = $('voOthersList'); const open = l.style.display !== 'none'; l.style.display = open ? 'none' : 'flex'; ot.textContent = open ? 'ดูรายชื่อ ▾' : 'ซ่อน ▴'; };
     document.querySelectorAll('#voBody .vo-seg button').forEach(b => b.onclick = () => {
       const id = Number(b.dataset.id); const prev = V.choice[id] || {};
       V.choice[id] = { action: b.dataset.a, remaining: prev.remaining };
