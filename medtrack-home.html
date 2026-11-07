@@ -1063,6 +1063,140 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 
 
 </style>
+<script>
+// 🌐 MedTrack i18n — TH (ต้นฉบับ) / EN / 中文
+// แปลข้อความบนหน้าจออัตโนมัติ (รวมส่วนที่สร้างทีหลัง) · ข้อมูลผู้ใช้ เช่น ชื่อยา/รพ. คงตามต้นฉบับ
+(function(){
+  let L = 'th';
+  try { L = localStorage.getItem('mt_lang') || 'th'; } catch(e) {}
+  if (!['th','en','zh'].includes(L)) L = 'th';
+  window.MT_LANG = L;
+  window.mtL = (th, en, zh) => L === 'en' ? en : L === 'zh' ? zh : th;
+  if (L === 'th') { window.mtT = s => s; return; }
+  const LI = L === 'en' ? 0 : 1;
+  const D = {"เพิ่ม MedTrack ลงหน้าจอ": ["Add MedTrack to Home Screen", "将 MedTrack 添加到主屏幕"], "กดเข้าใช้ง่ายทุกวัน ไม่ต้องเปิด LINE": ["Open it in one tap — no need to open LINE", "每天一键打开，无需打开 LINE"], "เพิ่มเลย": ["Add now", "立即添加"], "ทำตาม 2 ขั้นตอนง่ายๆ": ["Two easy steps", "两个简单步骤"], "กดปุ่ม": ["Tap", "点击"], "แชร์": ["Share", "分享"], "ด้านล่างจอ": ["at the bottom of the screen", "（屏幕底部）"], "เลือก": ["Choose", "选择"], "\"เพิ่มไปยังหน้าจอโฮม\"": ["\"Add to Home Screen\"", "“添加到主屏幕”"], "เข้าใจแล้ว": ["Got it", "知道了"], "ผู้ช่วยดูแลสุขภาพ": ["Your health companion", "您的健康助手"], "วันนี้เป็นยังไงบ้างครับ?": ["How are you today?", "今天感觉怎么样？"], "ยังไม่มีนัด": ["No appointment", "暂无预约"], "เคล็ดลับ:": ["Tip:", "小贴士："], "เคล็ดลับ": ["Tip", "小贴士"], "หมอน้อย:": ["Mor Noi:", "小医生："], "ผู้ป่วยเบาหวานควรตรวจ HbA1c ทุก 3 เดือนครับ": ["People with diabetes should check HbA1c every 3 months", "糖尿病患者应每 3 个月检查一次 HbA1c"], "ความดันโลหิตสูงควรวัดทุกวัน เพื่อผลการรักษาที่ดีขึ้น": ["With high blood pressure, measure it daily for better results", "高血压患者应每天测量血压，治疗效果更好"], "กดยืนยันกินยาทุกมื้อ สะสมแต้มได้": ["Confirm every dose to collect points", "每次确认服药即可累积积分"], "ตรวจน้ำตาลในเลือดสม่ำเสมอ ช่วยควบคุมเบาหวานได้ดีขึ้น": ["Regular blood sugar checks help control diabetes", "定期检测血糖，有助于控制糖尿病"], "อย่าลืมนัดพบแพทย์ตามกำหนด ถามหมอน้อยได้เลยครับ": ["Don't miss your doctor appointments — ask Mor Noi anytime", "别忘了按时复诊，有问题随时问小医生"], "มื้อต่อไป": ["Next dose", "下一次服药"], "ยังไม่มียา": ["No medicines yet", "暂无药品"], "ยังไม่ได้กิน": ["Not taken yet", "尚未服用"], "แบบมาตรฐาน": ["Standard", "标准模式"], "แบบผู้สูงอายุ": ["Senior mode", "长辈模式"], "สวัสดีครับ": ["Hello", "您好"], "เดือนนี้": ["This month", "本月"], "ยาวันนี้": ["Today's medicines", "今日用药"], "สแกนยา": ["Scan meds", "扫描药品"], "ตู้ยา": ["Med cabinet", "药箱"], "นัดหมอ": ["Doctor visit", "预约就诊"], "คนดูแล": ["Caregivers", "照护人"], "นัดหมอครั้งหน้า": ["Next appointment", "下次就诊"], "นัดหมอครั้งต่อไป": ["Next appointment", "下次就诊"], "คนดูแลของคุณ": ["Your caregivers", "您的照护人"], "จัดการ": ["Manage", "管理"], "ดูแลโดย": ["Cared for by", "照护人"], "ยังไม่มีผู้ดูแล — แตะเพื่อเพิ่ม": ["No caregivers yet — tap to add", "暂无照护人 — 点击添加"], "ยังไม่มีตารางยาวันนี้ — สแกนซองยาเพิ่มได้เลย": ["No medicine schedule today — scan a medicine envelope to add", "今天没有用药安排 — 扫描药袋即可添加"], "ยาใกล้หมด": ["Running low", "药品快用完"], "กำลังตรวจสอบ": ["Checking", "正在检查"], "พบแพทย์ใหม่ยังไม่เสร็จ": ["New doctor visit not finished", "新就诊尚未完成"], "แตะเพื่อทำต่อ": ["Tap to continue", "点击继续"], "ทำด่วน": ["Quick actions", "快捷操作"], "พบแพทย์ใหม่": ["New doctor visit", "新的就诊"], "ได้ยาชุดใหม่": ["Got new medicines", "领到新药"], "สแกนยาเพิ่ม": ["Add more meds", "补充扫描药品"], "ยาที่ลืมสแกน": ["Meds you missed", "漏扫的药品"], "สแกนใบนัด": ["Scan appointment", "扫描预约单"], "บันทึกนัดแพทย์": ["Save appointment", "记录就诊预约"], "บันทึกกินยา": ["Log a dose", "记录服药"], "ยืนยันมื้อยาวันนี้": ["Confirm today's doses", "确认今日服药"], "เมนูหลัก": ["Main menu", "主菜单"], "มื้อยา": ["Doses", "服药时间"], "นัดแพทย์": ["Appointments", "就诊预约"], "สถิติกินยา": ["Adherence", "服药统计"], "ประวัติรักษา": ["Treatment history", "治疗记录"], "สรุปให้หมอ": ["Doctor summary", "给医生的摘要"], "แต้มรางวัล": ["Reward points", "奖励积分"], "สแกนซองยา": ["Scan envelope", "扫描药袋"], "LINE หมอน้อย": ["Mor Noi LINE", "小医生 LINE"], "สั่งยา Refill": ["Refill", "续药提醒"], "หมอน้อย": ["Mor Noi", "小医生"], "ตั้งค่า": ["Settings", "设置"], "หมอน้อยบอกว่า": ["Mor Noi says", "小医生提醒"], "หน้าหลัก": ["Home", "首页"], "ยาของฉัน": ["My meds", "我的药"], "สแกน": ["Scan", "扫描"], "สถิติ": ["Stats", "统计"], "โปรไฟล์": ["Profile", "个人"], "ปรับแต่งแอปให้เหมาะกับคุณ": ["Make the app work for you", "按您的需要设置应用"], "ข้อมูลส่วนตัว": ["Personal", "个人信息"], "ประวัติผู้ใช้": ["My profile", "个人资料"], "ชื่อ อายุ โรคประจำตัว น้ำหนัก": ["Name, age, conditions, weight", "姓名、年龄、慢性病、体重"], "ผู้ดูแล / Caregiver": ["Caregivers", "照护人"], "เพิ่มญาติให้รับแจ้งเตือนเมื่อลืมกิน": ["Let family get alerts when you miss a dose", "漏服时通知家人"], "แพทย์ประจำตัว": ["My doctor", "我的医生"], "บันทึกชื่อแพทย์และโรงพยาบาล": ["Doctor and hospital details", "记录医生和医院"], "โรงพยาบาลของฉัน": ["My hospitals", "我的医院"], "ผูกโรงพยาบาล + HN (สูงสุด 3 แห่ง)": ["Link hospital + HN (up to 3)", "绑定医院 + 病历号（最多 3 家）"], "การแจ้งเตือน": ["Reminders", "提醒"], "ตั้งเวลาเตือน": ["Reminder times", "提醒时间"], "เช้า กลางวัน เย็น ก่อนนอน": ["Morning, noon, evening, bedtime", "早、午、晚、睡前"], "เสียงและการแจ้งเตือน": ["Sound & alerts", "声音与通知"], "เลือกเสียงหมอน้อย สั่น หรือ silent": ["Sound, vibration or silent", "声音、振动或静音"], "เชื่อม LINE OA": ["Connect LINE", "连接 LINE"], "รับแจ้งเตือนผ่าน LINE จากหมอน้อย": ["Get reminders from Mor Noi on LINE", "通过 LINE 接收小医生提醒"], "ความเป็นส่วนตัว": ["Privacy", "隐私"], "PDPA & ความเป็นส่วนตัว": ["PDPA & privacy", "PDPA 与隐私"], "จัดการ consent และข้อมูลของคุณ": ["Your data and consent", "管理同意与个人数据"], "ภาษา": ["Language", "语言"], "ไทย / English / 中文": ["ไทย / English / 中文", "ไทย / English / 中文"], "บัญชีผู้ใช้": ["Account", "账户"], "ออกจากระบบ": ["Log out", "退出登录"], "Logout · ออกจากบัญชีนี้": ["Sign out of this account", "退出此账户"], "MedTrack · หมอน้อย": ["MedTrack · Mor Noi", "MedTrack · 小医生"], "เวอร์ชัน": ["Version", "版本"], "มื้อยาของฉัน": ["My doses", "我的服药时间"], "วันนี้": ["Today", "今天"], "กำลังโหลด": ["Loading", "加载中"], "จัดการยา": ["Manage medicines", "管理药品"], "ตู้ยาของฉัน": ["My med cabinet", "我的药箱"], "ประวัติสแกนยา + ใบนัด": ["Scanned envelopes + appointments", "扫描记录 + 预约单"], "สแกนใบนัด → AI → ปฏิทิน": ["Scan → AI → Calendar", "扫描 → AI → 日历"], "AI ยืนยัน": ["AI check", "AI 确认"], "ปฏิทิน": ["Calendar", "日历"], "สแกนใบนัดแพทย์": ["Scan appointment slip", "扫描就诊预约单"], "ถ่ายรูปใบนัด — AI อ่านชื่อแพทย์ วันเวลา คำแนะนำ ให้อัตโนมัติ": ["Take a photo — AI reads the doctor, date, time and instructions", "拍下预约单 — AI 自动读取医生、日期时间和注意事项"], "กดเพื่อเลือกรูปใบนัด": ["Tap to choose a photo", "点击选择预约单照片"], "รองรับ JPG, PNG": ["JPG or PNG", "支持 JPG、PNG"], "ถ่ายรูป": ["Camera", "拍照"], "แกลเลอรี": ["Gallery", "相册"], "วิเคราะห์ใบนัด": ["Read appointment", "识别预约单"], "AI อ่านข้อมูลสำเร็จ": ["AI read the slip", "AI 识别成功"], "นัดพบแพทย์": ["Doctor appointment", "就诊预约"], "แก้ไขข้อมูล": ["Edit", "编辑"], "ตั้งเตือนล่วงหน้า": ["Remind me", "提前提醒"], "เช้าวันนัด": ["Morning of", "就诊当天早上"], "หมอน้อย — MedTrack": ["Mor Noi — MedTrack", "小医生 — MedTrack"], "รับทราบ": ["OK", "知道了"], "เพิ่มปฏิทิน": ["Add to calendar", "加入日历"], "ดูนัดทั้งหมด": ["All appointments", "查看全部预约"], "แก้ไข": ["Edit", "编辑"], "บันทึกนัดหมาย": ["Save appointment", "保存预约"], "ปฏิทินนัดหมาย": ["Appointment calendar", "预约日历"], "เพิ่มนัด": ["Add", "添加预约"], "อา": ["Su", "日"], "จ": ["Mo", "一"], "อ": ["Tu", "二"], "พ": ["We", "三"], "พฤ": ["Th", "四"], "ศ": ["Fr", "五"], "ส": ["Sa", "六"], "ยาครบ": ["Meds", "用药"], "ตรวจ lab": ["Lab", "化验"], "นัดหมายใกล้นี้": ["Upcoming", "近期预约"], "สแกนใบนัด → วิเคราะห์": ["Scan slip → read", "扫描预约单 → 识别"], "สถิติการกินยา": ["Medication adherence", "服药统计"], "ข้อมูลจริงจากการกดยืนยันกินยา": ["Based on the doses you confirmed", "根据您确认的服药记录"], "ประวัติการกินยา": ["Dose history", "服药记录"], "รายวัน · จากการกดยืนยัน": ["Daily · from confirmations", "按日 · 来自确认记录"], "รอบพบแพทย์": ["Doctor visits", "就诊记录"], "ยาที่ได้รับ และยาเดิมที่ปิดในแต่ละรอบ": ["Medicines received and stopped at each visit", "每次就诊领取和停用的药品"], "ประวัติการรักษา": ["Treatment history", "治疗记录"], "บันทึกสุขภาพของคุณ": ["Your health records", "您的健康记录"], "ประวัติ": ["History", "记录"], "รอบพบแพทย์และยาที่ได้รับ": ["Doctor visits and medicines", "就诊与领药"], "ยาแต่ละรอบ · ยาเดิมที่ปิดพร้อมเหตุผล": ["Meds per visit · stopped meds with reasons", "每次用药 · 停药及原因"], "ย้อนหลัง 30 / 90 / 180 วัน": ["Last 30 / 90 / 180 days", "最近 30 / 90 / 180 天"], "ประวัติพบแพทย์": ["Past appointments", "既往就诊"], "นัดที่ผ่านมาทั้งหมด": ["All past appointments", "全部既往预约"], "เปิดให้หมอดูตอนพบแพทย์": ["Show it to your doctor at the visit", "就诊时给医生看"], "เปิดสรุปให้หมอดู": ["Open doctor summary", "打开医生摘要"], "ถ้ามีใบนัดวันนี้ จะสรุปเฉพาะคลินิกนั้นให้เอง · พิมพ์ได้": ["If you have an appointment today, it focuses on that clinic · printable", "如今天有预约，将只汇总该科室 · 可打印"], "สรุปผลของฉัน": ["My summary", "我的总结"], "เกรด แต้ม และวันติดต่อกันของรอบนี้": ["Grade, points and streak for this cycle", "本周期的评级、积分和连续天数"], "สะสมแต้ม": ["Points", "积分"], "แต้มวันนี้": ["Today's points", "今日积分"], "ได้แต้มทุกครั้งที่กดยืนยันกินยา · การแลกรางวัลจะเปิดเมื่อมีร้านยาหรือโรงพยาบาลร่วมโครงการ": ["Earn points each time you confirm a dose · Redeeming opens when partner pharmacies or hospitals join", "每次确认服药即可获得积分 · 合作药房或医院加入后开放兑换"], "ถ่ายรูปซองยาหรือใบนัด": ["Photograph a medicine envelope or appointment slip", "拍摄药袋或预约单"], "ได้ยาชุดใหม่จาก รพ. — ระบบช่วยจัดการยาเดิมให้": ["New medicines from hospital — we'll help sort your old ones", "从医院领到新药 — 系统帮您处理旧药"], "สแกนยาเพิ่มเติม": ["Scan more medicines", "补充扫描药品"], "ยาที่ลืมสแกน หรือยาจากร้านยา — ยาเดิมไม่เปลี่ยน": ["Missed meds or pharmacy meds — current meds stay", "漏扫或药房买的药 — 原有药品不变"], "บันทึกวันนัดและแจ้งเตือนล่วงหน้า": ["Save the date and get reminders", "记录日期并提前提醒"], "มื้อยาที่ยังไม่ได้ยืนยันวันนี้": ["Doses not yet confirmed today", "今天尚未确认的服药"], "เชื่อมต่อเพื่อรับแจ้งเตือนกินยา": ["Connect to get dose reminders", "连接以接收服药提醒"], "วิธีเชื่อม LINE": ["How to connect LINE", "如何连接 LINE"], "เปิดแอป LINE บนมือถือ": ["Open the LINE app on your phone", "在手机上打开 LINE"], "กด \"เพิ่มเพื่อน\" → สแกน QR ด้านล่าง": ["Tap \"Add friend\" → scan the QR below", "点击“添加好友” → 扫描下方二维码"], "ส่งข้อความใดๆ มา — ระบบเชื่อมอัตโนมัติ": ["Send any message — it links automatically", "发送任意消息 — 自动连接"], "MedTrack หมอน้อย": ["MedTrack Mor Noi", "MedTrack 小医生"], "Add หมอน้อย": ["Add Mor Noi", "添加小医生"], "ตรวจสอบอีกครั้ง": ["Check again", "重新检查"], "เชื่อม LINE แล้วครับ!": ["LINE connected!", "LINE 已连接！"], "เชื่อม LINE แล้วครับ": ["LINE connected", "LINE 已连接"], "หมอน้อยจะส่งให้ทาง LINE": ["What Mor Noi sends on LINE", "小医生会通过 LINE 发送"], "เตือนกินยาทุกมื้อตามซอง กด \"กินแล้ว\" ในข้อความได้เลย": ["A reminder for every dose — tap \"Taken\" in the message", "按药袋提醒每次服药 — 在消息里点“已服用”即可"], "เตือนนัดแพทย์ล่วงหน้า 7 วัน, 3 วัน, 1 วัน และเช้าวันนัด": ["Appointment reminders 7, 3 and 1 day before, and that morning", "就诊前 7 天、3 天、1 天及当天早上提醒"], "เปลี่ยนเวลาเตือนได้ที่ ตั้งค่า → ตั้งเวลาเตือน": ["Change times in Settings → Reminder times", "可在 设置 → 提醒时间 中修改"], "ถ้าบล็อกหรือลบเพื่อน LINE หมอน้อย ระบบจะหยุดเตือนจนกว่าจะเพิ่มเพื่อนใหม่": ["If you block or remove Mor Noi on LINE, reminders stop until you add it again", "如果屏蔽或删除小医生 LINE，提醒将暂停，直到重新添加"], "เชื่อมแล้ว · หมอน้อย": ["Connected · Mor Noi", "已连接 · 小医生"], "หมอน้อยส่งเตือนถึงคุณทาง LINE ได้แล้ว": ["Mor Noi can now remind you on LINE", "小医生已可通过 LINE 提醒您"], "ยังไม่ได้เพิ่มเพื่อน — ยังไม่ได้รับเตือนทาง LINE": ["Not added yet — no LINE reminders", "尚未添加好友 — 暂无 LINE 提醒"], "กำลังตรวจสอบ...": ["Checking...", "正在检查..."], "หมอน้อย AI": ["Mor Noi AI", "小医生 AI"], "พร้อมตอบคำถาม": ["Ready to help", "随时为您解答"], "กำลังคิด...": ["Thinking...", "思考中..."], "สวัสดีครับ! ผมหมอน้อย": ["Hi! I'm Mor Noi", "您好！我是小医生"], "ถามเรื่องยาหรือสุขภาพได้เลยครับ": ["Ask me about your medicines or health", "有关药品或健康的问题都可以问我"], "กินยาตอนไหน": ["When to take", "什么时候吃药"], "ชื่อ-นามสกุล": ["Full name", "姓名"], "อายุ": ["Age", "年龄"], "เพศ": ["Sex", "性别"], "ชาย": ["Male", "男"], "หญิง": ["Female", "女"], "อื่นๆ": ["Other", "其他"], "น้ำหนัก (กก.)": ["Weight (kg)", "体重（公斤）"], "ส่วนสูง (ซม.)": ["Height (cm)", "身高（厘米）"], "เบอร์โทรศัพท์": ["Phone", "电话"], "HN (เลขผู้ป่วย)": ["HN (hospital number)", "HN（病历号）"], "โรคประจำตัว": ["Conditions", "慢性病"], "คั่นด้วยลูกน้ำ เช่น เบาหวาน, ความดัน": ["Separate with commas, e.g. diabetes, hypertension", "用逗号分隔，例如：糖尿病, 高血压"], "ประวัติแพ้ยา": ["Drug allergies", "药物过敏史"], "สิทธิการรักษา": ["Health coverage", "医疗保障"], "-- เลือก --": ["-- Choose --", "-- 请选择 --"], "บัตรทอง (30 บาท)": ["UCS gold card (30 baht)", "全民健康保障（30 泰铢）"], "ประกันสังคม": ["Social security", "社会保险"], "ข้าราชการ / รัฐวิสาหกิจ": ["Civil servant / state enterprise", "公务员 / 国企"], "ประกันเอกชน": ["Private insurance", "商业保险"], "แรงงานต่างชาติ / SMIS": ["Migrant worker / SMIS", "外籍劳工 / SMIS"], "จ่ายเองทั้งหมด": ["Self-pay", "自费"], "บันทึก": ["Save", "保存"], "เพิ่มผู้ดูแลใหม่": ["Add a caregiver", "添加照护人"], "ชื่อผู้ดูแล": ["Caregiver name", "照护人姓名"], "ความสัมพันธ์": ["Relationship", "关系"], "ลูก": ["Child", "子女"], "คู่สมรส": ["Spouse", "配偶"], "พ่อ / แม่": ["Parent", "父母"], "พี่ / น้อง": ["Sibling", "兄弟姐妹"], "เบอร์โทร": ["Phone", "电话"], "สิทธิ์การดูแล": ["Access level", "照护权限"], "ผู้ดูแลหลัก": ["Main caregiver", "主要照护人"], "เห็นยาทุกมื้อ ประวัติ และแนวโน้ม": ["Sees every dose, history and trends", "可查看每次服药、记录和趋势"], "ผู้ดูแลทั่วไป": ["Caregiver", "一般照护人"], "เห็นแค่ภาพรวมและนัดหมาย": ["Sees overview and appointments only", "仅查看概况和预约"], "เตือนผู้ดูแลหากผ่านมาแล้ว": ["Alert caregiver after", "超过以下时间提醒照护人"], "สร้างคำเชิญ": ["Create invite", "创建邀请"], "สร้างคำเชิญแล้ว": ["Invite created", "邀请已创建"], "รหัสเชิญผู้ดูแล:": ["Caregiver invite code:", "照护人邀请码："], "คัดลอก": ["Copy", "复制"], "วิธีใช้:": ["How to use:", "使用方法："], "ผู้ดูแลเพิ่ม": ["Caregiver adds", "照护人添加"], "@หมอน้อย": ["@MorNoi", "@小医生"], "เป็นเพื่อน LINE": ["as a LINE friend", "为 LINE 好友"], "ส่งข้อความ:": ["Send:", "发送："], "ระบบจะเชื่อมต่ออัตโนมัติ": ["It links automatically", "系统将自动连接"], "เสร็จสิ้น": ["Done", "完成"], "ผู้ดูแลปัจจุบัน:": ["Current caregivers:", "当前照护人："], "เชื่อมต่อแล้ว": ["Connected", "已连接"], "รอเชื่อม": ["Waiting", "等待连接"], "ยังไม่มีผู้ดูแล — เพิ่มได้เลยครับ": ["No caregivers yet — add one below", "暂无照护人 — 可在下方添加"], "ตามวันที่": ["By date", "按日期"], "ตามรพ.": ["By hospital", "按医院"], "ตามยา": ["By medicine", "按药品"], "ยังไม่มีประวัติการสแกน": ["No scans yet", "暂无扫描记录"], "เริ่มสแกนซองยาหรือใบนัดเพื่อสะสมประวัติ": ["Scan a medicine envelope or appointment slip to start", "扫描药袋或预约单开始记录"], "รายละเอียดการสแกน": ["Scan details", "扫描详情"], "หมายเหตุของฉัน": ["My notes", "我的备注"], "บันทึกหมายเหตุ": ["Save note", "保存备注"], "ตั้งค่าจำนวนยา": ["Pill counts", "设置药品数量"], "เลือกยาที่ต้องการใส่จำนวน → ระบบจะคำนวณวันที่ยาจะหมด และแจ้งเตือนล่วงหน้า 7/3/0 วัน": ["Choose a medicine and enter the count → we estimate when it runs out and remind you 7/3/0 days ahead", "选择药品并填写数量 → 系统计算用完日期，并提前 7/3/0 天提醒"], "ยังไม่มียาในระบบ": ["No medicines yet", "暂无药品"], "เพิ่มยาก่อนผ่านการสแกนซองยา": ["Add medicines by scanning an envelope first", "请先扫描药袋添加药品"], "กำลังตั้งค่า": ["Setting up", "正在设置"], "วันที่เริ่มกินยา": ["Start date", "开始服药日期"], "จำนวนเม็ดทั้งหมดที่ได้รับ": ["Total tablets received", "领取的药片总数"], "ตัวอย่าง: รพ. จ่ายยา 90 วัน × 1 เม็ด/วัน = 90 เม็ด": ["Example: 90 days × 1 tablet/day = 90 tablets", "例如：90 天 × 每天 1 片 = 90 片"], "ระบบจะคำนวณ:": ["We'll calculate:", "系统将计算："], "กลับ": ["Back", "返回"], "หยุดกินยานี้ (ลบจากระบบ)": ["Stop this medicine", "停用此药"], "ระบบจะหยุดเตือนยานี้ · ประวัติยังเก็บไว้": ["Reminders stop · history is kept", "将停止提醒此药 · 记录仍保留"], "เพียงพอ": ["Enough", "充足"], "ชื่อแพทย์": ["Doctor", "医生姓名"], "โรงพยาบาล": ["Hospital", "医院"], "แผนก / คลินิก": ["Department / clinic", "科室 / 门诊"], "เบอร์โทรนัดหมาย": ["Appointment phone", "预约电话"], "วันนัดครั้งถัดไป": ["Next appointment", "下次预约日期"], "ผูกโรงพยาบาลที่รักษา (สูงสุด 3 แห่ง) เพื่อเชื่อมข้อมูลยาอัตโนมัติ": ["Link the hospitals you visit (up to 3) to sync medicines automatically", "绑定就诊医院（最多 3 家），自动同步用药信息"], "เพิ่มโรงพยาบาล": ["Add hospital", "添加医院"], "เลข HN ที่โรงพยาบาลนี้": ["HN at this hospital", "该医院的病历号"], "ตั้งเวลาอาหาร": ["Meal times", "用餐时间"], "ตั้งเวลาที่กินข้าวจริง (เลือกทีละครึ่งชั่วโมง) ระบบจะเตือนยา \"ก่อน/หลังอาหาร\" ตามเวลานี้": ["Set when you actually eat (in half-hour steps). \"Before/after meal\" reminders follow these times", "设置您实际用餐的时间（以半小时为单位），“饭前/饭后”提醒将按此时间"], "มื้อเช้า": ["Breakfast", "早餐"], "มื้อกลางวัน": ["Lunch", "午餐"], "มื้อเย็น": ["Dinner", "晚餐"], "เวลานอน": ["Bedtime", "睡觉时间"], "ก่อนนอน": ["Bedtime", "睡前"], "ดูผลก่อนบันทึก": ["Preview changes", "预览更改"], "ยืนยันเปลี่ยนเวลา": ["Confirm new times", "确认修改时间"], "กลับไปแก้": ["Go back", "返回修改"], "ยังไม่ได้เปลี่ยนเวลา": ["No times changed", "时间未更改"], "ยังไม่มียาที่ผูกกับมื้อที่เปลี่ยน — ยาที่สแกนใหม่จะใช้เวลานี้": ["No medicines tied to these meals yet — new scans will use these times", "目前没有与这些餐次相关的药 — 新扫描的药将使用此时间"], "ตามเวลาที่แพทย์สั่ง": ["At the time the doctor set", "按医生指定的时间"], "เมื่อมีอาการ": ["When needed", "需要时服用"], "ทุก N ชั่วโมง": ["Every N hours", "每 N 小时"], "วันนี้ยังเตือนตามเวลาเดิม จะได้ไม่มีมื้อซ้ำหรือมื้อหาย": ["Today keeps the old times, so no dose is doubled or missed", "今天仍按原时间提醒，避免重复或漏服"], "ก่อนอาหารเช้า": ["Before breakfast", "早餐前"], "หลังอาหารเช้า": ["After breakfast", "早餐后"], "พร้อมอาหารเช้า": ["With breakfast", "随早餐"], "ก่อนอาหารกลางวัน": ["Before lunch", "午餐前"], "หลังอาหารกลางวัน": ["After lunch", "午餐后"], "พร้อมอาหารกลางวัน": ["With lunch", "随午餐"], "ก่อนอาหารเย็น": ["Before dinner", "晚餐前"], "หลังอาหารเย็น": ["After dinner", "晚餐后"], "พร้อมอาหารเย็น": ["With dinner", "随晚餐"], "ก่อนอาหาร": ["Before meals", "饭前"], "หลังอาหาร": ["After meals", "饭后"], "พร้อมอาหาร": ["With meals", "随餐"], "แจ้งเตือนก่อนถึงเวลา (นาที)": ["Remind before (minutes)", "提前提醒（分钟）"], "ตรงเวลาพอดี": ["On time", "准时"], "ถ้าลืมกิน แจ้งซ้ำหลัง (นาที)": ["If missed, remind again after (minutes)", "如漏服，多久后再次提醒（分钟）"], "ไม่แจ้งซ้ำ": ["Don't repeat", "不重复"], "1 ชั่วโมง": ["1 hour", "1 小时"], "เสียงแจ้งเตือน": ["Alert sound", "提醒声音"], "เสียง": ["Sound", "声音"], "สั่น": ["Vibrate", "振动"], "MedTrack เก็บข้อมูลยา ประวัติการกินยา และนัดแพทย์ของคุณไว้บน": ["MedTrack stores your medicines, dose history and appointments on", "MedTrack 将您的药品、服药记录和就诊预约保存在"], "ระบบของ MedTrack": ["the MedTrack system", "MedTrack 系统中"], "เพื่อส่งเตือนทาง LINE และทำสรุปให้แพทย์หรือผู้ดูแลที่คุณเชิญ": ["to send LINE reminders and prepare summaries for your doctor or invited caregivers", "用于发送 LINE 提醒，并为医生或您邀请的照护人生成摘要"], "ไม่ขายหรือส่งต่อข้อมูลให้บุคคลอื่น": ["We never sell or pass on your data", "不出售、不转交您的数据"], "ผู้ดูแลเห็นข้อมูลได้เฉพาะเมื่อคุณเชิญเท่านั้น": ["Caregivers see your data only if you invite them", "只有您邀请的照护人才能查看"], "ขอดู แก้ไข หรือลบข้อมูลบนระบบได้ — ส่งข้อความหา LINE @medtrack": ["To view, correct or delete your data, message LINE @medtrack", "如需查看、更正或删除数据，请发消息至 LINE @medtrack"], "อ่านนโยบายความเป็นส่วนตัว": ["Read the privacy policy", "阅读隐私政策"], "ล้างข้อมูลในเครื่องนี้": ["Clear data on this device", "清除本机数据"], "ปิด": ["Close", "关闭"], "ภาษา / Language": ["ภาษา / Language", "ภาษา / Language"], "ภาษาไทย": ["ภาษาไทย", "ภาษาไทย"], "หน้าสแกน หน้าสรุปให้หมอ และข้อความ LINE ยังเป็นภาษาไทย": ["Scanning, the doctor summary and LINE messages are still in Thai", "扫描页、医生摘要和 LINE 消息目前仍为泰语"], "ไม่มีรายการใหม่": ["Nothing new", "暂无新消息"], "ไม่มีการแจ้งเตือนใหม่": ["No new notifications", "暂无新通知"], "หมอน้อยส่งเตือนกินยาทาง LINE ตามเวลา": ["Mor Noi sends dose reminders on LINE on time", "小医生会按时通过 LINE 提醒服药"], "รอ": ["Pending", "待服"], "รอกิน": ["Due", "待服用"], "ตอนนี้ไม่มีมื้อที่ต้องยืนยัน": ["No doses to confirm right now", "目前没有需要确认的服药"], "มื้อถัดไปวันนี้:": ["Next today:", "今天接下来："], "ยืนยันได้เมื่อถึงเวลาเตือน": ["You can confirm once the reminder time arrives", "提醒时间到后即可确认"], "ภาพรวม": ["Overview", "概况"], "7 วันล่าสุด": ["Last 7 days", "最近 7 天"], "ยังไม่มีข้อมูล": ["No data yet", "暂无数据"], "ยาที่ลืมบ่อย (30 วัน)": ["Most missed (30 days)", "最常漏服（30 天）"], "ไม่มีมื้อที่พลาดใน 30 วันล่าสุด": ["No missed doses in the last 30 days", "最近 30 天没有漏服"], "กินครบต่อเนื่อง": ["Streak", "连续全勤"], "นับจากมื้อที่กดยืนยันหรือที่ระบบบันทึกว่าพลาด · มื้อที่ยังไม่ถึงเวลาไม่นับ": ["Counts confirmed and missed doses · upcoming doses are not counted", "统计已确认和漏服的剂次 · 尚未到时间的不计入"], "ยังไม่มีรอบพบแพทย์": ["No doctor visits yet", "暂无就诊记录"], "เมื่อได้ยาชุดใหม่จากโรงพยาบาล กด": ["When you get new medicines from the hospital, tap", "从医院领到新药时，请点"], "สแกน → พบแพทย์ใหม่": ["Scan → New doctor visit", "扫描 → 新的就诊"], "ยังไม่มีประวัติในช่วงนี้": ["No history for this period", "此期间暂无记录"], "วันนี้ยังไม่ได้แต้ม · กดยืนยันกินยาเพื่อรับแต้ม": ["No points yet today · confirm a dose to earn some", "今天还没有积分 · 确认服药即可获得"], "ลองใหม่": ["Try again", "重试"], "กินแล้ว": ["Taken", "已服用"], "กินแล้ว ✓": ["Taken ✓", "已服用 ✓"], "พลาด": ["Missed", "漏服"], "ข้าม": ["Skipped", "跳过"], "สาย": ["Late", "迟服"], "ยืนยัน": ["Confirm", "确认"], "ครึ่งเม็ด": ["½ tablet", "半片"], "ไม่ระบุชื่อ": ["Unnamed", "未命名"], "หมดแล้ว": ["Finished", "已用完"], "ยาหมดแล้ว": ["Finished", "已用完"], "วันนี้ไม่มีมื้อเหลือแล้วครับ พรุ่งนี้มาเริ่มใหม่กัน": ["No more doses today — see you tomorrow", "今天的服药已结束，明天继续"], "ยังไม่มียาที่ต้องกินวันนี้ ถ้าเพิ่งได้ยาใหม่ กด \"พบแพทย์ใหม่\" เพื่อสแกนซองยาได้เลยครับ": ["No medicines due today. Just got new ones? Tap \"New doctor visit\" to scan them", "今天没有需要服用的药。刚领到新药？点“新的就诊”扫描药袋"], "บันทึกเวลาอาหารแล้ว": ["Meal times saved", "用餐时间已保存"], "โหลดเวลาอาหารไม่สำเร็จ ลองใหม่อีกครั้ง": ["Couldn't load meal times — please try again", "无法加载用餐时间，请重试"], "คำนวณไม่สำเร็จ ลองใหม่อีกครั้ง": ["Couldn't calculate — please try again", "计算失败，请重试"], "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง": ["Couldn't save — please try again", "保存失败，请重试"], "ตรวจสอบไม่สำเร็จ ลองใหม่อีกครั้ง": ["Couldn't check — please try again", "检查失败，请重试"], "เชื่อม LINE แล้ว": ["LINE connected", "LINE 已连接"], "ยังไม่พบการเพิ่มเพื่อน — เพิ่มแล้วส่งข้อความหาหมอน้อย 1 ครั้ง": ["Not added yet — add Mor Noi and send it one message", "尚未添加 — 请添加小医生并发送一条消息"], "กำลังบันทึก...": ["Saving...", "保存中..."], "กำลังคำนวณ...": ["Calculating...", "计算中..."], "บันทึกประวัติผู้ใช้แล้ว": ["Profile saved", "个人资料已保存"], "บันทึกข้อมูลแพทย์แล้ว": ["Doctor details saved", "医生信息已保存"], "บันทึกการแจ้งเตือนแล้ว": ["Alert settings saved", "通知设置已保存"], "ล้างข้อมูลในเครื่องแล้ว": ["Device data cleared", "本机数据已清除"], "ยาของฉัน  ⏰ กินยาตอนไหน": ["My meds  ⏰ When to take", "我的药  ⏰ 什么时候吃药"], "LINE ID: รอการยืนยัน": ["LINE ID: pending", "LINE ID：待确认"], "รหัสเชิญผู้ดูแล": ["Caregiver invite code", "照护人邀请码"], "วิธีใช้": ["How to use", "使用方法"], "ระบบจะคำนวณ": ["We'll calculate", "系统将计算"], "อีก 14 วัน จะถึงนัดหมอแล้วนะครับ!": ["Your appointment is in 14 days!", "距离就诊还有 14 天！"], "นพ. วิชัย รักสุขภาพ": ["Dr. Wichai Raksukhaphap", "Wichai Raksukhaphap 医生"], "คลินิกเบาหวาน อาคาร 3": ["Diabetes clinic, Building 3", "糖尿病门诊，3 号楼"], "งดน้ำและอาหาร 8 ชม. ก่อนพบแพทย์": ["No food or water for 8 hours before the visit", "就诊前 8 小时禁食禁水"], "ถามหมอน้อย": ["Ask Mor Noi", "问小医生"], "ถามหมอน้อย...": ["Ask Mor Noi...", "问小医生..."], "นาย สมชาย ใจดี": ["e.g. Somchai Jaidee", "例如：Somchai Jaidee"], "พิมพ์เพิ่มโรค เช่น เบาหวาน, ความดัน": ["e.g. diabetes, hypertension", "例如：糖尿病, 高血压"], "นาง สมศรี ใจดี": ["e.g. Somsri Jaidee", "例如：Somsri Jaidee"], "เพิ่มหมายเหตุ...": ["Add a note...", "添加备注..."], "เพิ่มหมายเหตุ": ["Add a note", "添加备注"], "เช่น 30, 60, 90": ["e.g. 30, 60, 90", "例如：30, 60, 90"], "รพ. รามาธิบดี": ["e.g. Ramathibodi Hospital", "例如：Ramathibodi 医院"], "อายุรกรรม / เบาหวาน": ["e.g. Internal medicine / Diabetes", "例如：内科 / 糖尿病"], "พิมพ์ชื่อ เช่น ประสาท, รามา": ["Type a name, e.g. Prasat, Rama", "输入名称，例如：Prasat、Rama"], "หมายเลขผู้ป่วย": ["Patient number", "病历号"]};
+  const MF = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"], MS = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+  const MEN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTH_RE = '(' + MF.concat(MS).map(x => x.replace(/\./g,'\\.')).join('|') + ')';
+  const mIdx = n => { let i = MF.indexOf(n); return i >= 0 ? i : MS.indexOf(n); };
+  const yr = y => { if (!y) return null; y = +y; if (y < 100) y += 2500; return y > 2400 ? y - 543 : y; };
+  const fmtDate = (d, mon, y) => { const i = mIdx(mon), Y = yr(y);
+    return LI === 0 ? (d ? d + ' ' : '') + MEN[i] + (Y ? ' ' + Y : '') : (Y ? Y + '年' : '') + (i + 1) + '月' + (d ? d + '日' : ''); };
+  const two = (en, zh) => LI === 0 ? en : zh;
+  const MEAL = {'มื้อเช้า':['Breakfast','早餐'],'มื้อกลางวัน':['Lunch','午餐'],'มื้อเย็น':['Dinner','晚餐'],'ก่อนนอน':['Bedtime','睡前']};
+  const P = [
+    [/^สวัสดีครับ คุณ(.+)$/, m => two('Hello, ' + m[1], '您好，' + m[1])],
+    [/^สวัสดีตอน(เช้า|บ่าย|เย็น|ค่ำ) คุณ(.+)$/, m => two({เช้า:'Good morning',บ่าย:'Good afternoon',เย็น:'Good evening',ค่ำ:'Good evening'}[m[1]] + ', ' + m[2], {เช้า:'早上好',บ่าย:'下午好',เย็น:'晚上好',ค่ำ:'晚上好'}[m[1]] + '，' + m[2])],
+    [/^วันนี้ (\d+)\/(\d+) \((\d+)%\)$/, m => two(`Today ${m[1]}/${m[2]} (${m[3]}%)`, `今天 ${m[1]}/${m[2]}（${m[3]}%）`)],
+    [/^วันนี้ (\d+)\/(\d+) ครบ$/, m => two(`Today ${m[1]}/${m[2]} — all done`, `今天 ${m[1]}/${m[2]} 全部完成`)],
+    [/^พร้อมเริ่มวันใหม่$/, () => two('Ready for a new day', '新的一天开始了')],
+    [/^([\d,]+) (แต้ม|คะแนน)$/, m => two(m[1] + ' pts', m[1] + ' 积分')],
+    [/^คุณมี ([\d,]+) ⭐ แต้ม$/, m => two(`You have ${m[1]} ⭐ points`, `您有 ${m[1]} ⭐ 积分`)],
+    [/^วันนี้ (\d+) \/ (\d+) มื้อ$/, m => two(`Today ${m[1]} / ${m[2]} doses`, `今天 ${m[1]} / ${m[2]} 次`)],
+    [/^(\d+) วันติดต่อกัน$/, m => two(`${m[1]}-day streak`, `连续 ${m[1]} 天`)],
+    [/^(\d+) วันติดต่อกัน · สูงสุด (\d+) วัน$/, m => two(`${m[1]}-day streak · best ${m[2]} days`, `连续 ${m[1]} 天 · 最长 ${m[2]} 天`)],
+    [/^(\d+) วัน$/, m => two(m[1] + (m[1] === '1' ? ' day' : ' days'), m[1] + ' 天')],
+    [/^(\d+) นาที$/, m => two(m[1] + ' min', m[1] + ' 分钟')],
+    [/^(\d+) นาทีก่อน$/, m => two(m[1] + ' min before', '提前 ' + m[1] + ' 分钟')],
+    [/^(\d+) ชั่วโมง$/, m => two(m[1] + ' h', m[1] + ' 小时')],
+    [/^(\d\d?[:.]\d\d) น\.?$/, m => m[1]],
+    [/^(มื้อเช้า|มื้อกลางวัน|มื้อเย็น|ก่อนนอน) — (\d\d:\d\d) น\.$/, m => MEAL[m[1]][LI] + ' — ' + m[2]],
+    [/^(.+?) · (\d+(?:\.\d+)?) เม็ด$/, m => m[1] + ' · ' + two(m[2] + ' tab', m[2] + ' 片')],
+    [/^(.+?) · ครึ่งเม็ด$/, m => m[1] + ' · ' + two('½ tab', '半片')],
+    [/^(\d+(?:\.\d+)?) เม็ด$/, m => two(m[1] + ' tab', m[1] + ' 片')],
+    [/^เหลือ (\d+) (มื้อ|ครั้ง)$/, m => two(m[1] + ' doses left', '剩 ' + m[1] + ' 次')],
+    [/^วันนี้กินยาแล้ว (\d+)\/(\d+) ครั้ง$/, m => two(`Taken today: ${m[1]}/${m[2]}`, `今天已服 ${m[1]}/${m[2]} 次`)],
+    [/^จำนวน (\d+) เม็ด · เหลือ (\d+) เม็ด$/, m => two(`${m[1]} tablets · ${m[2]} left`, `共 ${m[1]} 片 · 剩 ${m[2]} 片`)],
+    [/^กินตรง (\d+)% \((\d+)\/(\d+) มื้อ\)(?: · ครบทุกมื้อ (\d+) วัน)?$/, m => two(`${m[1]}% on track (${m[2]}/${m[3]} doses)` + (m[4] ? ` · ${m[4]} full days` : ''), `按时 ${m[1]}%（${m[2]}/${m[3]} 次）` + (m[4] ? ` · 全勤 ${m[4]} 天` : ''))],
+    [/^กินตรง (\d+)\/(\d+) มื้อ$/, m => two(`${m[1]}/${m[2]} doses on track`, `按时 ${m[1]}/${m[2]} 次`)],
+    [/^ยาที่จะเลื่อนเวลาเตือน \((\d+)\)$/, m => two(`Medicines with new reminder times (${m[1]})`, `将调整提醒时间的药品（${m[1]}）`)],
+    [/^ไม่เปลี่ยน — ซองระบุเวลา \((\d+)\)$/, m => two(`Unchanged — time set on the envelope (${m[1]})`, `不变 — 药袋指定时间（${m[1]}）`)],
+    [/^ไม่เปลี่ยน — กินตามรอบชั่วโมง\/เมื่อมีอาการ \((\d+)\)$/, m => two(`Unchanged — every N hours / when needed (${m[1]})`, `不变 — 按小时间隔 / 需要时服用（${m[1]}）`)],
+    [/^ยกเลิกเวลาที่รอใช้ (\d+) รายการ \(กลับเป็นเวลาเดิม\)$/, m => two(`${m[1]} pending change(s) cancelled (back to the original time)`, `已取消 ${m[1]} 项待生效更改（恢复原时间）`)],
+    [/^เริ่มใช้เวลาใหม่$/, () => two('New times start', '新时间生效日期')],
+    [/^มีเวลาเตือนยาใหม่ (\d+) รายการ รอเริ่มใช้ (\d{1,2}) (\S+) (\d{2,4})$/, m => two(`${m[1]} new reminder time(s) start ${fmtDate(m[2], m[3], m[4])}`, `${m[1]} 项新提醒时间将于 ${fmtDate(m[2], m[3], m[4])} 生效`)],
+    [/^บันทึกแล้ว เวลาเตือนใหม่เริ่ม (\d{1,2}) (\S+) (\d{2,4})$/, m => two(`Saved. New reminder times start ${fmtDate(m[1], m[2], m[3])}`, `已保存，新提醒时间于 ${fmtDate(m[1], m[2], m[3])} 生效`)],
+    [/^ดูอีก (\d+) ตัว$/, m => two(`Show ${m[1]} more`, `再显示 ${m[1]} 个`)],
+    [/^พลาด (\d+) ครั้ง$/, m => two(`missed ${m[1]}×`, `漏服 ${m[1]} 次`)],
+    [/^อีก (\d+) วัน$/, m => two(`in ${m[1]} days`, `${m[1]} 天后`)],
+    [/^ใช้ได้อีก (\d+) วัน$/, m => two(`${m[1]} days left`, `还可用 ${m[1]} 天`)],
+    [new RegExp('^(\\d{1,2}) ' + MONTH_RE + '(?: (\\d{2,4}))?$'), m => fmtDate(m[1], m[2], m[3])],
+    [new RegExp('^เดือน' + MONTH_RE + ' (\\d{4})$'), m => fmtDate(null, m[1], m[2])],
+    [new RegExp('^(\\d{1,2}) ' + MONTH_RE + ' (\\d{4}) · (\\d\\d:\\d\\d)$'), m => fmtDate(m[1], m[2], m[3]) + ' · ' + m[4]],
+  ];
+  // ชิ้นส่วนที่แทนทีละคำ (ใช้เมื่อไม่ตรงทั้งประโยค — รับผลเฉพาะเมื่อไม่มีภาษาไทยเหลือ)
+  const F = [
+    [/ น\./g, () => ''],
+    [/\((\d+) ตัว\)/g, m => two(`(${m[1]} meds)`, `（${m[1]} 种）`)],
+    [/(\d+) มื้อ/g, m => two(`${m[1]} doses`, `${m[1]} 次`)],
+    [/(\d+) ครั้ง/g, m => two(`${m[1]}×`, `${m[1]} 次`)],
+    [new RegExp('(\\d{1,2}) ' + MONTH_RE + '(?: (\\d{2,4}))?', 'g'), m => fmtDate(m[1], m[2], m[3])],
+  ];
+  const TH = /[\u0E00-\u0E7F]/;
+  const cache = new Map();
+  function core(s){
+    const m = s.match(/^([^\u0E00-\u0E7FA-Za-z0-9"“(@\-]*)([\s\S]*?)([^\u0E00-\u0E7FA-Za-z0-9"”)%]*)$/);
+    return m ? [m[1], m[2], m[3]] : ['', s, ''];
+  }
+  function tr(c){
+    if (D[c]) return D[c][LI];
+    for (const [re, fn] of P) { const m = c.match(re); if (m) return fn(m); }
+    let out = c;
+    for (const [re, fn] of F) out = out.replace(re, (...a) => fn(a));
+    return TH.test(out) ? null : out;
+  }
+  function T(s){
+    if (s == null) return s;
+    const str = String(s);
+    if (!TH.test(str)) return str;
+    if (cache.has(str)) return cache.get(str);
+    let res = null;
+    const t = str.trim();
+    const [pre, c, suf] = core(t);
+    const noPre = t.slice(pre.length);
+    const exact = k => { if (D[k]) return D[k][LI]; for (const [re, fn] of P) { const m = k.match(re); if (m) return fn(m); } return null; };
+    let x;
+    if ((x = exact(t)) != null) res = str.replace(t, x);
+    else if (pre && (x = exact(noPre)) != null) res = str.replace(t, pre + x);
+    else if (c && (x = tr(c)) != null) res = str.replace(t, pre + x + suf);
+    else if (t.includes('\n')) { const parts = t.split('\n').map(p => T(p)); res = str.replace(t, parts.join('\n')); }
+    if (res == null) res = str;
+    cache.set(str, res);
+    return res;
+  }
+  window.mtT = T;
+  const SKIP = {SCRIPT:1, STYLE:1, NOSCRIPT:1};   // TEXTAREA: แปล placeholder แต่ไม่แตะข้อความที่ผู้ใช้พิมพ์
+  function walk(root){
+    if (!root) return;
+    if (root.nodeType === 3) { if (root.parentElement && root.parentElement.tagName === 'TEXTAREA') return; const v = root.nodeValue; if (TH.test(v)) { const n = T(v); if (n !== v) root.nodeValue = n; } return; }
+    if (root.nodeType !== 1 || SKIP[root.tagName]) return;
+    for (const a of ['placeholder','title','aria-label']) {
+      const v = root.getAttribute && root.getAttribute(a);
+      if (v && TH.test(v)) { const n = T(v); if (n !== v) root.setAttribute(a, n); }
+    }
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+      acceptNode: n => (n.nodeType === 1 && SKIP[n.tagName]) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let n; while ((n = w.nextNode())) {
+      if (n.nodeType === 3) { if (n.parentElement && n.parentElement.tagName === 'TEXTAREA') continue; const v = n.nodeValue; if (TH.test(v)) { const x = T(v); if (x !== v) n.nodeValue = x; } }
+      else for (const a of ['placeholder','title','aria-label']) {
+        const v = n.getAttribute(a); if (v && TH.test(v)) { const x = T(v); if (x !== v) n.setAttribute(a, x); } }
+    }
+  }
+  function start(){
+    document.documentElement.lang = L === 'en' ? 'en' : 'zh-Hans';
+    walk(document.body);
+    new MutationObserver(ms => { for (const m of ms) {
+      if (m.type === 'characterData') walk(m.target);
+      else if (m.type === 'attributes') walk(m.target);
+      else m.addedNodes.forEach(walk);
+    } }).observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder','title'] });
+    if (typeof window.toast === 'function') { const o = window.toast; window.toast = function(m){ return o.call(this, T(m)); }; try { toast = window.toast; } catch(e) {} }
+    const oc = window.confirm.bind(window), oa = window.alert.bind(window);
+    window.confirm = m => oc(T(m)); window.alert = m => oa(T(m));
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
 </head>
 <body>
 <!-- ═══ แถบเชิญเพิ่มไอคอนหน้าจอ (โผล่ล่างจอ) ═══ -->
@@ -1128,15 +1262,15 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
   <!-- BANNER -->
   <div class="banner-wrap">
     <div class="banner-track">
-      <div class="banner-item"><div class="banner-dot" style="background:#22c55e"></div>💡 <span>Sanofi:</span> ผู้ป่วยเบาหวานควรตรวจ HbA1c ทุก 3 เดือนครับ</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#3b82f6"></div>🏥 <span>Novartis:</span> ความดันโลหิตสูงควรวัดทุกวัน เพื่อผลการรักษาที่ดีขึ้น</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#f59e0b"></div>💊 <span>MedTrack:</span> กินยาครบ 30 วันติด รับแต้มพิเศษ 200 ⭐</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#ec4899"></div>🔬 <span>Abbott:</span> ตรวจน้ำตาลในเลือดสม่ำเสมอ ช่วยควบคุมเบาหวานได้ดีขึ้น</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#22c55e"></div>💡 <span>เคล็ดลับ:</span> ผู้ป่วยเบาหวานควรตรวจ HbA1c ทุก 3 เดือนครับ</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#3b82f6"></div>🏥 <span>เคล็ดลับ:</span> ความดันโลหิตสูงควรวัดทุกวัน เพื่อผลการรักษาที่ดีขึ้น</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#f59e0b"></div>💊 <span>MedTrack:</span> กดยืนยันกินยาทุกมื้อ สะสมแต้มได้ ⭐</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#ec4899"></div>🔬 <span>เคล็ดลับ:</span> ตรวจน้ำตาลในเลือดสม่ำเสมอ ช่วยควบคุมเบาหวานได้ดีขึ้น</div>
       <div class="banner-item"><div class="banner-dot" style="background:#8b5cf6"></div>🩺 <span>หมอน้อย:</span> อย่าลืมนัดพบแพทย์ตามกำหนด ถามหมอน้อยได้เลยครับ</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#22c55e"></div>💡 <span>Sanofi:</span> ผู้ป่วยเบาหวานควรตรวจ HbA1c ทุก 3 เดือนครับ</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#3b82f6"></div>🏥 <span>Novartis:</span> ความดันโลหิตสูงควรวัดทุกวัน เพื่อผลการรักษาที่ดีขึ้น</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#f59e0b"></div>💊 <span>MedTrack:</span> กินยาครบ 30 วันติด รับแต้มพิเศษ 200 ⭐</div>
-      <div class="banner-item"><div class="banner-dot" style="background:#ec4899"></div>🔬 <span>Abbott:</span> ตรวจน้ำตาลในเลือดสม่ำเสมอ ช่วยควบคุมเบาหวานได้ดีขึ้น</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#22c55e"></div>💡 <span>เคล็ดลับ:</span> ผู้ป่วยเบาหวานควรตรวจ HbA1c ทุก 3 เดือนครับ</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#3b82f6"></div>🏥 <span>เคล็ดลับ:</span> ความดันโลหิตสูงควรวัดทุกวัน เพื่อผลการรักษาที่ดีขึ้น</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#f59e0b"></div>💊 <span>MedTrack:</span> กดยืนยันกินยาทุกมื้อ สะสมแต้มได้ ⭐</div>
+      <div class="banner-item"><div class="banner-dot" style="background:#ec4899"></div>🔬 <span>เคล็ดลับ:</span> ตรวจน้ำตาลในเลือดสม่ำเสมอ ช่วยควบคุมเบาหวานได้ดีขึ้น</div>
       <div class="banner-item"><div class="banner-dot" style="background:#8b5cf6"></div>🩺 <span>หมอน้อย:</span> อย่าลืมนัดพบแพทย์ตามกำหนด ถามหมอน้อยได้เลยครับ</div>
     </div>
   </div>
@@ -1166,14 +1300,14 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div class="greeting-mascot">👨‍⚕️</div>
     </div>
 
-    <!-- STREAK (mock) -->
+    <!-- STREAK (จริง: /api/stats/adherence) -->
     <div class="streak-card">
       <div class="streak-icon">🔥</div>
       <div class="streak-info">
         <div class="streak-label">Streak</div>
-        <div class="streak-value" id="eldStreak">14 วันติดต่อกัน</div>
+        <div class="streak-value" id="eldStreak">—</div>
       </div>
-      <div class="streak-points" id="eldPoints">⭐ 280 คะแนน</div>
+      <div class="streak-points" id="eldPoints">⭐ —</div>
     </div>
 
     <!-- QUICK STATS (mock + adherence จริงทีหลัง) -->
@@ -1182,8 +1316,8 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
         <div class="qstat-card">
           <div class="qstat-icon">📊</div>
           <div class="qstat-label">เดือนนี้</div>
-          <div class="qstat-value" id="eldAdherence">95<span style="font-size:14px;color:var(--ink-light)">%</span></div>
-          <div class="qstat-extra">↗ ดีกว่าเดือนก่อน</div>
+          <div class="qstat-value" id="eldAdherence">—</div>
+          <div class="qstat-extra" id="eldAdhExtra"></div>
         </div>
         <div class="qstat-card">
           <div class="qstat-icon">💊</div>
@@ -1201,7 +1335,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
           <div class="qa-icon">📷</div>
           <div class="qa-label">สแกนยา</div>
         </button>
-        <button class="qa-btn" onclick="eldToast('💊 ดูตู้ยา...')">
+        <button class="qa-btn" onclick="openMedCabinet()">
           <div class="qa-icon">💊</div>
           <div class="qa-label">ตู้ยา</div>
         </button>
@@ -1209,7 +1343,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
           <div class="qa-icon">📅</div>
           <div class="qa-label">นัดหมอ</div>
         </button>
-        <button class="qa-btn" onclick="eldToast('👨‍👩‍👧 คนดูแล...')">
+        <button class="qa-btn" onclick="openHomeModal('caregiver')">
           <div class="qa-icon">👨‍👩‍👧</div>
           <div class="qa-label">คนดูแล</div>
         </button>
@@ -1230,43 +1364,17 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 
     <!-- CAREGIVERS (mock) -->
     <div class="section">
-      <div class="section-header"><h2>👨‍👩‍👧 คนดูแลของคุณ</h2><span class="more">จัดการ →</span></div>
-      <div class="caregiver-card">
-        <div class="cg-avatars">
-          <div class="cg-avatar" style="background:var(--accent)">ลส</div>
-          <div class="cg-avatar" style="background:var(--teal)">สม</div>
-        </div>
+      <div class="section-header"><h2>👨‍👩‍👧 คนดูแลของคุณ</h2><span class="more" onclick="openHomeModal('caregiver')" style="cursor:pointer">จัดการ →</span></div>
+      <div class="caregiver-card" onclick="openHomeModal('caregiver')" style="cursor:pointer">
+        <div class="cg-avatars" id="eldCgAvatars"></div>
         <div class="cg-info">
           <div class="cg-label">ดูแลโดย</div>
-          <div class="cg-text">ลูกสาว, สามี (2 คน)</div>
+          <div class="cg-text" id="eldCgText">กำลังโหลด...</div>
         </div>
         <span style="font-size:18px">›</span>
       </div>
     </div>
 
-    <!-- ACHIEVEMENT (mock) -->
-    <div class="section">
-      <div style="background:linear-gradient(135deg,#FFD700,#FFA500);padding:16px;border-radius:12px;color:#fff;box-shadow:var(--shadow)">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="font-size:36px">🏆</div>
-          <div>
-            <div style="font-family:'Bai Jamjuree';font-weight:700;font-size:16px">รางวัลใหม่!</div>
-            <div style="font-size:13px;opacity:.95">"นักกินยาตัวยง" — 14 วันติดต่อกัน</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- HEALTH TIP (static) -->
-    <div class="section">
-      <div style="background:#fff;padding:16px;border-radius:12px;box-shadow:var(--shadow);border-left:4px solid var(--teal)">
-        <div style="font-family:'Bai Jamjuree';font-weight:700;font-size:13px;color:var(--teal);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">💡 เคล็ดลับวันนี้</div>
-        <div style="font-size:14px;line-height:1.6">
-          ผู้ป่วย stroke ที่กินยาตรงเวลา จะลด<strong> ความเสี่ยง stroke ซ้ำได้ 26%</strong><br/>
-          <span style="font-size:12px;color:var(--ink-light);margin-top:4px;display:block">— Aga Khan University Study, 2024</span>
-        </div>
-      </div>
-    </div>
     <div style="height:16px"></div>
   </div>
 
@@ -1914,82 +2022,10 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
 </div>
 
 <!-- ── RECORD SHEET ── -->
-<div class="sheet" id="sheet-record">
-  <div class="sheet-handle"></div>
-  <div class="sheet-header">
-    <div class="sheet-header-ico ic-amber" style="border-radius:14px">✏️</div>
-    <div>
-      <div class="sheet-header-title">บันทึกการกินยา</div>
-      <div class="sheet-header-sub">ยืนยันมื้อที่กินแล้ว</div>
-    </div>
-    <button class="sheet-close" onclick="closeSheet()">✕</button>
-  </div>
-  <div class="sheet-list">
-    <div class="sheet-item" onclick="confirmMed()">
-      <div class="sheet-item-ico" style="background:#FFFBEB">☀️</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">มื้อเที่ยง — 12:00 น.</div>
-        <div class="sheet-item-sub">Metformin · Omeprazole</div>
-      </div>
-      <div style="background:var(--amber);color:#fff;padding:6px 14px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer" onclick="confirmMed()">กิน</div>
-    </div>
-    <div class="sheet-item" onclick="switchSheet('confirm')">
-      <div class="sheet-item-ico" style="background:#FFFBEB">📷</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ถ่ายรูปยืนยัน</div>
-        <div class="sheet-item-sub">ได้แต้มเพิ่ม +60 ⭐ พิเศษ</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-  </div>
-</div>
+
 
 <!-- ── DASHBOARD SHEET ── -->
-<div class="sheet" id="sheet-dashboard">
-  <div class="sheet-handle"></div>
-  <div class="sheet-header">
-    <div class="sheet-header-ico ic-navy" style="border-radius:14px">🖥️</div>
-    <div>
-      <div class="sheet-header-title">Dashboard</div>
-      <div class="sheet-header-sub">ภาพรวมสุขภาพของคุณ</div>
-    </div>
-    <button class="sheet-close" onclick="closeSheet()">✕</button>
-  </div>
-  <div class="sheet-list">
-    <div class="sheet-item" onclick="toast('🖥️ Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#EFF6FF">📈</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ภาพรวมสุขภาพ</div>
-        <div class="sheet-item-sub">Adherence · Streak · แต้มสะสม</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('❤️ Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FEF2F2">❤️</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">ความดันโลหิต</div>
-        <div class="sheet-item-sub">ล่าสุด 128/82 mmHg · เมื่อวาน</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('🩸 Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#FFFBEB">🩸</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">น้ำตาลในเลือด</div>
-        <div class="sheet-item-sub">ล่าสุด 126 mg/dL · 3 วันที่แล้ว</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-    <div class="sheet-item" onclick="toast('⚖️ Coming soon — Phase 2')">
-      <div class="sheet-item-ico" style="background:#F0FFF4">⚖️</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title">น้ำหนักตัว</div>
-        <div class="sheet-item-sub">72.5 kg · BMI 24.2</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>
-  </div>
-</div>
+
 
 <!-- ── NOTIFICATION SHEET ── -->
 <div class="sheet" id="sheet-notif">
@@ -2326,21 +2362,20 @@ function switchSheet(name){
 
 
 function clearAllData(){
-  if(confirm('ลบข้อมูลทั้งหมดจากเครื่อง?')){
+  if(confirm('ล้างข้อมูลที่เก็บในเครื่องนี้ และออกจากระบบ?\n\nยาและประวัติบนระบบ MedTrack จะยังอยู่ — ถ้าต้องการลบข้อมูลบนระบบ ส่งข้อความหา LINE @medtrack')){
     localStorage.clear();
     closeHomeModal();
-    toast('🗑️ ลบข้อมูลทั้งหมดแล้ว');
+    toast('🧹 ล้างข้อมูลในเครื่องแล้ว');
     setTimeout(()=>{ location.href='medtrack-onboard.html'; }, 1500);
   }
 }
 
 
 function pickLang(l){
-  localStorage.setItem('mt_lang', l);
+  try { localStorage.setItem('mt_lang', l); } catch(e) {}
   refreshLangModal();
-  setTimeout(closeHomeModal, 300);
-  const names = {th:'ภาษาไทย', en:'English', zh:'中文'};
-  toast('✅ ' + (names[l]||l));
+  if (l === (window.MT_LANG || 'th')) { setTimeout(closeHomeModal, 300); return; }
+  setTimeout(() => location.reload(), 250);   // โหลดหน้าใหม่ในภาษาที่เลือก
 }
 
 function refreshLangModal(){
@@ -2462,14 +2497,7 @@ function loadMedsFromStorage(){
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
-    <div class="sheet-item" onclick="clearAllMeds()">
-      <div class="sheet-item-ico" style="background:#FEF2F2;font-size:18px">🗑️</div>
-      <div class="sheet-item-info">
-        <div class="sheet-item-title" style="color:#EF4444">ล้างรายการยาทั้งหมด</div>
-        <div class="sheet-item-sub">เริ่มต้นใหม่</div>
-      </div>
-      <div class="sheet-item-arrow">›</div>
-    </div>`;
+</div>`;
 
   sheetList.innerHTML = mealHTML;
 
@@ -3724,7 +3752,7 @@ async function hnCall(msg){
     const res=await fetch(MEDTRACK_BACKEND+'/api/chat-hornoi',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ system: sys, messages: hnHist.slice(-8) })
+      body:JSON.stringify({ system: sys + (window.MT_LANG==='en' ? '\n\nIMPORTANT: Always reply in English.' : window.MT_LANG==='zh' ? '\n\n重要：请始终用简体中文回答。' : ''), messages: hnHist.slice(-8) })
     });
     const data=await res.json();
     if(!res.ok || !data.ok){
@@ -4568,7 +4596,7 @@ async function mcLoadView(view){
       if (meds.length === 0) { isEmpty = true; }
       else {
         html = meds.map(m => `
-          <div class="mc-card" onclick="alert('แสดงประวัติยา ${m.name} (coming soon)')">
+          <div class="mc-card" style="cursor:default">
             <div class="mc-card-hd">
               <div class="mc-card-thumb">💊</div>
               <div class="mc-card-meta">
@@ -5293,7 +5321,7 @@ async function deleteHospitalMapping(mappingId){
     <div class="chat-msgs" id="hnMsgs">
       <div class="msg-bot">
         <div class="msg-bot-ico">🩺</div>
-        <div class="bubble-bot">สวัสดีครับ! ผมหมอน้อย 😊<br>ถามเรื่องยาหรือสุขภาพได้เลยครับ<br><br>💊 ยาของฉัน &nbsp;⏰ กินยาตอนไหน</div>
+        <div class="bubble-bot">สวัสดีครับ! ผมหมอน้อย 😊<br>ถามเรื่องยาหรือสุขภาพได้เลยครับ<br><br><span>💊 ยาของฉัน</span> &nbsp;<span>⏰ กินยาตอนไหน</span></div>
       </div>
     </div>
     <div class="chat-inp-row">
@@ -5305,103 +5333,7 @@ async function deleteHospitalMapping(mappingId){
 
 
 <!-- REFILLS SHEET -->
-<div class="sheet" id="sheet-refills">
-  <div class="sheet-handle"></div>
-  <div class="sheet-header">
-    <div class="sheet-header-ico" style="background:#FEF2F2;border-radius:14px;font-size:22px;width:44px;height:44px;display:flex;align-items:center;justify-content:center">🔄</div>
-    <div>
-      <div class="sheet-header-title">สั่งยา Refill</div>
-      <div class="sheet-header-sub">ยาใกล้หมด 2 รายการ</div>
-    </div>
-    <button class="sheet-close" onclick="closeSheet()">✕</button>
-  </div>
 
-  <div class="sheet-list" style="padding:14px 16px">
-
-    <!-- ยาใกล้หมด -->
-    <div class="ssec" style="padding:0 0 8px">⚠️ ยาใกล้หมด</div>
-
-    <div class="refill-card" id="refill1">
-      <div class="refill-ico" style="background:#FEF2F2">💊</div>
-      <div class="refill-info">
-        <div class="refill-name">Metformin 500mg</div>
-        <div class="refill-days urgent">🔴 เหลือ 3 วัน</div>
-      </div>
-      <button class="refill-btn urgent" onclick="refillSelect('Metformin 500mg',this)">สั่งซื้อ</button>
-    </div>
-
-    <div class="refill-card" id="refill2">
-      <div class="refill-ico" style="background:#FFFBEB">💊</div>
-      <div class="refill-info">
-        <div class="refill-name">Amlodipine 5mg</div>
-        <div class="refill-days warn">🟡 เหลือ 6 วัน</div>
-      </div>
-      <button class="refill-btn warn" onclick="refillSelect('Amlodipine 5mg',this)">สั่งซื้อ</button>
-    </div>
-
-    <div class="refill-card">
-      <div class="refill-ico" style="background:#F0FFF4">💊</div>
-      <div class="refill-info">
-        <div class="refill-name">Atorvastatin 20mg</div>
-        <div class="refill-days ok">🟢 เหลือ 18 วัน</div>
-      </div>
-      <button class="refill-btn" style="background:var(--bg);color:var(--t2);border:1px solid var(--bd)" onclick="refillSelect('Atorvastatin 20mg',this)">สั่ง</button>
-    </div>
-
-    <!-- ร้านยาใกล้บ้าน -->
-    <div class="ssec" style="padding:16px 0 8px">🏪 ร้านยาใกล้บ้าน</div>
-    <div id="refillSelected" style="display:none;background:#EFF6FF;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:var(--blue)">
-      💊 เลือกแล้ว: <span id="refillSelectedList" style="font-weight:600"></span>
-    </div>
-
-    <div class="pharmacy-card" onclick="selectPharmacy(this,'boots')" data-ph="boots">
-      <div class="pharmacy-ico">🏪</div>
-      <div class="pharmacy-info">
-        <div class="pharmacy-name">Boots Pharmacy</div>
-        <div class="pharmacy-detail">เปิด 09:00-22:00 · รับหน้าร้าน / ส่งบ้าน</div>
-      </div>
-      <div class="pharmacy-dist">0.5 กม.</div>
-    </div>
-
-    <div class="pharmacy-card" onclick="selectPharmacy(this,'watsons')" data-ph="watsons">
-      <div class="pharmacy-ico">💙</div>
-      <div class="pharmacy-info">
-        <div class="pharmacy-name">Watsons</div>
-        <div class="pharmacy-detail">เปิด 10:00-21:00 · รับหน้าร้านเท่านั้น</div>
-      </div>
-      <div class="pharmacy-dist">1.2 กม.</div>
-    </div>
-
-    <div class="pharmacy-card" onclick="selectPharmacy(this,'local')" data-ph="local">
-      <div class="pharmacy-ico">🏥</div>
-      <div class="pharmacy-info">
-        <div class="pharmacy-name">ร้านยาบำรุงโภชน์</div>
-        <div class="pharmacy-detail">เปิด 08:00-20:00 · รับหน้าร้าน / Line OA</div>
-      </div>
-      <div class="pharmacy-dist">1.8 กม.</div>
-    </div>
-
-    <!-- Order Summary -->
-    <div id="orderSummary" style="display:none;margin-top:4px">
-      <div class="order-summary">
-        <div style="font-size:12px;font-weight:700;color:var(--teal2);margin-bottom:8px">📋 สรุปคำสั่งซื้อ</div>
-        <div id="orderItems"></div>
-        <div class="order-row total"><span>รวม</span><span id="orderTotal">฿0</span></div>
-      </div>
-      <button onclick="submitRefillOrder()" style="width:100%;padding:14px;background:var(--teal);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px">
-        🛒 ส่ง Order ไปร้านยา
-      </button>
-      <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--t3)">ร้านยาจะยืนยันภายใน 30 นาที</div>
-
-      <!-- ORDER STATUS — แสดงหลังสั่งซื้อ -->
-      <div id="orderStatusSection" style="display:none;margin-top:16px">
-        <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:8px">📦 สถานะคำสั่งซื้อ</div>
-        <div id="orderStatusList"></div>
-      </div>
-    </div>
-
-  </div>
-</div>
 
 <!-- ══ HOME MODALS ══ -->
 <div class="modal-overlay" id="homeModalOverlay" onclick="closeHomeModal(event)">
@@ -5734,16 +5666,16 @@ async function deleteHospitalMapping(mappingId){
   <div class="modal-box" id="modal-privacy" style="display:none">
     <div class="modal-handle"></div>
     <div class="modal-title">🔒 PDPA & ความเป็นส่วนตัว <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
-    <div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:14px">
-      MedTrack เก็บข้อมูลสุขภาพของคุณไว้ใน <b>เครื่องของคุณเท่านั้น</b> ไม่มีการส่งข้อมูลไปยังเซิร์ฟเวอร์โดยไม่ได้รับอนุญาต
+    <div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:12px">
+      MedTrack เก็บข้อมูลยา ประวัติการกินยา และนัดแพทย์ของคุณไว้บน<b>ระบบของ MedTrack</b> เพื่อส่งเตือนทาง LINE และทำสรุปให้แพทย์หรือผู้ดูแลที่คุณเชิญ
     </div>
-    <div style="background:#F0FFF4;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#065F46">
-      ✅ ข้อมูลเก็บใน localStorage ในเครื่องของคุณ<br>
-      ✅ ไม่มีการส่งไปยัง server โดยไม่ได้รับอนุญาต<br>
-      ✅ ลบข้อมูลได้ทุกเมื่อ
+    <div style="background:#F0FFF4;border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:#065F46;line-height:1.7">
+      ✅ ไม่ขายหรือส่งต่อข้อมูลให้บุคคลอื่น<br>
+      ✅ ผู้ดูแลเห็นข้อมูลได้เฉพาะเมื่อคุณเชิญเท่านั้น<br>
+      ✅ ขอดู แก้ไข หรือลบข้อมูลบนระบบได้ — ส่งข้อความหา LINE @medtrack
     </div>
-    <button class="modal-save-btn" style="background:#EF4444;margin-bottom:8px" onclick="clearAllData()">🗑️ ลบข้อมูลทั้งหมด (เริ่มใหม่)</button>
-    <button class="modal-save-btn" style="background:#F59E0B" onclick="clearAllMeds();closeHomeModal()">💊 ล้างรายการยาเท่านั้น</button>
+    <button class="modal-save-btn" style="background:#0A9C7A;margin-bottom:8px" onclick="window.open('privacy.html','_blank')">📄 อ่านนโยบายความเป็นส่วนตัว</button>
+    <button class="modal-save-btn" style="background:#fff;color:#DC2626;border:1.5px solid #FECACA;margin-bottom:8px" onclick="clearAllData()">🧹 ล้างข้อมูลในเครื่องนี้</button>
     <button class="modal-save-btn" style="margin-top:8px" onclick="closeHomeModal()">ปิด</button>
   </div>
 
@@ -5762,11 +5694,12 @@ async function deleteHospitalMapping(mappingId){
         <span>🇨🇳 中文</span><span id="hl-zh-ck" style="color:#059669;font-size:16px"></span>
       </div>
     </div>
+    <div style="font-size:12px;color:#6B7280;margin-top:12px;line-height:1.5">หน้าสแกน หน้าสรุปให้หมอ และข้อความ LINE ยังเป็นภาษาไทย</div>
   </div>
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07b</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07c</div>
 <script>
 // 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
 (function(){
@@ -6170,7 +6103,10 @@ async function mtApply(){
 // 🩺 "หมอน้อยบอกว่า..." — สรุปจากยาวันนี้จริง (1 มื้อ = 1 เวลาเตือน)
 function renderHornoiTip(doses){
   const el = document.getElementById('hornoiTip'); if(!el) return;
-  if(!doses || !doses.length){ el.textContent = 'ยังไม่มียาที่ต้องกินวันนี้ ถ้าเพิ่งได้ยาใหม่ กด "พบแพทย์ใหม่" เพื่อสแกนซองยาได้เลยครับ'; return; }
+  const L = window.mtL || ((th)=>th);
+  if(!doses || !doses.length){ el.textContent = L('ยังไม่มียาที่ต้องกินวันนี้ ถ้าเพิ่งได้ยาใหม่ กด "พบแพทย์ใหม่" เพื่อสแกนซองยาได้เลยครับ',
+      'No medicines due today. Just got new ones? Tap "New doctor visit" to scan them.',
+      '今天没有需要服用的药。刚领到新药？点“新的就诊”扫描药袋。'); return; }
   const now = new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',hour12:false});
   const slots = {};
   for(const d of doses){ const t=String(d.scheduled_time||'').slice(0,5); if(!t) continue; (slots[t]=slots[t]||[]).push(d); }
@@ -6182,15 +6118,45 @@ function renderHornoiTip(doses){
     else if(t <= now) waiting++;
     else upcoming.push(t);
   }
-  const total = Object.keys(slots).length;
+  const total = Object.keys(slots).length, nx = upcoming[0];
   let msg;
-  if(done === total) msg = `วันนี้กินยาครบทั้ง ${total} มื้อแล้ว เก่งมากครับ 👏`;
-  else if(waiting > 0) msg = `ถึงเวลากินยาแล้ว ${waiting} มื้อ กินแล้วกด "บันทึกกินยา" ได้เลยครับ` + (upcoming.length ? ` · มื้อถัดไป ${upcoming[0]} น.` : '');
-  else if(upcoming.length) msg = `วันนี้เหลืออีก ${upcoming.length} มื้อ มื้อถัดไป ${upcoming[0]} น. ครับ` + (done ? ` · กินไปแล้ว ${done} มื้อ 👍` : '');
-  else msg = 'วันนี้ไม่มีมื้อเหลือแล้วครับ พรุ่งนี้มาเริ่มใหม่กัน';
-  if(missed > 0 && done !== total) msg += ` (พลาดไป ${missed} มื้อ ไม่เป็นไรครับ มื้อต่อไปอย่าลืมนะ)`;
+  if(done === total) msg = L(`วันนี้กินยาครบทั้ง ${total} มื้อแล้ว เก่งมากครับ 👏`, `All ${total} doses taken today — well done! 👏`, `今天 ${total} 次全部服完，真棒！👏`);
+  else if(waiting > 0) msg = L(`ถึงเวลากินยาแล้ว ${waiting} มื้อ กินแล้วกด "บันทึกกินยา" ได้เลยครับ`, `${waiting} dose${waiting>1?'s':''} due now — after taking, tap "Log a dose".`, `有 ${waiting} 次该服药了，服完点“记录服药”。`)
+      + (nx ? L(` · มื้อถัดไป ${nx} น.`, ` · Next ${nx}`, ` · 下一次 ${nx}`) : '');
+  else if(upcoming.length) msg = L(`วันนี้เหลืออีก ${upcoming.length} มื้อ มื้อถัดไป ${nx} น. ครับ`, `${upcoming.length} dose${upcoming.length>1?'s':''} left today, next at ${nx}.`, `今天还剩 ${upcoming.length} 次，下一次 ${nx}。`)
+      + (done ? L(` · กินไปแล้ว ${done} มื้อ 👍`, ` · ${done} taken 👍`, ` · 已服 ${done} 次 👍`) : '');
+  else msg = L('วันนี้ไม่มีมื้อเหลือแล้วครับ พรุ่งนี้มาเริ่มใหม่กัน', 'No more doses today — see you tomorrow.', '今天的服药已结束，明天继续。');
+  if(missed > 0 && done !== total) msg += L(` (พลาดไป ${missed} มื้อ ไม่เป็นไรครับ มื้อต่อไปอย่าลืมนะ)`, ` (${missed} missed — that's OK, just don't miss the next one)`, `（漏服 ${missed} 次，没关系，下一次别忘了）`);
   el.textContent = msg;
 }
+</script>
+
+<script>
+// 👵 โหมดผู้สูงอายุ: streak / แต้ม / % เดือนนี้ / ผู้ดูแล — ข้อมูลจริง
+async function loadElderlyExtras(){
+  const uid = getCurrentUserId(); if(!uid) return;
+  try{
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/stats/adherence?user_id=${uid}`); const j = await r.json();
+    if(r.ok && j.ok !== false && j.streak){
+      document.getElementById('eldStreak').textContent = j.streak.current + ' วันติดต่อกัน';
+      document.getElementById('eldPoints').textContent = '⭐ ' + (j.points ? j.points.total : 0).toLocaleString('th-TH') + ' แต้ม';
+      const m = j.month || {};
+      document.getElementById('eldAdherence').innerHTML = m.pct == null ? '—' : (m.pct + '<span style="font-size:14px;color:var(--ink-light)">%</span>');
+      document.getElementById('eldAdhExtra').textContent = m.pct == null ? 'ยังไม่มีข้อมูล' : ('กินตรง ' + m.taken + '/' + m.total + ' มื้อ');
+    }
+  }catch(e){ console.warn('[elderly] stats', e); }
+  try{
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers?user_id=${uid}`); const j = await r.json();
+    const list = (j && Array.isArray(j.caregivers)) ? j.caregivers : [];
+    const av = document.getElementById('eldCgAvatars'), tx = document.getElementById('eldCgText');
+    const esc = t => String(t||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    if(!list.length){ av.innerHTML = '<div class="cg-avatar" style="background:var(--teal)">+</div>'; tx.textContent = 'ยังไม่มีผู้ดูแล — แตะเพื่อเพิ่ม'; return; }
+    const cols = ['var(--accent)','var(--teal)','#8B5CF6'];
+    av.innerHTML = list.slice(0,3).map((c,i)=>`<div class="cg-avatar" style="background:${cols[i%3]}">${esc((c.name||'?').replace(/^(นาย|นาง|นางสาว|น\.ส\.)\s*/,'').slice(0,2))}</div>`).join('');
+    tx.textContent = list.map(c => c.relationship || c.name).filter(Boolean).join(', ') + ' (' + list.length + ' คน)';
+  }catch(e){ console.warn('[elderly] caregivers', e); }
+}
+setTimeout(loadElderlyExtras, 1800);
 </script>
 </body>
 </html>
