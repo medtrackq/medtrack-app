@@ -1422,7 +1422,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       <div style="font-size:28px">🩺</div>
       <div>
         <div style="font-size:13px;font-weight:600;color:var(--teal2)">หมอน้อยบอกว่า...</div>
-        <div style="font-size:12px;color:var(--teal2);margin-top:2px;line-height:1.5">อีก 2 มื้อก็จะครบวันแล้วนะครับ สู้ๆ กินยาครบได้แต้มเพิ่มด้วย! 💪</div>
+        <div style="font-size:12px;color:var(--teal2);margin-top:2px;line-height:1.5" id="hornoiTip">กำลังดูยาวันนี้ให้นะครับ...</div>
       </div>
     </div>
 
@@ -3113,6 +3113,7 @@ function eldToast(msg){
 
 
 function renderStatsBar(doses){
+  try { renderHornoiTip(doses); } catch(e) { console.warn('[tip]', e); }
   const streakRow = document.getElementById('streakRow');
   const streakDays = document.getElementById('streakDays');
   const streakPoints = document.getElementById('streakPoints');
@@ -3631,70 +3632,65 @@ function apfRenderEvents(sel){
 /* ── LINE SHEET JS ── */
 function openSheetLine(){
   openSheet('line');
-  const uid = localStorage.getItem('mt_line_uid');
-  if(uid){
-    document.getElementById('lineSheetNotConn').style.display='none';
-    document.getElementById('lineSheetConn').style.display='block';
-    document.getElementById('lineSheetSub').textContent='เชื่อมแล้ว · หมอน้อย';
-    document.getElementById('lineSheetUid').textContent='LINE ID: '+uid.substring(0,12)+'...';
-  } else {
-    document.getElementById('lineSheetNotConn').style.display='block';
-    document.getElementById('lineSheetConn').style.display='none';
-    document.getElementById('lineSheetSub').textContent='เชื่อมต่อเพื่อรับแจ้งเตือนกินยา';
+  renderLineSheet();
+  refreshLineStatus(false);
+}
+function renderLineSheet(){
+  const linked = window._lineLinked === true;
+  document.getElementById('lineSheetNotConn').style.display = linked ? 'none' : 'block';
+  document.getElementById('lineSheetConn').style.display = linked ? 'block' : 'none';
+  document.getElementById('lineSheetSub').textContent = linked ? 'เชื่อมแล้ว · หมอน้อย' :
+    (window._lineLinked === false ? 'ยังไม่ได้เพิ่มเพื่อน — ยังไม่ได้รับเตือนทาง LINE' : 'กำลังตรวจสอบ...');
+  const u = document.getElementById('lineSheetUid');
+  if (u) u.textContent = 'หมอน้อยส่งเตือนถึงคุณทาง LINE ได้แล้ว';
+}
+// สถานะจริงจาก server: line_user_id จะถูกล้างเมื่อผู้ใช้บล็อก/ลบเพื่อน (unfollow)
+async function refreshLineStatus(showToast){
+  const uid = getCurrentUserId();
+  if (!uid) return;
+  try{
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${uid}`);
+    const j = await r.json();
+    if (!r.ok || !j.user) throw new Error(j.error || r.status);
+    window._lineLinked = !!j.user.line_linked;
+  }catch(e){
+    console.warn('[line] status check failed', e);
+    if (showToast) toast('ตรวจสอบไม่สำเร็จ ลองใหม่อีกครั้ง');
+    return;                       // ไม่รู้สถานะ → ไม่ขึ้น "!" ให้ตกใจ
   }
-  // restore saved display mode
-  const saved = localStorage.getItem('mt_disp_mode')||'text';
-  document.querySelectorAll('.home-disp-card').forEach(c=>{
-    c.classList.toggle('sel', c.dataset.mode===saved);
-  });
+  const badge = document.getElementById('lineBadge');
+  if (badge) badge.style.display = window._lineLinked ? 'none' : 'flex';
+  if (document.getElementById('sheet-line')?.classList.contains('open')) renderLineSheet();
+  if (showToast) toast(window._lineLinked ? '✅ เชื่อม LINE แล้ว' : 'ยังไม่พบการเพิ่มเพื่อน — เพิ่มแล้วส่งข้อความหาหมอน้อย 1 ครั้ง');
 }
-
-// ── LINE OA Config ──
-const LINE_CONFIG = {
-  channelId:    '2009822703',
-  accessToken:  'pexbSuSq7Eu5ZxHZ+NWt4u01ahbz3gUun5h3hE1JD290+PLRVsX9SAoy3V/h3MJd1sGr2uaMve0/t7NfiN3Th2K6WwH4VrbLmWTn66927766v2afInZkBiO/Q19JcsWVsVwYaKjH1SUOV44jHKp8YAdB04t89/1O/w1cDnyilFU=',
-  oaId:         '@medtrack',
-  addFriendUrl: 'https://line.me/ti/p/@medtrack',
-  qrUrl:        'https://qr-official.line.me/gs/M_medtrack_GW.png?oat_content=qr',
-};
-
 function homeLineConnect(){
-  toast('💚 กำลังเปิด LINE...');
-  setTimeout(homeLineSimulate, 1200);
+  window.open('https://line.me/ti/p/@medtrack','_blank');
+  window._lineCheckOnReturn = true;
 }
-function homeLineSimulate(){
-  const uid='U'+Math.random().toString(36).substr(2,16).toUpperCase();
-  localStorage.setItem('mt_line_uid',uid);
-  document.getElementById('lineBadge').style.display='none';
-  openSheetLine();
-  toast('✅ เชื่อม LINE สำเร็จแล้วครับ!');
-}
-function homeLineDisconnect(){
-  if(!confirm('ต้องการยกเลิกการเชื่อม LINE ใช่ไหม?')) return;
-  localStorage.removeItem('mt_line_uid');
-  document.getElementById('lineBadge').style.display='flex';
-  openSheetLine();
-  toast('ยกเลิกการเชื่อม LINE แล้ว');
-}
-function homeSelectDisp(card){
-  document.querySelectorAll('.home-disp-card').forEach(c=>c.classList.remove('sel'));
-  card.classList.add('sel');
-  localStorage.setItem('mt_disp_mode', card.dataset.mode);
-  toast('✅ เปลี่ยนเป็น: '+card.querySelector('div:nth-child(2)').textContent);
-}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && window._lineCheckOnReturn) {
+    window._lineCheckOnReturn = false;
+    setTimeout(() => refreshLineStatus(true), 800);
+  }
+});
 
 // patch openSheet to handle line specially
 const _origOpen = openSheet;
 openSheet = function(name){
-  if(name==='line'){ _origOpen(name); openSheetLine(); return; }
+  if(name==='line'){ _origOpen(name); renderLineSheet(); refreshLineStatus(false); return; }
   _origOpen(name);
 };
 
-// on load: show badge if not connected
-(function(){
-  const uid=localStorage.getItem('mt_line_uid');
-  if(!uid) document.getElementById('lineBadge').style.display='flex';
-})();
+// on load: ตรวจสถานะจริง
+setTimeout(() => refreshLineStatus(false), 1500);
+
+// ── LINE OA Config ──
+const LINE_CONFIG = {
+  channelId:    '2009822703',
+  oaId:         '@medtrack',
+  addFriendUrl: 'https://line.me/ti/p/@medtrack',
+  qrUrl:        'https://qr-official.line.me/gs/M_medtrack_GW.png?oat_content=qr',
+};
 
 
 /* HORNOI */
@@ -4899,14 +4895,7 @@ function openHomeModal(name){
     document.getElementById('md-phone').value = p.doctorPhone||p.doctor_phone||'';
     document.getElementById('md-appt').value = p.nextAppt||'';
   }
-  if(name==='mealtime'){
-    const m = settings.meals||{};
-    const pm = p.meals||{};
-    document.getElementById('mt-breakfast').value = m.breakfast||pm.morning||'07:00';
-    document.getElementById('mt-lunch').value = m.lunch||pm.noon||'12:00';
-    document.getElementById('mt-dinner').value = m.dinner||pm.evening||'18:00';
-    document.getElementById('mt-bedtime').value = m.bedtime||pm.bed||'21:00';
-  }
+  if(name==='mealtime'){ mtLoad(); }
   if(name==='notify'){
     const n = settings.notify||{};
     const sel1 = document.getElementById('mn-before');
@@ -5260,11 +5249,11 @@ async function deleteHospitalMapping(mappingId){
     </div>
 
     <div style="display:flex;gap:8px">
-      <button onclick="window.open('https://line.me/ti/p/@medtrack','_blank');homeLineConnect();" style="flex:1;padding:13px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+      <button onclick="homeLineConnect()" style="flex:1;padding:13px;background:#06C755;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">
         💚 Add หมอน้อย
       </button>
-      <button onclick="homeLineSimulate()" style="padding:12px 14px;background:#F0F4F8;border:1.5px solid #E5E7EB;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#6B7280">
-        ทดสอบ
+      <button onclick="refreshLineStatus(true)" style="padding:12px 14px;background:#F0F4F8;border:1.5px solid #E5E7EB;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#475569">
+        ตรวจสอบอีกครั้ง
       </button>
     </div>
   </div>
@@ -5279,66 +5268,13 @@ async function deleteHospitalMapping(mappingId){
       </div>
     </div>
 
-    <!-- Display Mode selector -->
-    <div style="font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">รูปแบบแสดงยาใน LINE</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="homeDispGrid">
-      <div class="home-disp-card sel" data-mode="text" onclick="homeSelectDisp(this)">
-        <div style="font-size:22px;margin-bottom:4px">📝</div>
-        <div style="font-size:12px;font-weight:700">ข้อความ</div>
-        <div style="font-size:10px;color:#6B7280;margin-top:2px">ชื่อยาและขนาด</div>
-      </div>
-      <div class="home-disp-card" data-mode="pill" onclick="homeSelectDisp(this)">
-        <div style="font-size:22px;margin-bottom:4px">💊</div>
-        <div style="font-size:12px;font-weight:700">รูปเม็ดยา</div>
-        <div style="font-size:10px;color:#6B7280;margin-top:2px">เห็นหน้าตายาจริง</div>
-      </div>
-      <div class="home-disp-card" data-mode="bag" onclick="homeSelectDisp(this)">
-        <div style="font-size:22px;margin-bottom:4px">🗂️</div>
-        <div style="font-size:12px;font-weight:700">รูปซองยา</div>
-        <div style="font-size:10px;color:#6B7280;margin-top:2px">ซองจากโรงพยาบาล</div>
-      </div>
-      <div class="home-disp-card" data-mode="box" onclick="homeSelectDisp(this)">
-        <div style="font-size:22px;margin-bottom:4px">📦</div>
-        <div style="font-size:12px;font-weight:700">รูปกล่องยา</div>
-        <div style="font-size:10px;color:#6B7280;margin-top:2px">กล่องยาทั้งกล่อง</div>
-      </div>
+    <div style="font-size:12px;font-weight:700;color:#6B7280;letter-spacing:.04em;margin-bottom:8px">หมอน้อยจะส่งให้ทาง LINE</div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:#374151;line-height:1.5">
+      <div style="display:flex;gap:10px;background:#F9FAFB;border-radius:12px;padding:10px 12px"><span>💊</span><span>เตือนกินยาทุกมื้อตามซอง กด "กินแล้ว" ในข้อความได้เลย</span></div>
+      <div style="display:flex;gap:10px;background:#F9FAFB;border-radius:12px;padding:10px 12px"><span>📅</span><span>เตือนนัดแพทย์ล่วงหน้า 7 วัน, 3 วัน, 1 วัน และเช้าวันนัด</span></div>
+      <div style="display:flex;gap:10px;background:#F9FAFB;border-radius:12px;padding:10px 12px"><span>⏰</span><span>เปลี่ยนเวลาเตือนได้ที่ ตั้งค่า → ตั้งเวลาเตือน</span></div>
     </div>
-
-    <div style="background:#FFFBEB;border-left:3px solid #F59E0B;padding:10px 12px;border-radius:0 10px 10px 0;font-size:12px;color:#92400E;line-height:1.6;margin-bottom:14px">
-      💡 <b>ทำไมถึงควรถ่ายรูปซองยา?</b><br>
-      ผู้ดูแลเห็นรูปแล้วหยิบยาถูกตัวได้ทันที ลดความเสี่ยงกินยาผิด
-    </div>
-
-    <!-- Notify toggles -->
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">LINE แจ้งเตือนกินยา</div>
-          <div class="toggle-sub">ส่งทุกมื้อตามตารางยา</div>
-        </div>
-        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">แจ้งเตือนนัดแพทย์</div>
-          <div class="toggle-sub">3 วัน / 1 วัน / เช้าวันนัด</div>
-        </div>
-        <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">แจ้งผู้ดูแลอัตโนมัติ</div>
-          <div class="toggle-sub">ถ้าลืมกินเกิน 60 นาที</div>
-        </div>
-        <button class="toggle" onclick="this.classList.toggle('on')"></button>
-      </div>
-    </div>
-
-    <div style="margin-top:14px">
-      <button onclick="homeLineDisconnect()" style="width:100%;padding:11px;background:#FEF2F2;border:1.5px solid #FECACA;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;color:#DC2626">
-        ยกเลิกการเชื่อม LINE
-      </button>
-    </div>
+    <div style="margin-top:12px;font-size:12px;color:#6B7280;line-height:1.5">ถ้าบล็อกหรือลบเพื่อน LINE หมอน้อย ระบบจะหยุดเตือนจนกว่าจะเพิ่มเพื่อนใหม่</div>
   </div>
   <div style="height:16px"></div>
 </div>
@@ -5750,12 +5686,16 @@ async function deleteHospitalMapping(mappingId){
   <div class="modal-box" id="modal-mealtime" style="display:none">
     <div class="modal-handle"></div>
     <div class="modal-title">⏰ ตั้งเวลาอาหาร <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
-    <div class="mfield"><label>🌅 มื้อเช้า</label><input id="mt-breakfast" type="time" value="07:00"></div>
-    <div class="mfield"><label>☀️ มื้อกลางวัน</label><input id="mt-lunch" type="time" value="12:00"></div>
-    <div class="mfield"><label>🌆 มื้อเย็น</label><input id="mt-dinner" type="time" value="18:00"></div>
-    <div class="mfield"><label>🌙 ก่อนนอน</label><input id="mt-bedtime" type="time" value="21:00"></div>
-    <div style="font-size:11px;color:#6B7280;margin-top:4px">⚡ เวลาเหล่านี้จะถูกใช้คำนวณตารางกินยาใน scan อัตโนมัติ</div>
-    <button class="modal-save-btn" onclick="saveHomeModal('mealtime')">💾 บันทึก</button>
+    <div id="mtForm">
+      <div style="font-size:12px;color:#6B7280;margin-bottom:10px;line-height:1.5">ตั้งเวลาที่กินข้าวจริง ระบบจะเตือนยา "ก่อน/หลังอาหาร" ตามเวลานี้</div>
+      <div class="mfield"><label>🌅 มื้อเช้า</label><input id="mt-breakfast" type="time" value="07:00"></div>
+      <div class="mfield"><label>☀️ มื้อกลางวัน</label><input id="mt-lunch" type="time" value="12:00"></div>
+      <div class="mfield"><label>🌆 มื้อเย็น</label><input id="mt-dinner" type="time" value="18:00"></div>
+      <div class="mfield"><label>🌙 เวลานอน</label><input id="mt-bedtime" type="time" value="21:00"></div>
+      <div id="mtPendingNote" style="display:none;font-size:12px;color:#B45309;background:#FEF3C7;border-radius:10px;padding:8px 10px;margin-top:6px"></div>
+      <button class="modal-save-btn" id="mtPreviewBtn" onclick="mtPreview()">ดูผลก่อนบันทึก ›</button>
+    </div>
+    <div id="mtReview" style="display:none"></div>
   </div>
 
   <!-- Notify Modal -->
@@ -5826,7 +5766,7 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.04v</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07a</div>
 <script>
 // 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
 (function(){
@@ -6120,6 +6060,118 @@ async function loadVisitHistory(){
     console.error('[visits] history load:', e);
     box.innerHTML = '<div style="text-align:center;padding:24px;color:var(--t2);font-size:13px">โหลดไม่สำเร็จ <button type="button" onclick="loadVisitHistory()" style="margin-left:6px;border:none;background:var(--teal);color:#fff;border-radius:8px;padding:6px 12px;font-family:inherit;cursor:pointer">ลองใหม่</button></div>';
   }
+}
+</script>
+
+<script>
+// ⏰ ตั้งเวลาอาหาร — อ่าน/บันทึกที่ server, ดูผลกระทบก่อนยืนยัน
+const MT_IDS = {breakfast_time:'mt-breakfast', lunch_time:'mt-lunch', dinner_time:'mt-dinner', bedtime:'mt-bedtime'};
+function mtEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function mtThaiDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-').map(Number);
+  const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return d+' '+mn[m-1]+' '+(y+543-2500); }
+function mtShowForm(){ document.getElementById('mtForm').style.display='block'; document.getElementById('mtReview').style.display='none'; }
+async function mtLoad(){
+  mtShowForm();
+  const btn=document.getElementById('mtPreviewBtn'); btn.disabled=true; btn.textContent='กำลังโหลด...';
+  const note=document.getElementById('mtPendingNote'); note.style.display='none';
+  try{
+    const r=await fetch(`${MEDTRACK_BACKEND}/api/users/${getCurrentUserId()}/meal-times`);
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||r.status);
+    for(const k in MT_IDS) document.getElementById(MT_IDS[k]).value=j.times[k];
+    if(j.pending_count>0){ note.textContent=`⏳ มีเวลาเตือนยาใหม่ ${j.pending_count} รายการ รอเริ่มใช้ ${mtThaiDate(j.pending_from)}`; note.style.display='block'; }
+  }catch(e){ console.warn('[meal-times] load',e); toast('โหลดเวลาอาหารไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+  btn.disabled=false; btn.textContent='ดูผลก่อนบันทึก ›';
+}
+function mtBody(){ const b={}; for(const k in MT_IDS) b[k]=document.getElementById(MT_IDS[k]).value; return b; }
+async function mtPreview(){
+  const btn=document.getElementById('mtPreviewBtn'); btn.disabled=true; btn.textContent='กำลังคำนวณ...';
+  try{
+    const r=await fetch(`${MEDTRACK_BACKEND}/api/users/${getCurrentUserId()}/meal-times/preview`,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(mtBody())});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||r.status);
+    mtRenderReview(j);
+  }catch(e){ console.warn('[meal-times] preview',e); toast('คำนวณไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+  btn.disabled=false; btn.textContent='ดูผลก่อนบันทึก ›';
+}
+function mtRenderReview(j){
+  const moved=j.changes.filter(c=>c.new_time!==c.old_time);
+  const reverted=j.changes.filter(c=>c.new_time===c.old_time);
+  const custom=j.fixed.filter(f=>f.reason==='custom'), interval=j.fixed.filter(f=>f.reason!=='custom');
+  const row=(a,b,c)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #F1F5F9;font-size:13px"><div><div style="font-weight:700">${a}</div><div style="font-size:11px;color:#6B7280">${b}</div></div><div style="white-space:nowrap;font-weight:700">${c}</div></div>`;
+  let h='';
+  if(!moved.length && !reverted.length && !j.times_changed.length){
+    h+=`<div style="padding:14px;background:#F1F5F9;border-radius:12px;font-size:13px;margin-bottom:10px">ยังไม่ได้เปลี่ยนเวลา</div>`;
+    h+=`<button class="modal-save-btn" onclick="mtShowForm()">‹ กลับไปแก้</button>`;
+    document.getElementById('mtReview').innerHTML=h; mtSwap(); return;
+  }
+  if(moved.length){
+    h+=`<div style="font-size:13px;font-weight:800;margin:4px 0">ยาที่จะเลื่อนเวลาเตือน (${moved.length})</div>`;
+    h+=moved.map(c=>row(mtEsc(c.drug_name)+' '+mtEsc(c.dose), mtEsc(c.label), `${c.old_time} → <span style="color:#0A9C7A">${c.new_time}</span>`)).join('');
+  } else if(j.times_changed.length){
+    h+=`<div style="padding:12px;background:#F1F5F9;border-radius:12px;font-size:13px;margin-bottom:6px">ยังไม่มียาที่ผูกกับมื้อที่เปลี่ยน — ยาที่สแกนใหม่จะใช้เวลานี้</div>`;
+  }
+  if(reverted.length) h+=`<div style="font-size:12px;color:#6B7280;margin-top:6px">ยกเลิกเวลาที่รอใช้ ${reverted.length} รายการ (กลับเป็นเวลาเดิม)</div>`;
+  if(custom.length){
+    h+=`<div style="font-size:13px;font-weight:800;margin:14px 0 4px">ไม่เปลี่ยน — ซองระบุเวลา (${custom.length})</div>`;
+    h+=custom.map(f=>row(mtEsc(f.drug_name)+' '+mtEsc(f.dose),'ตามเวลาที่แพทย์สั่ง',f.time)).join('');
+  }
+  if(interval.length){
+    h+=`<div style="font-size:13px;font-weight:800;margin:14px 0 4px">ไม่เปลี่ยน — กินตามรอบชั่วโมง/เมื่อมีอาการ (${interval.length})</div>`;
+    h+=interval.map(f=>row(mtEsc(f.drug_name)+' '+mtEsc(f.dose),f.reason==='prn'?'เมื่อมีอาการ':'ทุก N ชั่วโมง',f.time)).join('');
+  }
+  if(moved.length) h+=`<div style="margin:14px 0 4px;padding:10px 12px;background:#ECFDF5;border-radius:12px;font-size:13px;color:#065F46;line-height:1.5">เริ่มใช้เวลาใหม่ <b>${mtThaiDate(j.effective_date)}</b><br>วันนี้ยังเตือนตามเวลาเดิม จะได้ไม่มีมื้อซ้ำหรือมื้อหาย</div>`;
+  h+=`<button class="modal-save-btn" id="mtApplyBtn" onclick="mtApply()">✓ ยืนยันเปลี่ยนเวลา</button>`;
+  h+=`<button onclick="mtShowForm()" style="width:100%;margin-top:8px;padding:12px;border-radius:14px;border:1px solid #E2E8F0;background:#fff;font:inherit;font-weight:700;color:#475569">‹ กลับไปแก้</button>`;
+  document.getElementById('mtReview').innerHTML=h; mtSwap();
+}
+function mtSwap(){ document.getElementById('mtForm').style.display='none'; document.getElementById('mtReview').style.display='block'; }
+async function mtApply(){
+  const btn=document.getElementById('mtApplyBtn'); btn.disabled=true; btn.textContent='กำลังบันทึก...';
+  try{
+    const body=mtBody();
+    const r=await fetch(`${MEDTRACK_BACKEND}/api/users/${getCurrentUserId()}/meal-times/apply`,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||r.status);
+    // เก็บสำเนาในเครื่อง (ให้หน้าสแกนใช้ค่าเดียวกัน)
+    try{
+      const st=JSON.parse(localStorage.getItem('mt_settings')||'{}');
+      st.meals={breakfast:j.times.breakfast_time,lunch:j.times.lunch_time,dinner:j.times.dinner_time,bedtime:j.times.bedtime};
+      localStorage.setItem('mt_settings',JSON.stringify(st));
+      const p=JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
+      p.meals={morning:st.meals.breakfast,noon:st.meals.lunch,evening:st.meals.dinner,bed:st.meals.bedtime};
+      localStorage.setItem('mt_user_profile',JSON.stringify(p));
+    }catch(e){}
+    closeHomeModal();
+    toast(j.moved?`✅ บันทึกแล้ว เวลาเตือนใหม่เริ่ม ${mtThaiDate(j.effective_date)}`:'✅ บันทึกเวลาอาหารแล้ว');
+  }catch(e){ console.warn('[meal-times] apply',e); toast('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง'); btn.disabled=false; btn.textContent='✓ ยืนยันเปลี่ยนเวลา'; }
+}
+</script>
+
+<script>
+// 🩺 "หมอน้อยบอกว่า..." — สรุปจากยาวันนี้จริง (1 มื้อ = 1 เวลาเตือน)
+function renderHornoiTip(doses){
+  const el = document.getElementById('hornoiTip'); if(!el) return;
+  if(!doses || !doses.length){ el.textContent = 'ยังไม่มียาที่ต้องกินวันนี้ ถ้าเพิ่งได้ยาใหม่ กด "พบแพทย์ใหม่" เพื่อสแกนซองยาได้เลยครับ'; return; }
+  const now = new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',hour12:false});
+  const slots = {};
+  for(const d of doses){ const t=String(d.scheduled_time||'').slice(0,5); if(!t) continue; (slots[t]=slots[t]||[]).push(d); }
+  let done=0, missed=0, waiting=0; const upcoming=[];
+  for(const t of Object.keys(slots).sort()){
+    const st = slots[t].map(d=>d.status);
+    if(st.every(x=>['taken','late','skipped'].includes(x))) done++;
+    else if(st.some(x=>x==='missed')) missed++;
+    else if(t <= now) waiting++;
+    else upcoming.push(t);
+  }
+  const total = Object.keys(slots).length;
+  let msg;
+  if(done === total) msg = `วันนี้กินยาครบทั้ง ${total} มื้อแล้ว เก่งมากครับ 👏`;
+  else if(waiting > 0) msg = `ถึงเวลากินยาแล้ว ${waiting} มื้อ กินแล้วกด "บันทึกกินยา" ได้เลยครับ` + (upcoming.length ? ` · มื้อถัดไป ${upcoming[0]} น.` : '');
+  else if(upcoming.length) msg = `วันนี้เหลืออีก ${upcoming.length} มื้อ มื้อถัดไป ${upcoming[0]} น. ครับ` + (done ? ` · กินไปแล้ว ${done} มื้อ 👍` : '');
+  else msg = 'วันนี้ไม่มีมื้อเหลือแล้วครับ พรุ่งนี้มาเริ่มใหม่กัน';
+  if(missed > 0 && done !== total) msg += ` (พลาดไป ${missed} มื้อ ไม่เป็นไรครับ มื้อต่อไปอย่าลืมนะ)`;
+  el.textContent = msg;
 }
 </script>
 </body>
