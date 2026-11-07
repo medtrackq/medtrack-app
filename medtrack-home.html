@@ -5687,11 +5687,11 @@ async function deleteHospitalMapping(mappingId){
     <div class="modal-handle"></div>
     <div class="modal-title">⏰ ตั้งเวลาอาหาร <button class="modal-close" onclick="closeHomeModal()">✕</button></div>
     <div id="mtForm">
-      <div style="font-size:12px;color:#6B7280;margin-bottom:10px;line-height:1.5">ตั้งเวลาที่กินข้าวจริง ระบบจะเตือนยา "ก่อน/หลังอาหาร" ตามเวลานี้</div>
-      <div class="mfield"><label>🌅 มื้อเช้า</label><input id="mt-breakfast" type="time" value="07:00"></div>
-      <div class="mfield"><label>☀️ มื้อกลางวัน</label><input id="mt-lunch" type="time" value="12:00"></div>
-      <div class="mfield"><label>🌆 มื้อเย็น</label><input id="mt-dinner" type="time" value="18:00"></div>
-      <div class="mfield"><label>🌙 เวลานอน</label><input id="mt-bedtime" type="time" value="21:00"></div>
+      <div style="font-size:12px;color:#6B7280;margin-bottom:10px;line-height:1.5">ตั้งเวลาที่กินข้าวจริง (เลือกทีละครึ่งชั่วโมง) ระบบจะเตือนยา "ก่อน/หลังอาหาร" ตามเวลานี้</div>
+      <div class="mfield"><label>🌅 มื้อเช้า</label><select id="mt-breakfast" class="mt-sel" data-default="07:00"></select></div>
+      <div class="mfield"><label>☀️ มื้อกลางวัน</label><select id="mt-lunch" class="mt-sel" data-default="12:00"></select></div>
+      <div class="mfield"><label>🌆 มื้อเย็น</label><select id="mt-dinner" class="mt-sel" data-default="18:00"></select></div>
+      <div class="mfield"><label>🌙 เวลานอน</label><select id="mt-bedtime" class="mt-sel" data-default="21:00"></select></div>
       <div id="mtPendingNote" style="display:none;font-size:12px;color:#B45309;background:#FEF3C7;border-radius:10px;padding:8px 10px;margin-top:6px"></div>
       <button class="modal-save-btn" id="mtPreviewBtn" onclick="mtPreview()">ดูผลก่อนบันทึก ›</button>
     </div>
@@ -5766,7 +5766,7 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07b</div>
 <script>
 // 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
 (function(){
@@ -6070,20 +6070,38 @@ function mtEsc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;
 function mtThaiDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-').map(Number);
   const mn=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   return d+' '+mn[m-1]+' '+(y+543-2500); }
+// เลือกได้เฉพาะ :00 / :30 — ค่าอื่นปัดไปช่วงใกล้สุด (7:07→7:00, 7:15→7:30)
+function mtRound(v){
+  const m=String(v||'').match(/^(\d{1,2}):(\d{2})/); if(!m) return null;
+  let t=Math.round((+m[1]*60+ +m[2])/30)*30; if(t>=1440) t=1410;
+  return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+}
+function mtFillSelects(){
+  document.querySelectorAll('select.mt-sel').forEach(sel=>{
+    if(sel.options.length) return;
+    for(let t=0;t<1440;t+=30){
+      const v=String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+      sel.add(new Option(v+' น.', v));
+    }
+    sel.value=sel.dataset.default;
+  });
+}
+function mtSet(id,v){ const sel=document.getElementById(id); sel.value=mtRound(v)||sel.dataset.default; }
 function mtShowForm(){ document.getElementById('mtForm').style.display='block'; document.getElementById('mtReview').style.display='none'; }
 async function mtLoad(){
   mtShowForm();
   const btn=document.getElementById('mtPreviewBtn'); btn.disabled=true; btn.textContent='กำลังโหลด...';
+  mtFillSelects();
   const note=document.getElementById('mtPendingNote'); note.style.display='none';
   try{
     const r=await fetch(`${MEDTRACK_BACKEND}/api/users/${getCurrentUserId()}/meal-times`);
     const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.error||r.status);
-    for(const k in MT_IDS) document.getElementById(MT_IDS[k]).value=j.times[k];
+    for(const k in MT_IDS) mtSet(MT_IDS[k], j.times[k]);
     if(j.pending_count>0){ note.textContent=`⏳ มีเวลาเตือนยาใหม่ ${j.pending_count} รายการ รอเริ่มใช้ ${mtThaiDate(j.pending_from)}`; note.style.display='block'; }
   }catch(e){ console.warn('[meal-times] load',e); toast('โหลดเวลาอาหารไม่สำเร็จ ลองใหม่อีกครั้ง'); }
   btn.disabled=false; btn.textContent='ดูผลก่อนบันทึก ›';
 }
-function mtBody(){ const b={}; for(const k in MT_IDS) b[k]=document.getElementById(MT_IDS[k]).value; return b; }
+function mtBody(){ const b={}; for(const k in MT_IDS) b[k]=mtRound(document.getElementById(MT_IDS[k]).value); return b; }
 async function mtPreview(){
   const btn=document.getElementById('mtPreviewBtn'); btn.disabled=true; btn.textContent='กำลังคำนวณ...';
   try{
