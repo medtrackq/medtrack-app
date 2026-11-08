@@ -2,6 +2,8 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<script src="mt-auth.js"></script>
+<script>if (!MTAuth.token()) MTAuth.toLogin();</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -3317,49 +3319,11 @@ async function saveToBackend(medsList) {
   };
 }
 
-// 🆔 Resolve user_id from URL or localStorage
+// 🆔 ตัวตนจากบัตรผ่านเท่านั้น (server ตรวจซ้ำทุกคำขอ)
 async function resolveUserId() {
-  // 1. URL param ?user_id=X (highest priority)
-  const params = new URLSearchParams(window.location.search);
-  const urlUid = parseInt(params.get('user_id'));
-  if (urlUid) { return urlUid; }
-  
-  // 2. localStorage profile
-  try {
-    const raw = localStorage.getItem('mt_user_profile');
-    const profile = JSON.parse(raw || '{}');
-    if (profile.user_id || profile.id) { return profile.user_id || profile.id; }
-    
-    // 3. line_user_id → backend lookup
-    if (profile.line_user_id) {
-      const res = await fetchWithTimeout(
-        'https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/' + profile.line_user_id,
-        {}, 10000
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user?.id) { return data.user.id; }
-      }
-    }
-  } catch(e) { }
-  
-  // 4. URL ?lineUserId=...
-  const lineUid = params.get('lineUserId');
-  if (lineUid) {
-    try {
-      const res = await fetchWithTimeout(
-        'https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/' + lineUid,
-        {}, 10000
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user?.id) return data.user.id;
-      }
-    } catch(e) { /* ignore */ }
-  }
-  
-  // 5. Fallback for Apidej testing only
-  return 2;
+  const uid = MTAuth.userId();
+  if (!uid) MTAuth.toLogin();
+  return uid;
 }
 
 // 🌐 Fetch with timeout helper (uses AbortController)
@@ -3649,7 +3613,7 @@ function drawImageCover(ctx, img, x, y, w, h) {
     </div>
 
   </div><!-- /apptTab -->
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.04v</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08a</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      🩺 FLOW พบแพทย์ใหม่ — เปิดด้วย ?visit=new หรือ ?visit=<id>
@@ -3731,7 +3695,7 @@ function drawImageCover(ctx, img, x, y, w, h) {
     let j = {}; try { j = await r.json(); } catch(e){}
     return { ok: r.ok, status: r.status, j };
   }
-  function homeUrl(){ const u = params.get('user_id'); return 'medtrack-home.html' + (u ? '?user_id=' + encodeURIComponent(u) : ''); }
+  function homeUrl(){ return 'medtrack-home.html'; }
   function scanMoreUrl(){ const p = new URLSearchParams(location.search); p.set('visit', String(V.id)); return 'medtrack-scan.html?' + p.toString(); }
 
   // ── แถบบอกสถานะบนหน้าสแกน (ขั้น 3) ──
