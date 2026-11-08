@@ -1164,7 +1164,17 @@ function mtIsMobile(){
 }
 function mtOpenInLine(){
   const nx = new URLSearchParams(location.search).get('next');
-  location.href = 'https://liff.line.me/' + LIFF_ID_ONBOARD + (nx ? '?next=' + encodeURIComponent(nx) : '');
+  const url = 'https://liff.line.me/' + LIFF_ID_ONBOARD + (nx ? '?next=' + encodeURIComponent(nx) : '');
+  location.href = url;
+  // หน้านี้ยังค้างอยู่ใน Safari / ไอคอนหน้าจอโฮม → บอกให้ชัดว่าไปใช้ต่อใน LINE (ไม่ค้างที่ "กำลังเข้าสู่ระบบ")
+  setTimeout(() => {
+    const ov = document.getElementById('mtAuthOverlay'); if (!ov) return;
+    ov.innerHTML = '<div style="font-size:54px;margin-bottom:14px">💚</div>' +
+      '<div style="font-size:20px;font-weight:700">เปิดในแอป LINE แล้ว</div>' +
+      '<div style="font-size:15px;opacity:.92;margin:10px 24px 22px;line-height:1.7">ใช้งาน MedTrack ต่อในแอป LINE ได้เลยครับ<br>หน้านี้ปิดได้</div>' +
+      '<a href="' + url + '" style="background:#fff;color:#077A5F;font-weight:700;font-size:16px;padding:13px 26px;border-radius:14px;text-decoration:none">เปิดแอป LINE อีกครั้ง</a>';
+    ov.style.display = 'flex';
+  }, 900);
 }
 async function mtLineLogin(){
   mtShowOverlay();
@@ -1789,6 +1799,6 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08b</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08c</div>
 </body>
 </html>
