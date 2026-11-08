@@ -232,6 +232,7 @@ html, body {
           <div class="meta-box-value" id="cgTier">—</div>
         </div>
       </div>
+      <div id="cgWhat" style="font-size:13px;line-height:1.7;color:#374151;background:#F0FDF9;border-radius:12px;padding:10px 12px;margin:10px 0"></div>
       <div class="warn-box">⚠️ ลิงก์นี้ใช้ได้ครั้งเดียว และหมดอายุภายใน 7 วันหลังจากที่ผู้ป่วยส่งให้</div>
       <button class="btn-primary" id="btnAccept" onclick="acceptInvite()">✅ ยืนยันรับเชิญ</button>
       <button class="btn-ghost" onclick="declineInvite()">ไม่รับคำเชิญ</button>
@@ -259,7 +260,7 @@ html, body {
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.07.15e</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;">v2026.11.07a</div>
 
 <script>
 const API_BASE = 'https://api.medtrackq.com';
@@ -346,6 +347,11 @@ async function verifyToken() {
     document.getElementById('cgRelationship').textContent = data.relationship || 'ผู้ดูแล';
     document.getElementById('cgTier').textContent =
       data.tier === 'secondary' ? 'ผู้ดูแลทั่วไป' : 'ผู้ดูแลหลัก';
+    const mins = data.alert_threshold_minutes || 30;
+    document.getElementById('cgWhat').innerHTML = (data.tier === 'secondary'
+      ? '👀 ดูได้ว่าวันนี้กินยาครบหรือยัง และวันนัดหมอ'
+      : '👀 ดูยาทุกมื้อ ประวัติการกินยา และวันนัดหมอ')
+      + `<br>🔔 ถ้ายังไม่กดยืนยันกินยาภายใน ${mins} นาที หมอน้อยจะแจ้งคุณทาง LINE<br>✅ กดยืนยันแทนได้ ถ้ารู้ว่ากินแล้ว`;
     document.getElementById('successPatientName').textContent = data.patient_name;
 
     showState('stateInvite');
@@ -358,8 +364,7 @@ async function verifyToken() {
 // STEP 2: ยืนยันรับเชิญ → LIFF login → link-token
 async function acceptInvite() {
   const btn = document.getElementById('btnAccept');
-  const _DBG = new URLSearchParams(location.search).get('debug') === '1';
-  const _d = (m) => { if(_DBG) alert('[care-link] ' + m); console.log('[care-link] ' + m); };
+  const _d = (m) => console.log('[care-link] ' + m);
   btn.disabled = true;
   btn.textContent = '⏳ กำลังเชื่อมต่อ...';
 
@@ -387,17 +392,14 @@ async function acceptInvite() {
       return;
     }
 
-    _d('login แล้ว → getProfile');
-    const profile = await liff.getProfile();
-    _lineUserId = profile.userId;
-    _d('getProfile OK · userId=' + (_lineUserId ? _lineUserId.slice(0,8)+'…' : 'NULL'));
-
-    // POST link-token
+    // 🔐 ส่ง LINE access token — server ตรวจกับ LINE เองว่าเป็นใคร
+    const accessToken = liff.getAccessToken();
+    if (!accessToken) throw new Error('no_access_token');
     _d('POST link-token...');
     const res = await fetch(`${API_BASE}/api/caregivers/link-token`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: TOKEN, line_user_id: _lineUserId })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + accessToken },
+      body: JSON.stringify({ token: TOKEN })
     });
     const data = await res.json();
     _d('link-token status=' + res.status + ' · ok=' + data.ok);
@@ -407,6 +409,12 @@ async function acceptInvite() {
       btn.textContent = '✅ ยืนยันรับเชิญ';
       if (data.error === 'token_expired') {
         showError('ลิงก์หมดอายุ', 'ลิงก์นี้หมดอายุแล้ว<br>ขอลิงก์ใหม่จากผู้ป่วย');
+      } else if (data.error === 'link_used') {
+        showError('ลิงก์ถูกใช้แล้ว', 'ลิงก์นี้มีคนใช้เชื่อมต่อไปแล้ว<br>ถ้าไม่ใช่คุณ ขอให้ผู้ป่วยกด "ส่งลิงก์ใหม่"');
+      } else if (data.error === 'already_caregiver') {
+        showError('เป็นผู้ดูแลอยู่แล้ว', 'คุณเป็นผู้ดูแลของผู้ป่วยคนนี้อยู่แล้ว<br><a href="' + DASHBOARD_URL + '">เปิดแดชบอร์ด</a>');
+      } else if (data.error === 'line_auth_required') {
+        showError('ยืนยันตัวตนไม่สำเร็จ', 'กรุณาเปิดลิงก์นี้ในแอป LINE อีกครั้ง');
       } else {
         showError('เชื่อมต่อไม่สำเร็จ', data.message || 'กรุณาลองใหม่อีกครั้ง');
       }
@@ -416,7 +424,6 @@ async function acceptInvite() {
     // สำเร็จ → เคลียร์ token cache + เก็บ lineUserId ไว้ให้ dashboard
     _d('✅ สำเร็จ!');
     try{localStorage.removeItem('mt_carelink_token');}catch(e){} try{sessionStorage.removeItem('mt_carelink_token');}catch(e){}
-    if (_lineUserId) { try{localStorage.setItem('mt_caregiver_lineid',_lineUserId);}catch(e){} try{sessionStorage.setItem('mt_caregiver_lineid',_lineUserId);}catch(e){} }
     showState('stateSuccess');
 
   } catch (e) {
@@ -438,13 +445,9 @@ function declineInvite() {
 
 function goToDashboard() {
   // หา lineUserId: ตัวแปร → localStorage → sessionStorage (localStorage ทน iOS redirect)
-  const lid = _lineUserId
-    || localStorage.getItem('mt_caregiver_lineid')
-    || sessionStorage.getItem('mt_caregiver_lineid') || '';
-  const url = lid
-    ? `${DASHBOARD_URL}?line_user_id=${encodeURIComponent(lid)}`
-    : DASHBOARD_URL;
-  window.location.href = url;
+  // dashboard ยืนยันตัวตนผ่าน LINE เอง — ไม่ส่ง LINE ID ใน URL
+  try { localStorage.removeItem('mt_caregiver_lineid'); sessionStorage.removeItem('mt_caregiver_lineid'); } catch(e) {}
+  window.location.href = DASHBOARD_URL;
 }
 
 // เริ่ม
