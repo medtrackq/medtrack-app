@@ -364,6 +364,16 @@ function render(d){
   document.getElementById('content').innerHTML = html;
 }
 
+// 📵 มือถือคนไข้หาย → ออกจากระบบทุกเครื่อง (คนไข้ต้องเข้าสู่ระบบด้วย LINE ใหม่)
+async function revokeUserSessions(id){
+  if(!confirm('ออกจากระบบทุกเครื่องของผู้ใช้ #' + id + ' ?\nคนไข้จะต้องเข้าสู่ระบบด้วย LINE ใหม่')) return;
+  try{
+    const r = await fetch(`${API}/api/admin/user/${id}/revoke-sessions`, { method:'POST' });
+    const d = await r.json();
+    alert(d.ok ? '✅ ออกจากระบบทุกเครื่องแล้ว' : 'ไม่สำเร็จ');
+  }catch(e){ alert('ไม่สำเร็จ: ' + e.message); }
+}
+
 // ══ User Inspector — ตอบ "สแกนแล้วหายไปไหน" ══
 async function inspectUser(userId){
   const modal = document.getElementById('userModal');
@@ -382,7 +392,8 @@ async function inspectUser(userId){
     body.innerHTML = `
       <div class="um-head">
         <div><div class="um-name">${u.name||'—'}</div><div class="mono" style="color:var(--t2);font-size:12px">#${u.id} · ${u.phone||'ไม่มีเบอร์'} · สมัคร ${fmtTime(u.created_at)}</div></div>
-        <button class="btn" onclick="document.getElementById('userModal').style.display='none'">ปิด</button>
+        <div style="display:flex;gap:8px"><button class="btn" onclick="revokeUserSessions(${u.id})" title="มือถือหาย / เปลี่ยนเครื่อง">📵 ออกจากระบบทุกเครื่อง</button>
+        <button class="btn" onclick="document.getElementById('userModal').style.display='none'">ปิด</button></div>
       </div>
 
       <div class="um-section">
