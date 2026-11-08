@@ -132,6 +132,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     const data = await res.json();
+
+    // ยังไม่มีบัญชี → ไปสมัคร พร้อมตั๋วยืนยันตัวตน LINE
+    if (data.ok && data.need_onboard && data.onboard_ticket) {
+      try { localStorage.setItem('mt_onboard_ticket', data.onboard_ticket); localStorage.removeItem('mt_user_profile'); } catch(e) {}
+      localStorage.removeItem('mt_login_state'); sessionStorage.removeItem('mt_login_state');
+      window.location.replace('/medtrack-app/medtrack-onboard.html');
+      return;
+    }
     
     if (!data.ok || !data.session_token) {
       throw new Error('ตอบกลับไม่ครบถ้วน');
@@ -163,15 +171,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     // Redirect to home (with onboarding if new user OR incomplete profile)
     setTimeout(() => {
-      const u = data.user;
-      const isCompleted = u.age && u.gender;
-      const base = (data.user.is_new || !isCompleted)
-        ? '/medtrack-app/medtrack-onboard.html' 
-        : '/medtrack-app/medtrack-home.html';
-      // ส่ง token + user_id ผ่าน URL — กัน localStorage หายใน LINE in-app browser (iOS)
-      // หน้าปลายทางจะอ่านจาก URL แล้ว save ใหม่ + ใช้งานได้แม้ localStorage ไม่ข้ามหน้า
-      const target = base + '?token=' + encodeURIComponent(data.session_token) + '&uid=' + u.id;
-      window.location.href = target;
+      // ส่งบัตรผ่าน URL ไปหน้า onboard (กัน localStorage หายใน LINE in-app browser) —
+      // onboard จะเก็บบัตร ลบออกจาก URL ตรวจกับ server แล้วพาเข้าหน้าหลัก
+      window.location.replace('/medtrack-app/medtrack-onboard.html?token=' + encodeURIComponent(data.session_token));
     }, 1500);
     
   } catch(e) {
@@ -190,6 +192,6 @@ function showError(title, message) {
 }
 </script>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.06.27</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08a</div>
 </body>
 </html>
