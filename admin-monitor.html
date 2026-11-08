@@ -144,6 +144,20 @@
 <script>
 const API = 'https://medtrack-backend-production-7731.up.railway.app';
 let SECRET = '';
+// 🔐 ส่ง admin secret ทาง header เท่านั้น (ไม่ใส่ใน URL)
+(function(){
+  const of = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (SECRET && typeof API !== 'undefined' && url.indexOf(API) === 0) {
+      init = Object.assign({}, init || {});
+      const h = new Headers(init.headers || {});
+      if (!h.has('x-admin-secret')) h.set('x-admin-secret', SECRET);
+      init.headers = h;
+    }
+    return of(input, init);
+  };
+})();
 let autoTimer = null;
 
 function enterDash(){
@@ -154,7 +168,7 @@ function enterDash(){
 
 async function loadData(isFirst){
   try {
-    const r = await fetch(`${API}/api/admin/overview?secret=${encodeURIComponent(SECRET)}`);
+    const r = await fetch(`${API}/api/admin/overview`);
     if(r.status === 403){
       if(isFirst){ document.getElementById('secretErr').style.display='block'; }
       return;
@@ -199,7 +213,7 @@ function fmtTime(iso){
 // ═══ ผลลัพธ์รายสแกน — ตอบ "สแกน X เห็น Y" ได้ทันที ═══
 async function loadScanOutcomes(){
   try{
-    const r = await fetch(`${API}/api/admin/scan-outcomes?secret=${encodeURIComponent(SECRET)}&hours=48`);
+    const r = await fetch(`${API}/api/admin/scan-outcomes?hours=48`);
     const d = await r.json();
     const body = document.getElementById('scanOutcomesBody');
     const cnt = document.getElementById('soCount');
@@ -357,7 +371,7 @@ async function inspectUser(userId){
   modal.style.display = 'flex';
   body.innerHTML = '<div class="loading"><div class="spinner"></div>กำลังโหลด...</div>';
   try {
-    const r = await fetch(`${API}/api/admin/user/${userId}?secret=${encodeURIComponent(SECRET)}`);
+    const r = await fetch(`${API}/api/admin/user/${userId}`);
     const d = await r.json();
     if(!d.ok) throw new Error('failed');
     const u = d.user;
@@ -584,7 +598,7 @@ async function loadCost(){
   const box = document.getElementById('costContent');
   box.innerHTML = '<div class="loading"><div class="spinner"></div>โหลดข้อมูลต้นทุน...</div>';
   try {
-    const r = await fetch(`${API}/api/admin/cost?secret=${encodeURIComponent(SECRET)}`);
+    const r = await fetch(`${API}/api/admin/cost`);
     const d = await r.json();
     if(!d.ok) throw new Error('failed');
     const s = d.summary;
@@ -633,7 +647,7 @@ async function loadLogs(){
   const successF = document.getElementById('logSuccessFilter')?.value || '';
   box.innerHTML = '<div class="loading"><div class="spinner"></div>โหลด logs...</div>';
   try {
-    let url = `${API}/api/admin/logs?secret=${encodeURIComponent(SECRET)}&limit=100`;
+    let url = `${API}/api/admin/logs?limit=100`;
     if(typeF) url += `&type=${typeF}`;
     if(successF) url += `&success=${successF}`;
     const r = await fetch(url);
@@ -690,7 +704,7 @@ async function toggleLogDetail(logId, row){
   tr.innerHTML = `<td colspan="6"><div class="log-detail-box">โหลด...</div></td>`;
   row.after(tr);
   try {
-    const r = await fetch(`${API}/api/admin/logs/${logId}?secret=${encodeURIComponent(SECRET)}`);
+    const r = await fetch(`${API}/api/admin/logs/${logId}`);
     const d = await r.json();
     const det = d.detail||{};
     tr.querySelector('.log-detail-box').textContent =
