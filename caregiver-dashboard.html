@@ -625,7 +625,7 @@ h1, h2, h3 {
     </div>
 
     <!-- QUICK STATS -->
-    <div class="quick-stats">
+    <div class="quick-stats" id="quickStats">
       <div class="qstat">
         <div class="qstat-label">วันนี้</div>
         <div class="qstat-value" id="statToday">—</div>
@@ -644,9 +644,10 @@ h1, h2, h3 {
     </div>
 
     <!-- TODAY DOSES -->
-    <div class="section">
+    <div id="patientSwitch"></div>
+    <div class="section" id="todaySection">
       <div class="section-title">
-        <h2>💊 ยาวันนี้</h2>
+        <h2 id="todayTitle">💊 ยาวันนี้</h2>
         <span class="meta" id="todayMeta">—</span>
       </div>
       <div class="meal-list" id="todayList"></div>
@@ -696,65 +697,39 @@ function showError(title, msg) {
   document.getElementById('errorMsg').textContent = msg;
 }
 
-// หา line_user_id — จาก LIFF (จริง) หรือ query param (เทส)
-async function resolveLineUserId() {
-  const params = new URLSearchParams(location.search);
-  const qpLine = params.get('line_user_id');
-  const qpToken = params.get('token');
-  if (qpLine) {
-    // เก็บไว้ให้ refresh ครั้งหน้าใช้ได้ (กันเปิดตรงๆ แล้ว query หาย)
-    try { sessionStorage.setItem('mt_cg_lineid', qpLine); } catch(e){}
-    return { line_user_id: qpLine };
-  }
-  if (qpToken) return { token: qpToken };
-
-  // ไม่มีใน URL → ลองจาก sessionStorage (เคย resolve มาแล้ว)
+// 🔐 ยืนยันตัวตนผ่าน LINE (LIFF access token) — server ตรวจกับ LINE เอง
+let _accessToken = null, _data = null;
+async function resolveAuth() {
   try {
-    const saved = sessionStorage.getItem('mt_cg_lineid');
-    if (saved) { console.log('[dashboard] ใช้ line_user_id จาก sessionStorage'); return { line_user_id: saved }; }
-  } catch(e){}
-
-  if (LIFF_ID) {
-    try {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        try { sessionStorage.setItem('mt_cg_lineid', profile.userId); } catch(e){}
-        return { line_user_id: profile.userId };
-      }
-      // ยังไม่ login: ถ้าอยู่ใน LINE → login / ถ้านอก LINE → เปิดใน LINE app
-      if (liff.isInClient()) {
-        liff.login();
-        return null;
-      } else {
-        // นอก LINE → เปิด dashboard ผ่าน LIFF URL (เข้า LINE app ที่มี session)
-        console.log('[dashboard] นอก LINE → เปิดใน LINE app');
-        window.location.href = 'https://liff.line.me/' + LIFF_ID;
-        return null;
-      }
-    } catch (e) {
-      console.error('LIFF error', e);
-      showError('เชื่อมต่อ LINE ไม่สำเร็จ', 'กรุณาเปิดหน้านี้ผ่าน LINE');
+    await liff.init({ liffId: LIFF_ID });
+    if (!liff.isLoggedIn()) {
+      if (liff.isInClient()) liff.login();
+      else window.location.href = 'https://liff.line.me/' + LIFF_ID;   // นอก LINE → เปิดใน LINE app
       return null;
     }
+    return liff.getAccessToken();
+  } catch (e) {
+    console.error('LIFF error', e);
+    showError('เชื่อมต่อ LINE ไม่สำเร็จ', 'กรุณาเปิดหน้านี้ผ่าน LINE');
+    return null;
   }
-  showError('ไม่พบข้อมูลผู้ใช้', 'กรุณาเปิดหน้านี้ผ่านลิงก์ใน LINE');
-  return null;
 }
 
-async function loadDashboard() {
-  const auth = await resolveLineUserId();
-  if (!auth) return;
-
-  const qs = auth.line_user_id ? `line_user_id=${encodeURIComponent(auth.line_user_id)}`
-                                : `token=${encodeURIComponent(auth.token)}`;
+async function loadDashboard(patientId) {
+  if (!_accessToken) _accessToken = await resolveAuth();
+  if (!_accessToken) return;
+  // ล้างค่าเก่าที่เคยเก็บ LINE ID ไว้ในเครื่อง
+  try { sessionStorage.removeItem('mt_cg_lineid'); localStorage.removeItem('mt_caregiver_lineid'); } catch(e) {}
   try {
-    const res = await fetch(`${API_BASE}/api/caregivers/dashboard?${qs}`);
+    const qs = patientId ? `?patient_id=${encodeURIComponent(patientId)}` : '';
+    const res = await fetch(`${API_BASE}/api/caregivers/dashboard${qs}`, { headers: { Authorization: 'Bearer ' + _accessToken } });
     const data = await res.json();
     if (!data.ok) {
+      if (data.error === 'line_auth_required') { try { liff.logout(); } catch(e) {} showError('ต้องเข้าสู่ระบบ LINE ใหม่', 'ปิดหน้านี้แล้วเปิดจาก LINE อีกครั้ง'); return; }
       showError('ไม่พบข้อมูล', data.message || 'ไม่สามารถโหลดข้อมูลได้');
       return;
     }
+    _data = data;
     render(data);
   } catch (e) {
     console.error(e);
@@ -762,70 +737,133 @@ async function loadDashboard() {
   }
 }
 
+const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'ผู้ป่วย';
+
+function renderSwitcher(d) {
+  const box = document.getElementById('patientSwitch');
+  if (!d.patients || d.patients.length < 2) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div style="display:flex;gap:8px;overflow-x:auto;margin:0 0 14px;padding-bottom:2px">` +
+    d.patients.map(p => `<button onclick="loadDashboard(${p.id})" style="flex:0 0 auto;padding:8px 14px;border-radius:999px;border:1.5px solid ${p.id === d.patient.id ? 'var(--teal,#0A9C7A)' : '#E2E8F0'};background:${p.id === d.patient.id ? 'var(--teal,#0A9C7A)' : '#fff'};color:${p.id === d.patient.id ? '#fff' : '#334155'};font:inherit;font-weight:700;font-size:13px">คุณ${esc(firstName(p.name))}</button>`).join('') + `</div>`;
+}
+
 function render(d) {
   document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('mainContent').classList.remove('hidden');
+  const secondary = d.tier === 'secondary';
+  const pname = 'คุณ' + firstName(d.patient.name);
 
-  // tier badge
-  const tierBadge = document.getElementById('tierBadge');
-  tierBadge.style.display = 'flex';
-  document.getElementById('tierLabel').textContent =
-    d.tier === 'secondary' ? 'ผู้ดูแลรอง' : 'ผู้ดูแลหลัก';
-
-  // greeting
+  document.getElementById('tierBadge').style.display = 'flex';
+  document.getElementById('tierLabel').textContent = secondary ? 'ผู้ดูแลทั่วไป' : 'ผู้ดูแลหลัก';
   const now = new Date();
-  const dateStr = `${now.getDate()} ${TH_MONTHS[now.getMonth()]} ${now.getFullYear()+543} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  document.getElementById('greetDate').textContent = dateStr;
+  document.getElementById('greetDate').textContent =
+    `${now.getDate()} ${TH_MONTHS[now.getMonth()]} ${now.getFullYear()+543} · ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   document.getElementById('greetName').textContent = `สวัสดี คุณ${d.caregiver.name}`;
-  document.getElementById('greetCare').innerHTML =
-    `กำลังดูแล <strong>${d.patient.name}</strong>` + (d.patient.age ? ` (${d.patient.age} ปี)` : '');
+  document.getElementById('greetCare').innerHTML = `กำลังดูแล <strong>${esc(pname)}</strong>` + (!secondary && d.patient.age ? ` (${esc(d.patient.age)} ปี)` : '');
+  renderSwitcher(d);
 
-  // stats
   const s = d.stats;
+  const hero = document.getElementById('heroTitle'), heroDetail = document.getElementById('heroDetail'), heroIcon = document.getElementById('heroIcon');
+  const left = s.today_pending;
+  const cgNote = s.today_by_caregiver ? ` · ญาติยืนยัน ${s.today_by_caregiver} รายการ` : '';
+
+  if (secondary) {
+    // ผู้ดูแลทั่วไป: วันนี้กินครบหรือยัง + นัดหมอ เท่านั้น
+    document.getElementById('quickStats').style.display = 'none';
+    if (!s.today_total) { heroIcon.textContent = '📭'; hero.textContent = 'วันนี้ไม่มียาที่ต้องกิน'; hero.className = 'hero-msg-title'; heroDetail.textContent = ''; }
+    else if (s.today_taken === s.today_total) { heroIcon.textContent = '✅'; hero.textContent = 'วันนี้กินยาครบแล้ว'; hero.className = 'hero-msg-title'; heroDetail.textContent = `${pname}กินครบทุกมื้อ${cgNote}`; }
+    else if (s.today_missed) { heroIcon.textContent = '⚠️'; hero.textContent = 'วันนี้มีมื้อที่พลาด'; hero.className = 'hero-msg-title bad'; heroDetail.textContent = `ลองโทรถาม${pname}นะครับ`; }
+    else { heroIcon.textContent = '⏳'; hero.textContent = 'วันนี้ยังกินไม่ครบ'; hero.className = 'hero-msg-title warn'; heroDetail.textContent = `ยังเหลือมื้อที่ยังไม่ได้ยืนยัน${cgNote}`; }
+    document.getElementById('todayTitle').textContent = '🕐 มื้อวันนี้';
+    renderSlots(d.today_slots);
+    const done = (d.today_slots || []).filter(x => x.status === 'done').length;
+    document.getElementById('todayMeta').textContent = `${done}/${(d.today_slots || []).length} มื้อ`;
+    document.getElementById('trendSection').style.display = 'none';
+    document.getElementById('insightsSection').classList.add('hidden');
+    document.getElementById('actionsSection').style.display = 'none';
+    renderAppointment(d.appointment);
+    return;
+  }
+
+  document.getElementById('quickStats').style.display = '';
+  document.getElementById('actionsSection').style.display = '';
+  document.getElementById('todayTitle').textContent = '💊 ยาวันนี้';
   document.getElementById('statToday').innerHTML = `${s.today_taken}<span class="unit">/${s.today_total}</span>`;
   const statWeek = document.getElementById('statWeek');
-  statWeek.innerHTML = `${s.week_adherence}<span class="unit">%</span>`;
-  statWeek.className = 'qstat-value ' + (s.week_adherence >= 80 ? 'green' : s.week_adherence >= 50 ? 'yellow' : '');
+  const wk = s.week_adherence;
+  statWeek.innerHTML = wk == null ? '—' : `${wk}<span class="unit">%</span>`;
+  statWeek.className = 'qstat-value ' + (wk == null ? '' : wk >= 80 ? 'green' : wk >= 50 ? 'yellow' : '');
   document.getElementById('statStreak').textContent = s.streak;
+  if (wk == null) { heroIcon.textContent = '📊'; hero.textContent = 'เริ่มเก็บข้อมูลแล้ว'; hero.className = 'hero-msg-title'; heroDetail.textContent = 'ยังไม่มีมื้อที่ครบเวลาในสัปดาห์นี้'; }
+  else if (wk >= 80) { heroIcon.textContent = '🎉'; hero.textContent = 'ดูแลได้ดีมาก'; hero.className = 'hero-msg-title'; heroDetail.textContent = `${pname} กินยาสม่ำเสมอ สัปดาห์นี้ ${wk}%`; }
+  else if (wk >= 50) { heroIcon.textContent = '👀'; hero.textContent = 'ควรติดตามเพิ่ม'; hero.className = 'hero-msg-title warn'; heroDetail.textContent = `สัปดาห์นี้กินยา ${wk}% — มีบางมื้อที่ลืม`; }
+  else { heroIcon.textContent = '⚠️'; hero.textContent = 'ต้องช่วยดูแลใกล้ชิด'; hero.className = 'hero-msg-title bad'; heroDetail.textContent = `สัปดาห์นี้กินยาเพียง ${wk}% — ควรโทรหา${pname}`; }
 
-  // hero message
-  const hero = document.getElementById('heroTitle');
-  const heroDetail = document.getElementById('heroDetail');
-  const heroIcon = document.getElementById('heroIcon');
-  if (s.week_adherence >= 80) {
-    heroIcon.textContent = '🎉'; hero.textContent = 'ดูแลได้ดีมาก'; hero.className = 'hero-msg-title';
-    heroDetail.textContent = `${d.patient.name} กินยาสม่ำเสมอ สัปดาห์นี้ ${s.week_adherence}%`;
-  } else if (s.week_adherence >= 50) {
-    heroIcon.textContent = '👀'; hero.textContent = 'ควรติดตามเพิ่ม'; hero.className = 'hero-msg-title warn';
-    heroDetail.textContent = `สัปดาห์นี้กินยา ${s.week_adherence}% — มีบางมื้อที่ลืม`;
-  } else {
-    heroIcon.textContent = '⚠️'; hero.textContent = 'ต้องช่วยดูแลใกล้ชิด'; hero.className = 'hero-msg-title bad';
-    heroDetail.textContent = `สัปดาห์นี้กินยาเพียง ${s.week_adherence}% — ควรโทรหา ${d.patient.name}`;
-  }
-
-  // today doses
   renderTodayDoses(d.today_doses);
-  document.getElementById('todayMeta').textContent =
-    `${s.today_taken} กินแล้ว · ${s.today_pending} รอ · ${s.today_missed} ขาด`;
-
-  // ปุ่มสรุปก่อนพบหมอ (ขึ้นตอนยาหมด/ใกล้นัด — เหมือนคนไข้)
-  checkCaregiverReportButton(d.patient?.id, d.today_doses);
-
-  // trend (primary only)
-  if (d.tier === 'secondary' || !d.weeks || d.weeks.length === 0) {
-    document.getElementById('trendSection').style.display = 'none';
-  } else {
-    renderTrend(d.weeks);
-  }
-
-  // insights (primary only)
+  document.getElementById('todayMeta').textContent = `${s.today_taken} กินแล้ว · ${left} รอ · ${s.today_missed} ขาด${cgNote}`;
+  checkCaregiverReportButton(d.patient.id, d.appointment);
+  if (!d.weeks || !d.weeks.length) document.getElementById('trendSection').style.display = 'none';
+  else { document.getElementById('trendSection').style.display = ''; renderTrend(d.weeks); }
   renderInsights(d.insights, d.tier);
-
-  // appointment
   renderAppointment(d.appointment);
+  renderActions(d);
+}
 
-  // quick actions
-  renderActions(d.patient);
+function renderSlots(slots) {
+  const list = document.getElementById('todayList');
+  if (!slots || !slots.length) { list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--ink-light);">ไม่มียาวันนี้</div>'; return; }
+  const M = { done: ['confirmed', 'กินแล้ว'], missed: ['missed', 'พลาด'], pending: ['pending', 'ยังไม่ยืนยัน'] };
+  list.innerHTML = slots.map(x => `
+    <div class="meal-row">
+      <div class="dose-time-badge">${esc(x.time)}</div>
+      <div class="meal-info"><div class="meal-name">มื้อ ${esc(x.time)} น.</div>${x.by_caregiver ? '<div class="meal-meds">ญาติยืนยันแทน</div>' : ''}</div>
+      <div class="meal-status ${M[x.status][0]}">${M[x.status][1]}</div>
+    </div>`).join('');
+}
+
+function openSheet(title, html) {
+  let ov = document.getElementById('cgSheet');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'cgSheet';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:9000;display:flex;align-items:flex-end;justify-content:center';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `<div style="background:#fff;width:100%;max-width:520px;max-height:82vh;overflow:auto;border-radius:20px 20px 0 0;padding:18px 16px 28px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:17px;font-weight:800">${title}</div>
+    <button onclick="document.getElementById('cgSheet').remove()" style="border:none;background:#F1F5F9;border-radius:50%;width:32px;height:32px;font-size:15px">✕</button></div>${html}</div>`;
+}
+
+function fmtThaiDate(iso) {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number);
+  return `${d} ${TH_MONTHS[m - 1]} ${y + 543}`;
+}
+
+function showHistory() {
+  const h = (_data && _data.history_30d) || [];
+  if (!h.length) return openSheet('📊 ประวัติ 30 วัน', '<div style="color:#64748B;padding:16px 0">ยังไม่มีข้อมูล</div>');
+  const tot = h.reduce((a, r) => ({ t: a.t + r.taken, m: a.m + r.missed, c: a.c + r.by_caregiver }), { t: 0, m: 0, c: 0 });
+  const pct = (tot.t + tot.m) ? Math.round(100 * tot.t / (tot.t + tot.m)) : null;
+  const rows = h.map(r => {
+    const done = r.total && r.taken === r.total;
+    const color = r.missed ? '#DC2626' : done ? '#059669' : '#64748B';
+    return `<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F1F5F9;font-size:14px">
+      <div>${fmtThaiDate(r.date)}${r.by_caregiver ? '<div style="font-size:11px;color:#64748B">ญาติยืนยัน ' + r.by_caregiver + ' รายการ</div>' : ''}</div>
+      <div style="font-weight:700;color:${color}">${r.taken}/${r.total}${r.missed ? ' · พลาด ' + r.missed : ''}${r.pending ? ' · รอ ' + r.pending : ''}</div></div>`;
+  }).join('');
+  openSheet('📊 ประวัติ 30 วัน', `<div style="background:#F0FDF9;border-radius:12px;padding:12px;margin-bottom:10px;font-size:14px">กินตรง <b>${pct == null ? '—' : pct + '%'}</b> · กินแล้ว ${tot.t} · พลาด ${tot.m}${tot.c ? ' · ญาติยืนยัน ' + tot.c : ''}</div>${rows}`);
+}
+
+function showAppointments() {
+  const a = (_data && _data.appointments) || [];
+  if (!a.length) return openSheet('📅 นัดหมอ', '<div style="color:#64748B;padding:16px 0">ยังไม่มีนัดที่กำลังจะถึง</div>');
+  openSheet('📅 นัดหมอที่กำลังจะถึง', a.map(x => {
+    const du = x.days_until, tag = du === 0 ? 'วันนี้' : du === 1 ? 'พรุ่งนี้' : `อีก ${du} วัน`;
+    return `<div style="padding:12px;border:1px solid #E2E8F0;border-radius:14px;margin-bottom:10px">
+      <div style="font-size:12px;color:#0A9C7A;font-weight:700">${tag}</div>
+      <div style="font-weight:800;margin:2px 0">${fmtThaiDate(x.appointment_date)} ${x.appointment_time ? String(x.appointment_time).slice(0, 5) + ' น.' : ''}</div>
+      <div style="font-size:13px;color:#475569">${esc(x.hospital_name || '')}${x.department ? ' · ' + esc(x.department) : ''}${x.doctor_name ? '<br>' + esc(x.doctor_name) : ''}${x.purpose ? '<br>นัดเพื่อ: ' + esc(x.purpose) : ''}</div></div>`;
+  }).join(''));
 }
 
 function renderInsights(insights, tier) {
@@ -855,30 +893,18 @@ function renderInsights(insights, tier) {
   });
 }
 
-function renderActions(patient) {
+function renderActions(d) {
   const list = document.getElementById('actionsList');
   list.innerHTML = '';
-  const name = patient.name || 'คนไข้';
-  const actions = [];
-
-  // โทร (ถ้ามีเบอร์)
-  if (patient.phone) {
-    actions.push({ icon:'📞', text:`โทรหา${name}`, onclick:`window.location.href='tel:${patient.phone}'` });
-  }
-  // ส่ง LINE (ถ้ามี line_user_id — เปิด LINE)
-  if (patient.line_user_id) {
-    actions.push({ icon:'💬', text:'ส่ง LINE', onclick:`window.open('https://line.me/R/','_blank')` });
-  }
-  // ดูประวัติเต็ม
-  actions.push({ icon:'📊', text:'ดูประวัติเต็ม', onclick:`alert('ดูประวัติย้อนหลัง (เร็วๆ นี้)')` });
-  // นัดหมอทั้งหมด
-  actions.push({ icon:'📅', text:'นัดหมอทั้งหมด', onclick:`alert('ปฏิทินนัดหมาย (เร็วๆ นี้)')` });
-
+  const p = d.patient, actions = [];
+  if (p.phone) actions.push({ icon: '📞', text: `โทรหาคุณ${firstName(p.name)}`, fn: () => { window.location.href = 'tel:' + String(p.phone).replace(/[^\d+]/g, ''); } });
+  actions.push({ icon: '📊', text: 'ดูประวัติเต็ม', fn: showHistory });
+  actions.push({ icon: '📅', text: 'นัดหมอทั้งหมด', fn: showAppointments });
   actions.forEach(a => {
     const btn = document.createElement('button');
     btn.className = 'action-btn';
-    btn.setAttribute('onclick', a.onclick);
-    btn.innerHTML = `<div class="action-icon">${a.icon}</div><div class="action-text">${a.text}</div>`;
+    btn.onclick = a.fn;
+    btn.innerHTML = `<div class="action-icon">${a.icon}</div><div class="action-text">${esc(a.text)}</div>`;
     list.appendChild(btn);
   });
 }
@@ -912,8 +938,8 @@ function renderTodayDoses(doses) {
     row.innerHTML = `
       <div class="dose-time-badge">${time}</div>
       <div class="meal-info">
-        <div class="meal-name">${dose.drug_name || dose.drug_name_en || 'ยา'}${finishedBadge}</div>
-        <div class="meal-meds">${dose.dose_mg||''} ${dose.dose_unit||''} ${tabStr ? '· '+tabStr : ''}</div>
+        <div class="meal-name">${esc(dose.drug_name || dose.drug_name_en || 'ยา')}${finishedBadge}</div>
+        <div class="meal-meds">${dose.dose_mg ? Number(dose.dose_mg) : ''} ${esc(dose.dose_unit||'')} ${tabStr ? '· '+tabStr : ''}${dose.confirmed_by === 'caregiver' ? ' · ญาติยืนยันแทน' : ''}</div>
       </div>
       <div class="meal-status ${st.cls}">${st.label}</div>
     `;
@@ -946,6 +972,7 @@ function renderTrend(weeks) {
 function renderAppointment(appt) {
   const section = document.getElementById('apptSection');
   if (!appt) { section.style.display = 'none'; return; }
+  section.style.display = '';
   const card = document.getElementById('apptCard');
   const d = new Date(appt.appointment_date);
   const dateStr = `${d.getDate()} ${TH_MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
@@ -962,42 +989,21 @@ function renderAppointment(appt) {
   `;
 }
 
-// ปุ่มสรุปก่อนพบหมอ (caregiver) — เงื่อนไขเดียวกับคนไข้
-async function checkCaregiverReportButton(patientId, doses){
-  if(!patientId) return;
-  try {
-    // เงื่อนไขตรงกับ home: เฉพาะยาที่ระบุจำนวน (total_doses != null)
-    // ยาที่ไม่ระบุจำนวน (เรื้อรัง) ไม่นับ — ไม่บล็อกปุ่ม
-    const withDose = (doses||[]).filter(d => d.total_doses != null);
-    const activeWithDose = withDose.filter(d => !d.is_finished);
-    const allFinished = withDose.length > 0 && activeWithDose.length === 0;
-
-    const rep = await fetch(`${API_BASE}/api/med-report?user_id=${patientId}`).then(r=>r.json()).catch(()=>null);
-    let nearAppt = false, apptDate = null, pct = null;
-    if(rep && rep.ok){
-      pct = rep.overall_pct;
-      if(rep.next_appointment){
-        const days = Math.ceil((new Date(rep.next_appointment.appointment_date) - new Date())/(1000*60*60*24));
-        if(days >= 0 && days <= 3) nearAppt = true;
-        apptDate = new Date(rep.next_appointment.appointment_date).toLocaleDateString('th-TH',{day:'numeric',month:'short'});
-      }
-    }
-    if(!(allFinished || nearAppt)) return;
-    if(document.getElementById('cgReportBtn')) return;
-
-    const patientName = rep?.user_name || 'คนไข้';
-    const html = `
-      <div id="cgReportBtn" onclick="window.open('med-report.html?user_id=${patientId}&role=caregiver','_blank')"
-           style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:16px;color:#fff;margin-bottom:14px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
-        <div style="font-size:11px;opacity:.9;margin-bottom:3px">🎉 รอบยาจบแล้ว${apptDate?' · ก่อนพบหมอ '+apptDate:''}</div>
-        <div style="font-size:17px;font-weight:800;margin-bottom:3px">สรุป 💊 ก่อนพบหมอ</div>
-        <div style="font-size:12px;opacity:.9">ดูผลการกินยาของ${patientName}${pct!=null?' · '+pct+'%':''}</div>
-        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
-      </div>`;
-    // แทรกบนสุดของ content (หลัง header)
-    const anchor = document.querySelector('.dashboard-content') || document.querySelector('main') || document.body;
-    anchor.insertAdjacentHTML('afterbegin', html);
-  } catch(e){ console.warn('checkCaregiverReportButton', e); }
+// ปุ่มสรุปก่อนพบหมอ — แสดงเมื่อใกล้วันนัด (ภายใน 3 วัน)
+function checkCaregiverReportButton(patientId, appt) {
+  const old = document.getElementById('cgReportBtn'); if (old) old.remove();
+  if (!patientId || !appt || appt.days_until == null || appt.days_until > 3) return;
+  const tag = appt.days_until === 0 ? 'วันนี้' : appt.days_until === 1 ? 'พรุ่งนี้' : `อีก ${appt.days_until} วัน`;
+  const html = `
+    <div id="cgReportBtn" onclick="window.open('medtrack-doctor.html?user_id=${patientId}&appointment_id=${appt.id}','_blank')"
+         style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:16px;color:#fff;margin-bottom:14px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
+      <div style="font-size:11px;opacity:.9;margin-bottom:3px">📅 นัดหมอ${tag}</div>
+      <div style="font-size:17px;font-weight:800;margin-bottom:3px">สรุปให้หมอดู</div>
+      <div style="font-size:12px;opacity:.9">เปิดให้หมอดูผลการกินยาตอนพบแพทย์</div>
+      <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:20px">→</div>
+    </div>`;
+  const anchor = document.getElementById('heroMsg');
+  anchor.insertAdjacentHTML('beforebegin', html);
 }
 
 loadDashboard();
