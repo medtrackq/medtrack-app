@@ -10,6 +10,7 @@
 
 <!-- ============ LIFF SDK (สำหรับ iPhone PWA login) ============ -->
 <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="mt-auth.js"></script>
 
 <!-- ============ ICON FOR ALL PLATFORMS ============ -->
 
@@ -269,7 +270,8 @@ textarea.field-input{resize:none;min-height:80px}
   // แสดง overlay ทันทีถ้ากลับมาจาก LINE (มี lineUserId ใน URL) — กันเห็นหน้า onboard แวบ
   (function(){
     var p = new URLSearchParams(location.search);
-    if (p.get('lineUserId') || p.get('user_id') || p.get('token')) {
+    var hasTok = false; try { hasTok = !!localStorage.getItem('mt_session_token'); } catch(e) {}
+    if (p.get('token') || p.get('code') || p.get('liffClientId') || hasTok) {
       var ov = document.getElementById('mtAuthOverlay');
       if (ov) ov.style.display = 'flex';
     }
@@ -301,7 +303,7 @@ textarea.field-input{resize:none;min-height:80px}
       <button class="lang-btn" data-lang="zh" onclick="selectSplashLang(this)">🇨🇳 中文</button>
       <button class="lang-btn" data-lang="lo" onclick="selectSplashLang(this)">🇱🇦 ລາວ</button>
     </div>
-    <button class="btn-primary" onclick="goTo('sOnboard')">🚀 เริ่มใช้งานฟรี</button>
+    <button class="btn-primary" onclick="startNew()">🚀 เริ่มใช้งานฟรี</button>
     <button class="btn-secondary" onclick="loginExisting()">เข้าสู่ระบบ (มีบัญชีแล้ว)</button>
   </div>
 </div>
@@ -1106,94 +1108,76 @@ function goTo(id){
   });
 }
 
-async function loginExisting(){
-  const p=loadProfile();
-  const uid = p ? (p.user_id || p.id) : null;
-  // 🛡️ VERIFY กับ DB ก่อน — กัน localStorage ค้าง (user ถูกลบ/ไม่เคยลงจริง)
-  if(p && p.name && uid){
-    showToast('⏳ กำลังตรวจสอบ...');
-    try {
-      const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/'+uid);
-      if(chk.status === 404){
-        // ไม่มีใน DB → ล้าง + ให้ลงทะเบียน
-        showToast('ยังไม่มีบัญชี กรุณาลงทะเบียน');
-        localStorage.removeItem(KEY);
-        setTimeout(()=>goTo('sOnboard'), 900);
-        return;
-      }
-      // มีจริง → เข้า home
-      showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
-      const homeUrl = 'medtrack-home.html?user_id='+uid;
-      setTimeout(()=>{ window.location.href=homeUrl; }, 800);
-    } catch(e){
-      // network error → เข้า home ด้วย local (ไม่ block)
-      showToast('👋 ยินดีต้อนรับกลับ '+p.name.split(' ')[0]);
-      const homeUrl = 'medtrack-home.html?user_id='+uid;
-      setTimeout(()=>{ window.location.href=homeUrl; }, 800);
-    }
-  } else {
-    // ไม่มี local profile → ใช้ LIFF login ดึง lineUserId → verify DB → เด้ง home
-    // (แก้เคส iPhone PWA/เคลียร์ข้อมูล: localStorage ว่างแต่มี user ใน DB)
-    if (typeof liff !== 'undefined') {
-      try {
-        showToast('⏳ กำลังเชื่อม LINE...');
-        await liff.init({ liffId: '2009969889-ledTsERa' });
-        if (liff.isLoggedIn()) {
-          const lp = await liff.getProfile();
-          if (lp && /^U[a-f0-9]{32}$/.test(lp.userId)) {
-            const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/'+lp.userId);
-            if (chk.ok) {
-              const d = await chk.json();
-              if (d && d.user && d.user.id) {
-                const prof = JSON.parse(localStorage.getItem(KEY)||'{}');
-                prof.user_id=d.user.id; prof.id=d.user.id; prof.line_user_id=lp.userId;
-                if(d.user.name) prof.name=d.user.name;
-                localStorage.setItem(KEY, JSON.stringify(prof));
-                showToast('👋 ยินดีต้อนรับกลับ '+((d.user.name||'').split(' ').slice(-1)[0]||''));
-                setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 600);
-                return;
-              }
-            }
-            // login LINE ได้ แต่ยังไม่มีบัญชีใน DB → ให้ลงทะเบียน
-            showToast('ยังไม่มีบัญชี กรุณาลงทะเบียน');
-            setTimeout(()=>goTo('sOnboard'), 900);
-            return;
-          }
-        } else {
-          // ยังไม่ login LINE → เด้งเข้า LINE แล้วกลับมาที่หน้านี้
-          liff.login({ redirectUri: window.location.href });
-          return;
-        }
-      } catch(e){
-        console.warn('[loginExisting] LIFF ล้มเหลว:', e);
-        showToast('เชื่อม LINE ไม่สำเร็จ ลองใหม่อีกครั้ง');
-        return;
-      }
-    }
-    // ไม่มี LIFF → fallback เดิม
-    showToast('กรุณาลงทะเบียนก่อนใช้งาน');
-    setTimeout(()=>goTo('sOnboard'), 700);
+// ═══ 🔐 เข้าสู่ระบบด้วย LINE (LIFF) → ได้บัตรผ่านจาก server ═══
+const LIFF_ID_ONBOARD = '2009969889-ledTsERa';
+const OB_TICKET = 'mt_onboard_ticket';
+let _mtLiffP = null;
+function mtLiffInit(){ if(!_mtLiffP) _mtLiffP = liff.init({ liffId: LIFF_ID_ONBOARD }).catch(e => { _mtLiffP = null; throw e; }); return _mtLiffP; }
+function mtHideOverlay(){ var ov=document.getElementById('mtAuthOverlay'); if(ov) ov.style.display='none'; }
+function mtShowOverlay(){ var ov=document.getElementById('mtAuthOverlay'); if(ov) ov.style.display='flex'; }
+function mtGoNext(msg){
+  if(msg) showToast(msg);
+  const nx = new URLSearchParams(location.search).get('next');
+  const dest = (nx && /^[\w\-]+\.html(\?[^#]*)?$/.test(nx) && !/^medtrack-onboard/.test(nx)) ? nx : 'medtrack-home.html';
+  setTimeout(()=>location.replace(dest), msg ? 700 : 0);
+}
+// มีบัตรอยู่แล้ว → ตรวจกับ server (ได้บัตรต่ออายุกลับมา)
+async function mtVerifySession(){
+  if(!MTAuth.token()) return false;
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    if(r.status === 401 || r.status === 404){ MTAuth.clear(); return false; }
+    const j = await r.json();
+    if(!j.ok) return false;
+    MTAuth.save(j.session_token, j.user);
+    mtGoNext('👋 ยินดีต้อนรับกลับ คุณ' + String(j.user.name||'').split(' ')[0]);
+    return true;
+  }catch(e){
+    // เครือข่ายขัดข้อง → เข้าหน้าหลักไปก่อน (หน้าหลักจะตรวจบัตรเอง)
+    mtGoNext(); return true;
   }
 }
+// LIFF login แล้ว → แลกเป็นบัตรผ่าน หรือได้ตั๋วสมัครใหม่
+async function mtLiffSession(){
+  const r = await fetch(MEDTRACK_BACKEND + '/api/auth/liff', { method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ access_token: liff.getAccessToken() }) });
+  const j = await r.json();
+  if(j.ok && j.session_token){
+    try{ localStorage.removeItem(OB_TICKET); }catch(e){}
+    MTAuth.save(j.session_token, j.user);
+    mtGoNext('👋 ยินดีต้อนรับกลับ คุณ' + String(j.user.name||'').split(' ')[0]);
+    return 'home';
+  }
+  if(j.ok && j.need_onboard){
+    try{ localStorage.setItem(OB_TICKET, j.onboard_ticket); localStorage.removeItem(KEY); }catch(e){}
+    return 'onboard';
+  }
+  throw new Error(j.error || ('HTTP ' + r.status));
+}
+async function mtLineLogin(){
+  mtShowOverlay();
+  try{
+    await mtLiffInit();
+    if(!liff.isLoggedIn()){
+      liff.login({ redirectUri: location.href.split('#')[0] });   // กลับมาหน้านี้ แล้ว INIT จะทำต่อ
+      return;
+    }
+    const res = await mtLiffSession();
+    if(res === 'onboard'){ mtHideOverlay(); goTo('sOnboard'); initOb(); }
+  }catch(e){
+    console.warn('[login] LINE ล้มเหลว:', e);
+    mtHideOverlay();
+    showToast('เชื่อม LINE ไม่สำเร็จ ลองใหม่อีกครั้ง');
+  }
+}
+async function loginExisting(){ return mtLineLogin(); }
+async function startNew(){
+  // ต้องรู้ตัวตน LINE ก่อนสมัคร (กันสมัครแทนคนอื่น)
+  let ticket = null; try{ ticket = localStorage.getItem(OB_TICKET); }catch(e){}
+  if(ticket){ goTo('sOnboard'); initOb(); return; }
+  return mtLineLogin();
+}
 
-// ── ONBOARDING STEPS ──
-const OB_STEPS = [
-  {label:'ขั้นตอน 1 จาก 6', title:'ข้อมูลส่วนตัว', sub:'ชื่อ อายุ เพศ และข้อมูลพื้นฐาน'},
-  {label:'ขั้นตอน 2 จาก 6', title:'โรคประจำตัว', sub:'เพื่อให้หมอน้อยดูแลได้ตรงจุด'},
-  {label:'ขั้นตอน 3 จาก 6', title:'เวลามื้ออาหาร', sub:'สำหรับตั้งเวลาแจ้งเตือนกินยา'},
-  {label:'ขั้นตอน 4 จาก 6', title:'เชื่อม LINE หมอน้อย', sub:'รับแจ้งเตือนกินยาผ่าน LINE'},
-  {label:'ขั้นตอน 5 จาก 6', title:'ผู้ดูแลและแจ้งเตือน', sub:'คนที่จะช่วยดูแลให้คุณกินยาครบ'},
-  {label:'ขั้นตอน 6 จาก 6', title:'ข้อตกลงและความเป็นส่วนตัว', sub:'PDPA และสิทธิ์การใช้ข้อมูล'},
-];
-let obCurrent = 1;
-let selectedAvatar = '👴';
-let caregivers = [];
-
-// 🏥 โหลด + autocomplete filter โรงพยาบาล (filter + tag สี + keyboard เหมือน Google)
-let _allHospitals = [];
-const _HOSP_TAG = { government:['htag-gov','รัฐ'], university:['htag-uni','มหาลัย'], private:['htag-priv','เอกชน'] };
-let _hospActiveIdx = -1;
-let _hospFiltered = [];
 async function loadHospitals(){
   const search = document.getElementById('f_hospital_search');
   const results = document.getElementById('hospitalResults');
@@ -1477,128 +1461,56 @@ async function saveOnboarding(){
     createdAt:new Date().toISOString()
   };
   
-  // Path B (Session 8): Submit to backend if we have lineUserId OR user_id
-  const params = new URLSearchParams(window.location.search);
-  const lineUserId = params.get('lineUserId');
-  
-  // 🔧 NEW: Get user_id from localStorage (set by LINE Login OAuth callback)
-  const storedProfile = JSON.parse(localStorage.getItem(KEY) || '{}');
-  const existingUserId = storedProfile.user_id || storedProfile.id;
-  const existingLineUserId = storedProfile.line_user_id;
-  
-  // 🎯 Path C (Day 15): User logged in via OAuth → PATCH existing user
-  if (existingUserId) {
-    try {
-      showToast('💾 กำลังบันทึกข้อมูล...');
-      const r = await fetch(`https://medtrack-backend-production-7731.up.railway.app/api/users/${existingUserId}`, {
-        method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          name: profile.name,
-          age: profile.age ? parseInt(profile.age) : null,
-          gender: profile.gender,
-          phone: profile.phone,
-          breakfast_time: profile.meals.morning + ':00',
-          lunch_time: profile.meals.noon + ':00',
-          dinner_time: profile.meals.evening + ':00',
-          bedtime: profile.meals.bed + ':00',
-          push_lead_minutes: 0
-        })
-      });
-      const data = await r.json();
-      
-      if (r.ok && data.user) {
-        profile.user_id = existingUserId;
-        profile.id = existingUserId;
-        profile.line_user_id = existingLineUserId;
-        console.log('[onboard] ✅ User updated via PATCH:', existingUserId);
-        showToast('✅ บันทึกข้อมูลสำเร็จ');
-        await linkHospital(existingUserId, profile.hospital_id, profile.hn_hospital);
-      } else if (r.status === 404 && lineUserId && lineUserId.match(/^U[a-f0-9]{32}$/)) {
-        // 🛡️ user_id ค้าง (ถูกลบใน DB) → POST สร้างใหม่ด้วย lineUserId
-        console.warn('[onboard] PATCH 404 — user ถูกลบ, สร้างใหม่ด้วย POST');
-        const rNew = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/onboard', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            line_user_id: lineUserId,
-            name: profile.name,
-            age: profile.age ? parseInt(profile.age) : null,
-            gender: profile.gender,
-            phone: profile.phone,
-            breakfast_time: profile.meals.morning + ':00',
-            lunch_time: profile.meals.noon + ':00',
-            dinner_time: profile.meals.evening + ':00',
-            bedtime: profile.meals.bed + ':00',
-            push_lead_minutes: 0,
-            chronic_conditions: profile.diseases
-          })
-        });
-        const dNew = await rNew.json();
-        if ((dNew.ok && dNew.user) || dNew.error === 'user_exists') {
-          profile.user_id = dNew.user ? dNew.user.id : dNew.user_id;
-          profile.id = profile.user_id;
-          profile.line_user_id = lineUserId;
-          console.log('[onboard] ✅ สร้าง user ใหม่:', profile.user_id);
-          showToast('✅ บันทึกข้อมูลสำเร็จ');
-        } else {
-          console.error('[onboard] POST ใหม่ error:', dNew);
-          showToast('⚠️ บันทึก local แล้ว — backend ติดขัด');
-        }
+  // 🔐 บันทึกลง server: มีบัตรผ่าน = แก้ข้อมูลบัญชีเดิม · มีตั๋วสมัคร = สร้างบัญชีใหม่
+  const body = {
+    name: profile.name,
+    age: profile.age ? parseInt(profile.age) : null,
+    gender: profile.gender,
+    phone: profile.phone,
+    breakfast_time: profile.meals.morning + ':00',
+    lunch_time: profile.meals.noon + ':00',
+    dinner_time: profile.meals.evening + ':00',
+    bedtime: profile.meals.bed + ':00',
+    push_lead_minutes: 0
+  };
+  let ticket = null; try{ ticket = localStorage.getItem(OB_TICKET); }catch(e){}
+  let savedUserId = MTAuth.userId();
+  try {
+    showToast('💾 กำลังบันทึกข้อมูล...');
+    if (savedUserId) {
+      const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${savedUserId}`, {
+        method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok || !d.user) throw new Error(d.error || ('HTTP ' + r.status));
+    } else if (ticket) {
+      const r = await fetch(`${MEDTRACK_BACKEND}/api/users/onboard`, {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ ...body, chronic_conditions: profile.diseases, onboard_ticket: ticket }) });
+      const d = await r.json();
+      if (d.session_token) {
+        MTAuth.save(d.session_token, d.user || { id: d.user_id, name: d.user_name });
+        savedUserId = d.user ? d.user.id : d.user_id;
+        try{ localStorage.removeItem(OB_TICKET); }catch(e){}
+      } else if (r.status === 401) {
+        try{ localStorage.removeItem(OB_TICKET); }catch(e){}
+        showToast('⚠️ กรุณาเข้าสู่ระบบด้วย LINE อีกครั้ง');
+        setTimeout(()=>mtLineLogin(), 900);
+        return;
       } else {
-        console.error('[onboard] PATCH error:', data);
-        showToast('⚠️ บันทึก local แล้ว — backend ติดขัดเล็กน้อย');
+        throw new Error(d.error || ('HTTP ' + r.status));
       }
-    } catch (e) {
-      console.error('[onboard] Network error (PATCH):', e);
-      showToast('⚠️ บันทึก local แล้ว — เครือข่ายติดขัด');
+    } else {
+      showToast('⚠️ กรุณาเข้าสู่ระบบด้วย LINE ก่อนลงทะเบียน');
+      setTimeout(()=>mtLineLogin(), 900);
+      return;
     }
-  } else if (lineUserId && lineUserId.match(/^U[a-f0-9]{32}$/)) {
-    // Path B (Session 8): No user_id but has lineUserId → POST onboard (legacy)
-    try {
-      showToast('💾 กำลังบันทึกข้อมูล...');
-      const r = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/onboard', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          line_user_id: lineUserId,
-          name: profile.name,
-          age: profile.age ? parseInt(profile.age) : null,
-          gender: profile.gender,
-          phone: profile.phone,
-          breakfast_time: profile.meals.morning + ':00',
-          lunch_time: profile.meals.noon + ':00',
-          dinner_time: profile.meals.evening + ':00',
-          bedtime: profile.meals.bed + ':00',
-          push_lead_minutes: 0,
-          chronic_conditions: profile.diseases
-        })
-      });
-      const data = await r.json();
-      
-      if (data.ok && data.user) {
-        profile.user_id = data.user.id;
-        profile.id = data.user.id;
-        profile.line_user_id = lineUserId;
-        console.log('[onboard] Backend user created:', data.user.id);
-        // 🏥 ผูกโรงพยาบาล (hospital_id) เข้า hn_mapping
-        await linkHospital(data.user.id, profile.hospital_id, profile.hn_hospital);
-      } else if (data.error === 'user_exists') {
-        profile.user_id = data.user_id;
-        profile.id = data.user_id;
-        profile.line_user_id = lineUserId;
-        console.log('[onboard] User already exists:', data.user_id);
-        await linkHospital(data.user_id, profile.hospital_id, profile.hn_hospital);
-      } else {
-        console.error('[onboard] Backend error:', data);
-        showToast('⚠️ บันทึก local แล้ว — ระบบ backend ติดขัดเล็กน้อย');
-      }
-    } catch (e) {
-      console.error('[onboard] Network error:', e);
-      showToast('⚠️ บันทึก local แล้ว — เครือข่ายติดขัดเล็กน้อย');
-    }
-  } else {
-    console.log('[onboard] No user_id and no lineUserId — saving local only');
+    profile.user_id = savedUserId; profile.id = savedUserId;
+    await linkHospital(savedUserId, profile.hospital_id, profile.hn_hospital);
+    showToast('✅ บันทึกข้อมูลสำเร็จ');
+  } catch (e) {
+    console.error('[onboard] save error:', e);
+    showToast('⚠️ บันทึกไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
+    return;
   }
   
   localStorage.setItem(KEY, JSON.stringify(profile));
@@ -1621,25 +1533,9 @@ function showSuccessScreen(p){
 }
 
 function goToHome(){
-  const params = new URLSearchParams(window.location.search);
-  const lineUserId = params.get('lineUserId');
-  let uid = null, hasProfile = false;
-  try {
-    const pr = JSON.parse(localStorage.getItem(KEY)||'{}');
-    uid = pr.user_id || pr.id;
-    hasProfile = !!(pr.name && pr.age); // มีข้อมูลสมัครครบ
-  } catch(e){}
-  // 🛡️ เข้า home ได้ถ้ามี: user_id / lineUserId / profile ครบ (home จะ verify + หา user เอง)
-  if (!uid && !lineUserId && !hasProfile) {
-    showToast('⚠️ ยังบันทึกไม่สำเร็จ กรุณาลองใหม่');
-    return;
-  }
+  if (!MTAuth.token()) { showToast('⚠️ ยังบันทึกไม่สำเร็จ กรุณาลองใหม่'); return; }
   showToast('🏠 กำลังเข้าสู่หน้าหลัก...');
-  let homeUrl = 'medtrack-home.html';
-  if (uid) homeUrl += '?user_id=' + uid;
-  else if (lineUserId) homeUrl += '?lineUserId=' + lineUserId;
-  // ถ้ามีแค่ profile (ไม่มี uid/lineUserId) → home อ่านจาก localStorage เอง
-  setTimeout(()=>{ window.location.href=homeUrl; },1000);
+  setTimeout(()=>{ window.location.replace('medtrack-home.html'); }, 800);
 }
 
 // ── PROFILE HELPERS ──
@@ -1832,172 +1728,54 @@ toggleChip = function(el){
 
 // ── LINE CONNECT (Onboarding Step 4) ──
 function ob4ConnectLine(){
-  showToast('💚 กำลังเปิด LINE...');
-  setTimeout(()=> ob4SimConnect(), 1500);
-}
-function ob4SimConnect(){
-  const uid='U'+Math.random().toString(36).substr(2,16).toUpperCase();
-  localStorage.setItem('mt_line_uid', uid);
+  // เปิดหน้าเพิ่มเพื่อน LINE หมอน้อย (ปุ่มเปิดลิงก์ให้แล้ว) — ระบบรู้สถานะจริงเมื่อเพิ่มเพื่อน
   const badge=document.getElementById('ob4LineStatus');
-  if(badge){ badge.textContent='✅ เชื่อมแล้ว'; badge.style.cssText='font-size:10px;font-weight:700;background:#0A9C7A;color:#fff;padding:3px 9px;border-radius:10px;border:1px solid #0A9C7A'; }
-  const btn=document.getElementById('ob4LineBtn');
-  if(btn){ btn.innerHTML='✅ เชื่อม LINE แล้วครับ'; btn.style.background='#077A5F'; }
+  if(badge){ badge.textContent='เปิด LINE แล้ว'; }
   const tgLine=document.getElementById('tg_line');
   if(tgLine) tgLine.classList.add('on');
-  const sub=document.getElementById('tg_line_sub');
-  if(sub) sub.textContent='เชื่อมแล้ว · หมอน้อย LINE OA';
-  showToast('✅ เชื่อม LINE สำเร็จ!');
 }
+function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank'); ob4ConnectLine(); }
 
 // ── INIT ──
 (async function(){
-  // ✅ รับ token + user_id จาก URL (callback แนบมา) — กัน localStorage หายใน LINE in-app browser
   const params = new URLSearchParams(window.location.search);
+  // บัตรจากหน้า callback (LINE Login แบบเว็บ) → เก็บ แล้วลบออกจาก URL
   const urlToken = params.get('token');
-  const urlUid = params.get('uid') || params.get('user_id');
   if (urlToken) {
-    localStorage.setItem('mt_session_token', urlToken);
-    console.log('[onboard] token จาก URL · saved len=' + urlToken.length);
+    MTAuth.save(urlToken);
+    params.delete('token'); params.delete('uid'); params.delete('user_id');
+    history.replaceState({}, '', location.pathname + (params.toString() ? '?' + params : ''));
   }
-  if (urlUid) {
-    // merge user_id เข้า profile (เผื่อ localStorage profile หาย)
-    try {
-      const prof = JSON.parse(localStorage.getItem(KEY) || '{}');
-      prof.user_id = parseInt(urlUid);
-      prof.id = parseInt(urlUid);
-      localStorage.setItem(KEY, JSON.stringify(prof));
-      console.log('[onboard] user_id จาก URL = ' + urlUid);
-    } catch(e){}
-  }
-
-  // ═══════════════════════════════════════════════════════════
-  // 🍎 LIFF LOGIN — แก้ปัญหา iPhone PWA / localStorage ว่าง
-  // หลักการ: เลิกเดา environment (standalone/inLine เปราะเกินไป)
-  // → ถ้า URL ไม่มี lineUserId + ยังไม่เคยมี profile ใน localStorage
-  //   → ให้ LIFF จัดการ (login/getProfile) ไม่ว่าอยู่ context ไหน
-  // กัน PC/เครื่องที่ login แล้ว: มี profile.user_id ใน localStorage = ข้าม
-  // ═══════════════════════════════════════════════════════════
-  const LIFF_ID_ONBOARD = '2009969889-ledTsERa';
-  const _hasLineIdInURL = /^U[a-f0-9]{32}$/.test(params.get('lineUserId') || '');
-  // เคย login แล้วไหม (มี user_id ค้างใน localStorage)
-  let _hasLocalUser = false;
-  try {
-    const _pp = JSON.parse(localStorage.getItem(KEY) || '{}');
-    _hasLocalUser = !!(_pp && (_pp.user_id || _pp.id));
-  } catch(e){}
-
-  // 🐞 DEBUG: ปิด alert แล้ว (pilot-ready) — เหลือแค่ console.log สำหรับ dev
-  const _DBG = false; // ปิดถาวร: ไม่มี alert เด้งรบกวนคนไข้อีก
-  const _dbg = (m) => { console.log('[onboard] ' + m); };
-
-  if (!_hasLineIdInURL && !_hasLocalUser && typeof liff !== 'undefined') {
-    try {
-      _dbg('เริ่ม LIFF (ไม่มี lineUserId + ไม่มี local user)');
-      await liff.init({ liffId: LIFF_ID_ONBOARD });
-      _dbg('liff.init OK · isLoggedIn=' + liff.isLoggedIn());
-      if (liff.isLoggedIn()) {
-        // ✅ มี LIFF session อยู่แล้ว → ดึง profile + verify + เด้ง home เงียบๆ
-        // (ไม่เรียก liff.login() → ไม่เด้ง access.line.me)
-        const _lp = await liff.getProfile();
-        _dbg('getProfile · userId=' + (_lp && _lp.userId ? _lp.userId : 'NULL'));
-        if (_lp && /^U[a-f0-9]{32}$/.test(_lp.userId)) {
-          const _u = new URL(window.location.href);
-          _u.searchParams.set('lineUserId', _lp.userId);
-          window.history.replaceState({}, '', _u.toString());
-          params.set('lineUserId', _lp.userId);
-          _dbg('ได้ lineUserId → ไป verify by-line-id');
-        } else {
-          _dbg('⚠️ userId ไม่ผ่าน regex/null → แสดง splash');
-        }
-      } else {
-        // ❌ ยังไม่มี LIFF session → ไม่บังคับ login อัตโนมัติ (กันเด้ง access.line.me ทุกครั้ง)
-        // ให้ผู้ใช้กดปุ่ม "เข้าสู่ระบบ (มีบัญชีแล้ว)" เอง → loginExisting() จะ login ให้
-        _dbg('ยังไม่ login LINE → แสดง splash ให้กดปุ่มเข้าสู่ระบบ');
-      }
-    } catch (e) {
-      _dbg('❌ LIFF error: ' + (e && e.message ? e.message : e));
-    }
-  } else if (_DBG) {
-    _dbg('ข้าม LIFF · hasLineIdInURL=' + _hasLineIdInURL + ' hasLocalUser=' + _hasLocalUser + ' liffLoaded=' + (typeof liff !== 'undefined'));
-  }
-
-  // 🎯 เช็ค lineUserId จาก URL ก่อน — ถ้า user มีใน DB แล้ว → เด้ง home (ไม่ต้องกรอกซ้ำ)
-  const _urlParams2 = new URLSearchParams(window.location.search);
-  const _urlLineId = _urlParams2.get('lineUserId');
-  if(_urlLineId && _urlLineId.match(/^U[a-f0-9]{32}$/)){
-    try {
-      if(_DBG) _dbg('verify by-line-id: ' + _urlLineId.slice(0,10) + '…');
-      const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/by-line-id/'+_urlLineId);
-      if(_DBG) _dbg('by-line-id status=' + chk.status);
-      if(chk.ok){
-        const d = await chk.json();
-        if(d && d.user && d.user.id && d.user.name){
-          if(_DBG) _dbg('✅ เจอ user id=' + d.user.id + ' → เด้ง home');
-          console.log('[onboard] user มีแล้ว (id='+d.user.id+') — เด้ง home');
-          const prof = JSON.parse(localStorage.getItem(KEY)||'{}');
-          prof.user_id = d.user.id; prof.id = d.user.id; prof.line_user_id = _urlLineId;
-          if(d.user.name) prof.name = d.user.name;
-          localStorage.setItem(KEY, JSON.stringify(prof));
-          showToast('👋 ยินดีต้อนรับกลับ คุณ'+(d.user.name.split(' ').slice(-1)[0]||d.user.name));
-          setTimeout(()=>{ window.location.href='medtrack-home.html?user_id='+d.user.id; }, 1000);
-          return;
-        }
-      }
-      if(_DBG) _dbg('⚠️ by-line-id ไม่เจอ user (status=' + chk.status + ') → ให้กรอก onboard');
-      console.log('[onboard] lineUserId นี้ยังไม่มี user — ให้กรอก onboard');
-      // ไม่เจอ user → ต้องกรอกใหม่ → ซ่อน overlay ให้เห็นฟอร์ม
-      var _ov = document.getElementById('mtAuthOverlay'); if(_ov) _ov.style.display='none';
-    } catch(e){
-      if(_DBG) _dbg('❌ verify error: ' + (e && e.message ? e.message : e));
-      console.warn('[onboard] เช็ค by-line-id ล้มเหลว:', e);
-      var _ov2 = document.getElementById('mtAuthOverlay'); if(_ov2) _ov2.style.display='none';
-    }
-  }
-
-  const p=loadProfile();
-  // 🔧 Check ที่ไม่ใช้ meal_time (DB มี default)
-  // ถ้ามี name + age + gender = onboarding completed
-  const isCompleted = p && p.name && p.age && p.gender;
-  
-  if(isCompleted){
-    const uid = p.user_id || p.id;
-    // 🛡️ VERIFY กับ DB ก่อน — กัน localStorage ค้าง (user ถูกลบ/เปลี่ยนเครื่อง)
-    if(uid){
-      try {
-        const chk = await fetch('https://medtrack-backend-production-7731.up.railway.app/api/users/'+uid);
-        if(chk.status === 404){
-          // user ไม่มีใน DB แล้ว (ถูกลบ/ค้าง) → ล้าง แล้วลงทะเบียนใหม่
-          console.warn('[onboard] user_id '+uid+' ไม่พบใน DB — ล้าง localStorage + onboard ใหม่');
-          localStorage.removeItem(KEY);
-          initOb();
-          return;
-        }
-        // มีจริง → ต้อนรับกลับ + ไป home
-        showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
-        const homeUrl = 'medtrack-home.html?user_id='+uid;
-        setTimeout(()=>{ window.location.href=homeUrl; }, 600);
-        return;
-      } catch(e){
-        // network error — ไม่ block (ให้เข้า home ด้วย local ไปก่อน)
-        console.warn('[onboard] verify ล้มเหลว (network) — ใช้ local:', e);
-        showToast('👋 ยินดีต้อนรับกลับ คุณ'+(p.name.split(' ').slice(-1)[0]||p.name));
-        const homeUrl = 'medtrack-home.html?user_id='+uid;
-        setTimeout(()=>{ window.location.href=homeUrl; }, 600);
-        return;
-      }
-    }
-    // ไม่มี user_id เลย (local อย่างเดียว ไม่เคยลง backend) → ให้ลงทะเบียนใหม่
-    console.warn('[onboard] มี profile local แต่ไม่มี user_id — onboard ใหม่');
-    localStorage.removeItem(KEY);
-    initOb();
+  // 0) เพิ่งออกจากระบบ → ออกจาก LINE login ของหน้านี้ด้วย แล้วแสดงหน้าแรก
+  if (params.get('logout') === '1') {
+    MTAuth.clear();
+    try { await mtLiffInit(); if (liff.isLoggedIn()) liff.logout(); } catch (e) {}
+    history.replaceState({}, '', location.pathname);
+    mtHideOverlay();
     return;
   }
-  // New user OR incomplete profile → run onboarding
-  initOb();
+  // 1) มีบัตรผ่าน → ตรวจแล้วเข้าหน้าหลัก
+  if (MTAuth.token() && await mtVerifySession()) return;
+  // 2) login LINE ไว้แล้ว (หรือเพิ่งกลับมาจาก LINE) → แลกบัตร / สมัครใหม่
+  if (typeof liff !== 'undefined') {
+    try {
+      await mtLiffInit();
+      if (liff.isLoggedIn()) {
+        mtShowOverlay();
+        const res = await mtLiffSession();
+        if (res === 'home') return;
+        if (res === 'onboard') { mtHideOverlay(); goTo('sOnboard'); initOb(); return; }
+      }
+    } catch (e) {
+      console.warn('[onboard] LIFF:', e && e.message ? e.message : e);
+    }
+  }
+  // 3) ยังไม่ login → หน้าแรก ให้กด "เริ่มใช้งาน" หรือ "เข้าสู่ระบบ"
+  mtHideOverlay();
 })();
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.07.15a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08a</div>
 </body>
 </html>
