@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
+<script src="mt-auth.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>สรุปการกินยาให้หมอ · MedTrack</title>
 <meta name="robots" content="noindex">
@@ -61,23 +62,26 @@ td.num,th.num{text-align:right;white-space:nowrap}
   const pill = p => p == null ? '<span class="pill p-na">—</span>' : '<span class="pill ' + (p >= 80 ? 'p-ok' : p >= 50 ? 'p-warn' : 'p-bad') + '">' + p + '%</span>';
   const days = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5) + 1;
 
-  let userId = parseInt(qs.get('user_id'));
-  if (!userId) { try { const p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}'); userId = parseInt(p.user_id || p.id); } catch (e) {} }
+  // ลิงก์จาก LINE/ผู้ดูแล มี ?share= (ไม่ต้อง login) · เปิดจากแอป ใช้บัตรผ่านของคนไข้
+  const share = qs.get('share');
+  const userId = share ? null : MTAuth.userId();
+  if (!share && !userId) MTAuth.toLogin();
 
   function url(extra){
-    const p = new URLSearchParams({ user_id: String(userId) });
-    if (qs.get('appointment_id')) p.set('appointment_id', qs.get('appointment_id'));
+    const p = new URLSearchParams(share ? { share } : { user_id: String(userId) });
+    if (!share && qs.get('appointment_id')) p.set('appointment_id', qs.get('appointment_id'));
     Object.entries(extra || {}).forEach(([k, v]) => v == null ? p.delete(k) : p.set(k, v));
     return p;
   }
 
   async function load(){
-    if (!userId) { root.innerHTML = '<div class="center">ไม่พบบัญชีผู้ใช้ กรุณาเปิดจากแอป MedTrack</div>'; return; }
+    if (!share && !userId) { root.innerHTML = '<div class="center">กรุณาเข้าสู่ระบบ MedTrack</div>'; return; }
     const params = url(qs.get('scope') === 'all' ? { scope: 'all', appointment_id: null } : {});
     let j;
     try {
       const r = await fetch(API + '/api/doctor-summary?' + params.toString());
       j = await r.json();
+      if (j && j.error === 'share_expired') { root.innerHTML = '<div class="center">ลิงก์นี้หมดอายุแล้ว<br>เปิดสรุปใหม่จากแอป MedTrack ได้เลยครับ</div>'; return; }
       if (!r.ok || !j.ok) throw new Error(j.error || 'load failed');
     } catch (e) {
       root.innerHTML = '<div class="center">โหลดข้อมูลไม่สำเร็จ<br><button class="btn" style="max-width:200px;margin-top:12px" onclick="location.reload()">ลองใหม่</button></div>';
