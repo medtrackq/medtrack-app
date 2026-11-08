@@ -2,6 +2,7 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<script src="mt-auth.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>สรุปการกินยา — MedTrack</title>
 <style>
@@ -86,7 +87,8 @@
 <script>
 const API = 'https://medtrack-backend-production-7731.up.railway.app';
 const params = new URLSearchParams(location.search);
-const userId = params.get('user_id');
+const userId = MTAuth.userId();
+if (!userId) MTAuth.toLogin();
 const forCaregiver = params.get('role') === 'caregiver';
 
 async function load(){
