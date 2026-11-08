@@ -1663,6 +1663,14 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     </div>
     
     <div class="sheet-sec">บัญชีผู้ใช้</div>
+    <div class="sheet-item" onclick="logoutOtherDevices()" style="cursor:pointer">
+      <div class="sheet-item-ico" style="background:#FEF3C7">📵</div>
+      <div class="sheet-item-info">
+        <div class="sheet-item-title">ออกจากระบบเครื่องอื่นทั้งหมด</div>
+        <div class="sheet-item-sub">ใช้เมื่อมือถือเครื่องเก่าหาย หรือเปลี่ยนเครื่อง</div>
+      </div>
+      <div class="sheet-item-arrow">›</div>
+    </div>
     <div class="sheet-item" onclick="logoutUser()" style="cursor:pointer">
       <div class="sheet-item-ico" style="background:#FEE2E2">🚪</div>
       <div class="sheet-item-info">
@@ -2124,6 +2132,18 @@ function fmtTablets(n, suffix) {
     }
   } catch (e) {}
 })();
+
+// 📵 ออกจากระบบเครื่องอื่นทั้งหมด (เครื่องนี้ใช้ต่อได้)
+async function logoutOtherDevices(){
+  if(!confirm('ออกจากระบบ MedTrack บนเครื่องอื่นทั้งหมด?\n\nเครื่องนี้ยังใช้งานต่อได้ตามปกติ')) return;
+  try{
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/auth/logout-others`, { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    const j = await r.json();
+    if(!r.ok || !j.session_token) throw new Error(j.error || r.status);
+    MTAuth.save(j.session_token);
+    toast('✅ ออกจากระบบเครื่องอื่นแล้ว');
+  }catch(e){ toast('ทำไม่สำเร็จ ลองใหม่อีกครั้ง'); }
+}
 
 // 🚪 Logout — clear session + redirect
 function logoutUser() {
