@@ -305,6 +305,8 @@ textarea.field-input{resize:none;min-height:80px}
     </div>
     <button class="btn-primary" onclick="startNew()">🚀 เริ่มใช้งานฟรี</button>
     <button class="btn-secondary" onclick="loginExisting()">เข้าสู่ระบบ (มีบัญชีแล้ว)</button>
+    <div id="mtLineHint" style="display:none;margin-top:14px;font-size:13px;line-height:1.6;opacity:.9;text-align:center">💚 กดปุ่มแล้ว ระบบจะเปิด<b>แอป LINE</b> ให้เอง<br>ไม่ต้องกรอกอีเมลหรือรหัสผ่าน</div>
+    <script>try{ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)) document.getElementById('mtLineHint').style.display='block'; }catch(e){}</script>
   </div>
 </div>
 
@@ -1154,12 +1156,23 @@ async function mtLiffSession(){
   }
   throw new Error(j.error || ('HTTP ' + r.status));
 }
+// มือถือที่เปิดจาก Safari/Chrome: ไม่ใช้หน้า login ของ LINE บนเว็บ (ต้องกรอกอีเมล/รหัสยืนยัน)
+// → เปิดหน้านี้ "ในแอป LINE" แทน ซึ่ง login ให้อัตโนมัติ ไม่ต้องกรอกอะไร
+function mtIsMobile(){
+  const ua = navigator.userAgent || '';
+  return /Android|iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+function mtOpenInLine(){
+  const nx = new URLSearchParams(location.search).get('next');
+  location.href = 'https://liff.line.me/' + LIFF_ID_ONBOARD + (nx ? '?next=' + encodeURIComponent(nx) : '');
+}
 async function mtLineLogin(){
   mtShowOverlay();
   try{
     await mtLiffInit();
     if(!liff.isLoggedIn()){
-      liff.login({ redirectUri: location.href.split('#')[0] });   // กลับมาหน้านี้ แล้ว INIT จะทำต่อ
+      if (mtIsMobile() && !liff.isInClient()) { mtOpenInLine(); return; }   // มือถือ → เด้งเข้าแอป LINE
+      liff.login({ redirectUri: location.href.split('#')[0] });   // คอมพิวเตอร์ → สแกน QR ด้วย LINE
       return;
     }
     const res = await mtLiffSession();
@@ -1776,6 +1789,6 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08b</div>
 </body>
 </html>
