@@ -1,77 +1,80 @@
-// mt-auth.js — บัตรผ่าน (session) ของคนไข้ MedTrack
-// • แนบ Authorization: Bearer <session> ให้ทุกคำขอไป backend อัตโนมัติ
-// • รับบัตรใหม่ที่ server ต่ออายุให้ (header X-Session-Token)
-// • บัตรหาย/หมดอายุ → พาไปหน้าเข้าสู่ระบบ (medtrack-onboard.html)
+// mt-admin.js — รหัส admin สำหรับเครื่องมือภายใน (ทดสอบ OCR / ใบนัด / เก็บข้อมูล)
+// • ใส่รหัสครั้งเดียว แล้วแนบ header x-admin-secret ให้ทุกคำขอไป backend เอง (ไม่ใส่ใน URL)
+// • ยังไม่ใส่รหัส → คำขอจะรอจนกว่าจะใส่ · รหัสผิด (401/403) → ถามใหม่
+// • เก็บในแท็บนี้เท่านั้น (ปิดแท็บแล้วหาย) เว้นแต่ติ๊ก "จำไว้ในเครื่องนี้"
 (function () {
-  var BACKENDS = ['https://medtrack-backend-production-7731.up.railway.app', 'https://api.medtrackq.com'];
-  var TK = 'mt_session_token', PK = 'mt_user_profile', LOGIN = 'medtrack-onboard.html';
-  // ไม่พาไปหน้า login เมื่อ 401 จาก endpoint เหล่านี้ (จัดการเอง)
-  var NO_REDIRECT = /\/api\/(auth\/|users\/onboard|caregivers\/(dashboard|verify-token|link-token))|[?&]share=/;
+  var HOSTS = ['https://api.medtrackq.com', 'https://medtrack-backend-production-7731.up.railway.app'];
+  var K = 'mt_admin_secret';
+  function load() { try { return sessionStorage.getItem(K) || localStorage.getItem(K) || ''; } catch (e) { return ''; } }
+  function save(v, remember) {
+    try { sessionStorage.setItem(K, v); } catch (e) {}
+    try { if (remember) localStorage.setItem(K, v); else localStorage.removeItem(K); } catch (e) {}
+  }
+  function clear() { try { sessionStorage.removeItem(K); localStorage.removeItem(K); } catch (e) {} }
 
-  function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
-  function del(k) { try { localStorage.removeItem(k); } catch (e) {} }
-  function uidFrom(t) {
-    try {
-      var s = atob(String(t).replace(/-/g, '+').replace(/_/g, '/'));
-      var u = parseInt(s.split('.')[0], 10);
-      return u > 0 ? u : null;
-    } catch (e) { return null; }
+  var secret = load(), waiters = [], asking = false, rejected = false;
+  function whenReady() { return secret ? Promise.resolve(secret) : new Promise(function (r) { waiters.push(r); ask(); }); }
+
+  function css() {
+    if (document.getElementById('mtAdmCss')) return;
+    var s = document.createElement('style'); s.id = 'mtAdmCss';
+    s.textContent = '#mtAdmPill{position:fixed;top:8px;right:8px;z-index:99999;font:600 12px system-ui,sans-serif;background:#0f172a;color:#fff;border-radius:16px;padding:5px 12px;cursor:pointer;opacity:.85}' +
+      '#mtAdmBox{position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center}' +
+      '#mtAdmBox .c{background:#fff;border-radius:14px;padding:22px;width:min(340px,90vw);font:14px system-ui,sans-serif;color:#0f172a;box-shadow:0 10px 40px rgba(0,0,0,.3)}' +
+      '#mtAdmBox h3{margin:0 0 6px;font-size:17px}#mtAdmBox p{margin:0 0 12px;color:#475569;font-size:13px}' +
+      '#mtAdmBox input[type=password]{width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px}' +
+      '#mtAdmBox label{display:flex;gap:6px;align-items:center;margin:10px 0 14px;font-size:13px;color:#475569}' +
+      '#mtAdmBox button{width:100%;padding:10px;border:0;border-radius:8px;background:#0a9c7a;color:#fff;font:700 15px system-ui,sans-serif;cursor:pointer}' +
+      '#mtAdmBox .err{color:#dc2626;font-size:13px;min-height:16px;margin-top:6px}';
+    document.head.appendChild(s);
+  }
+  function pill() {
+    if (!document.body) return;
+    css();
+    var p = document.getElementById('mtAdmPill');
+    if (!p) { p = document.createElement('div'); p.id = 'mtAdmPill'; document.body.appendChild(p); }
+    p.textContent = secret ? '🔓 Admin · ออก' : '🔐 ใส่รหัส Admin';
+    p.title = secret ? 'ล้างรหัส admin ออกจากเครื่องนี้' : 'ใส่รหัส admin';
+    p.onclick = function () { if (secret) { secret = ''; clear(); pill(); } else ask(); };
+  }
+  function ask(msg) {
+    if (asking) return;
+    if (!document.body) { document.addEventListener('DOMContentLoaded', function () { ask(msg); }); return; }
+    asking = true; css();
+    var b = document.createElement('div'); b.id = 'mtAdmBox';
+    b.innerHTML = '<div class="c"><h3>🔐 รหัส Admin</h3><p>เครื่องมือนี้ใช้ได้เฉพาะผู้ดูแลระบบ<br>ใช้รหัสเดียวกับ admin-monitor</p>' +
+      '<input type="password" id="mtAdmIn" autocomplete="current-password" placeholder="ADMIN_SECRET">' +
+      '<label><input type="checkbox" id="mtAdmRem"> จำไว้ในเครื่องนี้ (เฉพาะคอมส่วนตัว)</label>' +
+      '<button id="mtAdmOk">เข้าใช้งาน</button><div class="err">' + (msg || '') + '</div></div>';
+    document.body.appendChild(b);
+    var inp = document.getElementById('mtAdmIn'); inp.focus();
+    var go = function () {
+      var v = inp.value.trim(); if (!v) return;
+      secret = v; save(v, document.getElementById('mtAdmRem').checked);
+      b.remove(); asking = false; pill();
+      if (rejected) { location.reload(); return; }   // หน้าโหลดข้อมูลไม่สำเร็จไปแล้ว → โหลดใหม่ด้วยรหัสที่ถูก
+      var w = waiters; waiters = []; w.forEach(function (r) { r(v); });
+    };
+    document.getElementById('mtAdmOk').onclick = go;
+    inp.onkeydown = function (e) { if (e.key === 'Enter') go(); };
   }
 
-  var redirecting = false;
-  var MTAuth = {
-    token: function () { return get(TK); },
-    userId: function () { var t = get(TK); return t ? uidFrom(t) : null; },
-    save: function (token, user) {
-      if (token) set(TK, token);
-      if (user) {
-        var p = {};
-        try { p = JSON.parse(get(PK) || '{}') || {}; } catch (e) {}
-        p.user_id = user.id; p.id = user.id;
-        if (user.name) p.name = user.name;
-        if (user.line_user_id) p.line_user_id = user.line_user_id;
-        set(PK, JSON.stringify(p));
-      }
-    },
-    clear: function () { del(TK); },
-    loginUrl: function () {
-      var here = location.pathname.split('/').pop() || 'medtrack-home.html';
-      if (here === LOGIN) return LOGIN;
-      return LOGIN + '?next=' + encodeURIComponent(here + location.search.replace(/([?&])(user_id|lineUserId)=[^&]*&?/g, '$1').replace(/[?&]$/, ''));
-    },
-    toLogin: function () {
-      if (redirecting) return;
-      redirecting = true;
-      location.replace(MTAuth.loginUrl());
-    },
-    // เรียกตอนเปิดหน้า: ไม่มีบัตร → ไปหน้า login
-    require: function () {
-      if (!get(TK)) { MTAuth.toLogin(); return false; }
-      return true;
-    }
-  };
-
-  var origFetch = window.fetch.bind(window);
+  var of = window.fetch.bind(window);
   window.fetch = function (input, init) {
     var url = typeof input === 'string' ? input : (input && input.url) || '';
-    var isApi = BACKENDS.some(function (b) { return url.indexOf(b) === 0; });
-    if (!isApi) return origFetch(input, init);
-    init = Object.assign({}, init || {});
-    var h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || {});
-    var t = get(TK);
-    if (t && !h.has('Authorization')) h.set('Authorization', 'Bearer ' + t);
-    init.headers = h;
-    return origFetch(input, init).then(function (r) {
-      var nt = r.headers.get('X-Session-Token');
-      if (nt) set(TK, nt);
-      if (r.status === 401 && !NO_REDIRECT.test(url)) {
-        r.clone().json().then(function (j) {
-          if (j && j.error === 'session_required') { MTAuth.clear(); MTAuth.toLogin(); }
-        }).catch(function () {});
-      }
-      return r;
+    if (!HOSTS.some(function (h) { return url.indexOf(h) === 0; })) return of(input, init);
+    return whenReady().then(function (sec) {
+      var i = Object.assign({}, init || {});
+      var h = new Headers(i.headers || (typeof input !== 'string' && input.headers) || {});
+      h.set('x-admin-secret', sec); i.headers = h;
+      return of(input, i).then(function (r) {
+        if ((r.status === 401 || r.status === 403) && secret === sec) {
+          secret = ''; clear(); pill(); rejected = true; ask('รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง');
+        }
+        return r;
+      });
     });
   };
-  window.MTAuth = MTAuth;
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pill); else pill();
+  window.MTAdmin = { clear: function () { secret = ''; clear(); pill(); } };
 })();
