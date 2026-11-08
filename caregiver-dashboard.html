@@ -801,7 +801,7 @@ function render(d) {
 
   renderTodayDoses(d.today_doses);
   document.getElementById('todayMeta').textContent = `${s.today_taken} กินแล้ว · ${left} รอ · ${s.today_missed} ขาด${cgNote}`;
-  checkCaregiverReportButton(d.patient.id, d.appointment);
+  checkCaregiverReportButton(d.doctor_url, d.appointment);
   if (!d.weeks || !d.weeks.length) document.getElementById('trendSection').style.display = 'none';
   else { document.getElementById('trendSection').style.display = ''; renderTrend(d.weeks); }
   renderInsights(d.insights, d.tier);
@@ -990,12 +990,12 @@ function renderAppointment(appt) {
 }
 
 // ปุ่มสรุปก่อนพบหมอ — แสดงเมื่อใกล้วันนัด (ภายใน 3 วัน)
-function checkCaregiverReportButton(patientId, appt) {
+function checkCaregiverReportButton(doctorUrl, appt) {
   const old = document.getElementById('cgReportBtn'); if (old) old.remove();
-  if (!patientId || !appt || appt.days_until == null || appt.days_until > 3) return;
+  if (!doctorUrl || !appt || appt.days_until == null || appt.days_until > 3) return;
   const tag = appt.days_until === 0 ? 'วันนี้' : appt.days_until === 1 ? 'พรุ่งนี้' : `อีก ${appt.days_until} วัน`;
   const html = `
-    <div id="cgReportBtn" onclick="window.open('medtrack-doctor.html?user_id=${patientId}&appointment_id=${appt.id}','_blank')"
+    <div id="cgReportBtn" onclick="window.open(${JSON.stringify(doctorUrl).replace(/"/g,'&quot;')},'_blank')"
          style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:16px;color:#fff;margin-bottom:14px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
       <div style="font-size:11px;opacity:.9;margin-bottom:3px">📅 นัดหมอ${tag}</div>
       <div style="font-size:17px;font-weight:800;margin-bottom:3px">สรุปให้หมอดู</div>
