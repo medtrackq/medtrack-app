@@ -8,6 +8,7 @@
   
 <head>
 <meta charset="UTF-8">
+<script src="mt-auth.js"></script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1941,7 +1942,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
     <button class="sheet-close" onclick="closeSheet()">✕</button>
   </div>
   <div class="sheet-list">
-    <div class="sheet-item" onclick="closeSheet();window.open('medtrack-doctor.html?user_id='+getCurrentUserId(),'_blank')">
+    <div class="sheet-item" onclick="closeSheet();window.open('medtrack-doctor.html','_blank')">
       <div class="sheet-item-ico" style="background:#F0FFF4">🩺</div>
       <div class="sheet-item-info">
         <div class="sheet-item-title">เปิดสรุปให้หมอดู</div>
@@ -1949,7 +1950,7 @@ html,body{height:100%;background:var(--bg);font-family:var(--sans);color:var(--t
       </div>
       <div class="sheet-item-arrow">›</div>
     </div>
-    <div class="sheet-item" onclick="closeSheet();window.open('med-report.html?user_id='+getCurrentUserId(),'_blank')">
+    <div class="sheet-item" onclick="closeSheet();window.open('med-report.html','_blank')">
       <div class="sheet-item-ico" style="background:#EFF6FF">📊</div>
       <div class="sheet-item-info">
         <div class="sheet-item-title">สรุปผลของฉัน</div>
@@ -2105,90 +2106,23 @@ function fmtTablets(n, suffix) {
   return num + ' ' + unit;
 }
 
-// 🔐 AUTH GATE — verify session before showing app
-(async function authGate() {
+// 🔐 AUTH GATE — ต้องมีบัตรผ่าน (ไม่รับ ?user_id / ?lineUserId จาก URL อีก)
+(function authGate() {
   const params = new URLSearchParams(window.location.search);
-
-  // ✅ token จาก URL (callback แนบมา) — กัน localStorage หายใน LINE in-app browser
   const urlToken = params.get('token');
-  if (urlToken) {
-    localStorage.setItem('mt_session_token', urlToken);
-    // ลบ token ออกจาก URL (กัน token ค้างใน history/แชร์หลุด)
-    const uid = params.get('uid');
-    const cleanUrl = window.location.pathname + (uid ? ('?user_id='+uid) : '');
-    window.history.replaceState({}, '', cleanUrl);
-  }
-
-  // Bypass for debug user_id parameter (test mode)
-  if (params.has('user_id')) {
-    return;
-  }
-  
-  const token = localStorage.getItem('mt_session_token');
-  
-  // 🔒 กัน redirect loop: ถ้ามี profile ใน localStorage (user_id) → ใช้เลย ไม่ต้องเด้ง
-  // (เคส onboard เด้งมาโดยไม่มี ?user_id= แต่ save profile ไว้แล้ว)
-  let _localUid = null;
+  if (urlToken) MTAuth.save(urlToken);
+  let dirty = false;
+  ['token', 'uid', 'user_id', 'lineUserId'].forEach(k => { if (params.has(k)) { params.delete(k); dirty = true; } });
+  if (dirty) window.history.replaceState({}, '', window.location.pathname + (params.toString() ? '?' + params : '') + window.location.hash);
+  if (!MTAuth.token()) { MTAuth.toLogin(); return; }
+  // ข้อมูลในเครื่องเป็นของบัญชีอื่น → ล้างทิ้ง (สลับบัญชีบนเครื่องเดียวกัน)
   try {
-    const _p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}');
-    _localUid = _p.user_id || _p.id || null;
-  } catch(e){}
-  if (!token && _localUid) {
-    console.log('[home] ไม่มี token แต่มี profile ใน localStorage (user_id=' + _localUid + ') → ใช้ต่อ');
-    return;
-  }
-
-  // 🔒 กัน loop ชั้น 2: ถ้าเพิ่งเด้งมาจาก onboard ภายใน 3 วินาที → อย่าเด้งกลับ
-  const _lastRedirect = parseInt(sessionStorage.getItem('mt_redirect_ts') || '0');
-  if (Date.now() - _lastRedirect < 3000) {
-    console.warn('[home] ตรวจพบ redirect loop → หยุดเด้ง แสดงหน้าเปล่าแทน');
-    return;
-  }
-
-  // No token → go to onboard (LIFF login)
-  if (!token) {
-    sessionStorage.setItem('mt_redirect_ts', Date.now().toString());
-    window.location.replace('/medtrack-app/medtrack-onboard.html');
-    return;
-  }
-  
-  // Verify token with backend
-  try {
-    const res = await fetch(`${MEDTRACK_BACKEND}/api/auth/verify`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({session_token: token})
-    });
-    
-    if (!res.ok) {
-      localStorage.removeItem('mt_session_token');
-      window.location.replace('/medtrack-app/medtrack-onboard.html');
-      return;
+    const p = JSON.parse(localStorage.getItem('mt_user_profile') || '{}');
+    const uid = MTAuth.userId();
+    if (p && (p.user_id || p.id) && (p.user_id || p.id) !== uid) {
+      ['mt_user_profile', 'mt_medications', 'mt_settings'].forEach(k => localStorage.removeItem(k));
     }
-    
-    const data = await res.json();
-    if (data.user) {
-      // Update profile from backend (always fresh)
-      const existing = JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
-      const merged = {
-        ...existing,
-        user_id: data.user.id,
-        id: data.user.id,
-        name: data.user.name,
-        age: data.user.age,
-        gender: data.user.gender,
-        phone: data.user.phone,
-        line_user_id: data.user.line_user_id,
-        breakfast_time: data.user.breakfast_time,
-        lunch_time: data.user.lunch_time,
-        dinner_time: data.user.dinner_time,
-        bedtime: data.user.bedtime,
-        push_lead_minutes: data.user.push_lead_minutes
-      };
-      localStorage.setItem('mt_user_profile', JSON.stringify(merged));
-    }
-  } catch(e) {
-  }
+  } catch (e) {}
 })();
 
 // 🚪 Logout — clear session + redirect
@@ -2204,8 +2138,8 @@ function logoutUser() {
   // Clear caches
   sessionStorage.clear();
   
-  // Redirect to login
-  window.location.href = '/medtrack-app/medtrack-onboard.html';
+  // Redirect to login (logout=1 → ออกจาก LINE login ด้วย ไม่ให้เข้าอัตโนมัติ)
+  window.location.href = 'medtrack-onboard.html?logout=1';
 }
 
 let currentSheet = null;
@@ -2368,7 +2302,7 @@ function clearAllData(){
     localStorage.clear();
     closeHomeModal();
     toast('🧹 ล้างข้อมูลในเครื่องแล้ว');
-    setTimeout(()=>{ location.href='medtrack-onboard.html'; }, 1500);
+    setTimeout(()=>{ location.href='medtrack-onboard.html?logout=1'; }, 1500);
   }
 }
 
@@ -2530,20 +2464,6 @@ function closeSheet() {
 
 function navTo(url){
   closeSheet();
-  // แนบ user_id ไปด้วย — กัน localStorage หายใน LINE in-app browser (หน้าปลายทางจะรู้ว่าใคร)
-  try {
-    const prof = JSON.parse(localStorage.getItem('mt_user_profile')||'{}');
-    const uid = prof.user_id || prof.id;
-    if (uid && !url.includes('user_id=')) {
-      const sep = url.includes('?') ? '&' : (url.includes('#') ? '' : '?');
-      if (url.includes('#')) {
-        // แทรกก่อน hash
-        url = url.replace('#', '?user_id='+uid+'#');
-      } else {
-        url = url + sep + 'user_id=' + uid;
-      }
-    }
-  } catch(e){}
   setTimeout(()=>{ window.location.href = url; }, 150);
 }
 
@@ -2657,97 +2577,13 @@ async function initUserData(){
 //   5. None → redirect to onboarding (if has lineUserId) or null
 // ────────────────────────────────────────────────────────
 async function resolveUserIdentity() {
-  const params = new URLSearchParams(window.location.search);
-  const urlLineId = params.get('lineUserId');
-  const urlUid = parseInt(params.get('user_id'));
-  let profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
-  
-  // 🔧 Priority 0: URL ?user_id= (highest — for debugging/testing)
-  // Force-override localStorage profile when explicit user_id given
-  if (urlUid && !isNaN(urlUid)) {
-    console.log('[resolveUserIdentity] URL user_id=' + urlUid + ' — fetching fresh profile');
-    
-    // Try to fetch full user data from backend (with timeout)
-    try {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 8000);
-      const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${urlUid}`, {
-        signal: controller.signal
-      });
-      if (r.ok) {
-        const d = await r.json();
-        if (d.user) {
-          // Replace localStorage with this user's profile
-          saveProfileFromBackend(d.user);
-          console.log('[resolveUserIdentity] ✅ Loaded user_id=' + urlUid + ' (' + d.user.name + ')');
-          return urlUid;
-        }
-      }
-      // 🛡️ 404 — user_id นี้ไม่มีใน DB (ถูกลบ/ค้าง) → onboard ไม่ใช้ค้าง
-      if (r.status === 404) {
-        console.warn('[resolveUserIdentity] user_id=' + urlUid + ' ไม่พบใน DB — ไป onboard');
-        localStorage.removeItem('mt_user_profile');
-        const lid = params.get('lineUserId');
-        window.location.href = 'medtrack-onboard.html' + (lid ? ('?lineUserId=' + lid) : '');
-        return null;
-      }
-    } catch(e) {
-      console.warn('[resolveUserIdentity] User fetch failed:', e.message);
-    }
-    
-    // network error (ไม่ใช่ 404) — ใช้ URL user_id ไปก่อน (ไม่ block ตอนเน็ตมีปัญหา)
-    return urlUid;
-  }
-  
-  // Priority 1: URL has lineUserId → backend lookup
-  if (urlLineId && urlLineId.match(/^U[a-f0-9]{32}$/)) {
-    const user = await fetchUserByLineId(urlLineId);
-    if (user) {
-      saveProfileFromBackend(user);
-      return user.id;
-    }
-    // 404 — redirect to onboarding
-    console.log('[Path B] User not found, redirecting to onboarding');
-    window.location.href = `medtrack-onboard.html?lineUserId=${urlLineId}`;
-    return null;
-  }
-  
-  // Priority 2: Profile has user_id → trust it
-  if (profile?.user_id) {
-    // Refresh in background
-    if (profile.line_user_id) {
-      fetchUserByLineId(profile.line_user_id).then(user => {
-        if (user) saveProfileFromBackend(user);
-      }).catch(()=>{});
-    }
-    return profile.user_id;
-  }
-  
-  // Priority 3: Profile has line_user_id → backend lookup
-  if (profile?.line_user_id && profile.line_user_id.match(/^U[a-f0-9]{32}$/)) {
-    const user = await fetchUserByLineId(profile.line_user_id);
-    if (user) {
-      saveProfileFromBackend(user);
-      return user.id;
-    }
-    // มี line_user_id แต่ไม่เจอใน DB → ล้าง + onboard
-    console.warn('[resolveUserIdentity] line_user_id ไม่พบใน DB — ไป onboard');
-    localStorage.removeItem('mt_user_profile');
-    window.location.href = `medtrack-onboard.html?lineUserId=${profile.line_user_id}`;
-    return null;
-  }
-  
-  // 🛡️ ไม่มีตัวตนที่ verify ได้ → ต้อง onboard (ไม่ fallback เป็น user คนอื่น!)
-  // เดิม return 2 (hardcode Apidej) = อันตราย: คนแปลกหน้าเข้ามาเป็น user 2
-  console.warn('[resolveUserIdentity] ไม่พบตัวตน — redirect ไป onboarding');
-  localStorage.removeItem('mt_user_profile');
-  const fallbackLineId = urlLineId || profile?.line_user_id;
-  if (fallbackLineId && fallbackLineId.match(/^U[a-f0-9]{32}$/)) {
-    window.location.href = `medtrack-onboard.html?lineUserId=${fallbackLineId}`;
-  } else {
-    window.location.href = 'medtrack-onboard.html';
-  }
-  return null;
+  const uid = MTAuth.userId();
+  if (!uid) { MTAuth.toLogin(); return null; }
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/users/${uid}`);
+    if (r.ok) { const d = await r.json(); if (d.user) saveProfileFromBackend(d.user); }
+  } catch (e) { console.warn('[resolveUserIdentity] profile refresh failed:', e.message); }
+  return uid;
 }
 
 // Backend lookup helper
@@ -2912,7 +2748,7 @@ function renderMedReportButton(show, userId, apptDate, pct){
   if(btn) return; // มีแล้ว ไม่ซ้ำ
 
   const html = `
-    <div id="medReportBtn" onclick="window.open('medtrack-doctor.html?user_id=${userId}','_blank')"
+    <div id="medReportBtn" onclick="window.open('medtrack-doctor.html','_blank')"
          style="background:linear-gradient(135deg,#2563EB,#1d4ed8);border-radius:16px;padding:18px;color:#fff;margin:0 0 16px;box-shadow:0 6px 20px rgba(37,99,235,.3);cursor:pointer;position:relative;overflow:hidden">
       <div style="font-size:12px;opacity:.9;margin-bottom:3px">${apptDate?'🩺 นัดพบหมอ '+apptDate:'🎉 รอบยาจบแล้ว'}</div>
       <div style="font-size:18px;font-weight:800;margin-bottom:4px">เปิดสรุปให้หมอดู</div>
@@ -3197,10 +3033,7 @@ async function confirmDose(doseId){
   
   // Get user_id from localStorage (already resolved by initUserData)
   function getUserId(){
-    const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlUid = parseInt(urlParams.get('user_id'));
-    return profile?.user_id || profile?.id || urlUid || 2;
+    return MTAuth.userId();
   }
   
   try {
@@ -3966,16 +3799,10 @@ let _currentMagicLink  = '';
 
 // Get current user_id (helper)
 function getCurrentUserId(){
-  // 🎯 Priority order:
-  // 1. URL ?user_id= (highest — debug/test mode)
-  // 2. localStorage profile.user_id
-  // 3. Fallback to 2 (Apidej test)
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlUid = parseInt(urlParams.get('user_id'));
-  if (urlUid && !isNaN(urlUid)) return urlUid;
-  
-  const profile = JSON.parse(localStorage.getItem('mt_user_profile')||'null');
-  return profile?.user_id || profile?.id || 2;
+  // ตัวตนมาจากบัตรผ่านเท่านั้น (server ตรวจซ้ำทุกคำขอ)
+  const uid = MTAuth.userId();
+  if (!uid) MTAuth.toLogin();
+  return uid;
 }
 
 // Load + render caregiver list from backend
@@ -5748,7 +5575,7 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.07d</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08a</div>
 <script>
 // 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
 (function(){
