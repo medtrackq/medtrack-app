@@ -265,7 +265,20 @@ textarea.field-input{resize:none;min-height:80px}
   <div style="font-size:18px;font-weight:700">กำลังเข้าสู่ระบบ...</div>
   <div style="font-size:13px;opacity:.85;margin-top:6px">กรุณารอสักครู่</div>
 </div>
-<style>@keyframes mtSpin{to{transform:rotate(360deg)}}</style>
+<style>@keyframes mtSpin{to{transform:rotate(360deg)}}
+#mtPair{display:none;position:fixed;inset:0;z-index:100000;background:linear-gradient(160deg,#0BAA85,#077A5F);color:#fff;font-family:'Sarabun',sans-serif;
+  flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px}
+#mtPair h2{font-size:26px;font-weight:800;margin:10px 0 8px;line-height:1.35}
+#mtPair p{font-size:17px;line-height:1.7;opacity:.95;margin:0 0 18px}
+#mtPair .big{font-size:56px;margin-bottom:6px}
+#mtPair .code{font-size:44px;font-weight:800;letter-spacing:12px;background:rgba(255,255,255,.16);border-radius:16px;padding:8px 18px 8px 30px;margin:4px 0 14px}
+#mtPair .pbtn{display:block;width:100%;max-width:320px;border:none;border-radius:18px;padding:18px 20px;font:inherit;font-size:20px;font-weight:800;
+  background:#fff;color:#077A5F;box-shadow:0 6px 0 #05634C,0 10px 18px rgba(0,0,0,.25);margin:8px auto;cursor:pointer;text-decoration:none}
+#mtPair .plink{background:none;border:none;color:#fff;opacity:.85;font:inherit;font-size:16px;text-decoration:underline;margin-top:14px;cursor:pointer}
+#mtPair input{font:inherit;font-size:34px;font-weight:800;letter-spacing:10px;text-align:center;width:200px;padding:10px;border-radius:14px;border:none;margin:4px 0 12px;color:#065F46}
+#mtPair .err{color:#FDE68A;font-weight:700;min-height:24px;margin-bottom:6px}
+</style>
+<div id="mtPair"></div>
 <script>
   // แสดง overlay ทันทีถ้ากลับมาจาก LINE (มี lineUserId ใน URL) — กันเห็นหน้า onboard แวบ
   (function(){
@@ -305,7 +318,7 @@ textarea.field-input{resize:none;min-height:80px}
     </div>
     <button class="btn-primary" onclick="startNew()">🚀 เริ่มใช้งานฟรี</button>
     <button class="btn-secondary" onclick="loginExisting()">เข้าสู่ระบบ (มีบัญชีแล้ว)</button>
-    <div id="mtLineHint" style="display:none;margin-top:14px;font-size:13px;line-height:1.6;opacity:.9;text-align:center">💚 กดปุ่มแล้ว ระบบจะเปิด<b>แอป LINE</b> ให้เอง<br>ไม่ต้องกรอกอีเมลหรือรหัสผ่าน</div>
+    <div id="mtLineHint" style="display:none;margin-top:14px;font-size:13px;line-height:1.6;opacity:.9;text-align:center">💚 กดปุ่มแล้ว ระบบจะเปิด<b>แอป LINE</b> ให้กดยืนยัน 1 ครั้ง<br>ไม่ต้องกรอกอีเมลหรือรหัสผ่าน</div>
     <script>try{ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)) document.getElementById('mtLineHint').style.display='block'; }catch(e){}</script>
   </div>
 </div>
@@ -1181,7 +1194,7 @@ async function mtLineLogin(){
   try{
     await mtLiffInit();
     if(!liff.isLoggedIn()){
-      if (mtIsMobile() && !liff.isInClient()) { mtOpenInLine(); return; }   // มือถือ → เด้งเข้าแอป LINE
+      if (mtIsMobile() && !liff.isInClient()) { mtHideOverlay(); await mtStartPairing(); return; }   // มือถือ → ยืนยันในแอป LINE แล้วกลับมา
       liff.login({ redirectUri: location.href.split('#')[0] });   // คอมพิวเตอร์ → สแกน QR ด้วย LINE
       return;
     }
@@ -1193,6 +1206,130 @@ async function mtLineLogin(){
     showToast('เชื่อม LINE ไม่สำเร็จ ลองใหม่อีกครั้ง');
   }
 }
+// ═══ 📱 จับคู่เครื่อง: ไอคอนหน้าจอโฮม/เบราว์เซอร์ ↔ แอป LINE ═══
+const PAIR_KEY = 'mt_pair';
+let _pairTimer = null;
+function mtPairUI(html){ const el = document.getElementById('mtPair'); el.innerHTML = html; el.style.display = 'flex'; mtHideOverlay(); }
+function mtPairHide(){ const el = document.getElementById('mtPair'); el.style.display = 'none'; }
+function mtLiffPairUrl(id){ return 'https://liff.line.me/' + LIFF_ID_ONBOARD + '?pair=' + encodeURIComponent(id); }
+function mtPairStored(){ try{ const p = JSON.parse(localStorage.getItem(PAIR_KEY) || 'null'); return (p && p.exp > Date.now()) ? p : null; }catch(e){ return null; } }
+
+// ฝั่งไอคอน/เบราว์เซอร์: เริ่มจับคู่ → เปิดแอป LINE → รอ
+async function mtStartPairing(){
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/pair/start', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || r.status);
+    const p = { id: j.pair_id, code: j.short_code, exp: Date.now() + (j.expires_in - 15) * 1000 };
+    try{ localStorage.setItem(PAIR_KEY, JSON.stringify(p)); }catch(e){}
+    mtPairWaiting(p);
+    location.href = mtLiffPairUrl(p.id);
+  }catch(e){
+    console.warn('[pair] start:', e);
+    showToast('เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง');
+  }
+}
+function mtPairWaiting(p){
+  mtPairUI(
+    '<div class="big">💚</div><h2>กด "ยืนยัน" ในแอป LINE</h2>' +
+    '<p>แล้วกลับมาที่แอป MedTrack<br>ระบบจะเข้าสู่ระบบให้เอง</p>' +
+    '<div style="font-size:14px;opacity:.85">ถ้า LINE ถามเลข ให้ใส่เลขนี้</div><div class="code">' + p.code + '</div>' +
+    '<a class="pbtn" href="' + mtLiffPairUrl(p.id) + '">เปิดแอป LINE</a>' +
+    '<button class="plink" onclick="mtPairCancel()">ยกเลิก</button>');
+  mtPairPollStart(p);
+}
+function mtPairCancel(){ clearInterval(_pairTimer); try{ localStorage.removeItem(PAIR_KEY); }catch(e){} mtPairHide(); }
+async function mtPairPollOnce(p){
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/pair/poll?pair=' + encodeURIComponent(p.id));
+    const j = await r.json();
+    if(j.ok && j.session_token){
+      clearInterval(_pairTimer);
+      try{ localStorage.removeItem(PAIR_KEY); }catch(e){}
+      MTAuth.save(j.session_token, j.user);
+      mtPairUI('<div class="big">✅</div><h2>เข้าสู่ระบบสำเร็จ</h2><p>กำลังเปิดหน้าหลัก...</p>');
+      mtGoNext();
+      return true;
+    }
+    if(r.status === 410 || r.status === 404){
+      clearInterval(_pairTimer);
+      try{ localStorage.removeItem(PAIR_KEY); }catch(e){}
+      mtPairUI('<div class="big">⏱️</div><h2>หมดเวลา</h2><p>กดเข้าสู่ระบบอีกครั้งได้เลยครับ</p><button class="pbtn" onclick="mtPairHide();mtLineLogin()">เข้าสู่ระบบอีกครั้ง</button>');
+    }
+  }catch(e){ /* เน็ตหลุดชั่วคราว — ลองรอบหน้า */ }
+  return false;
+}
+function mtPairPollStart(p){
+  clearInterval(_pairTimer);
+  _pairTimer = setInterval(() => { if(document.visibilityState === 'visible') mtPairPollOnce(p); }, 2000);
+}
+document.addEventListener('visibilitychange', () => {
+  const p = mtPairStored();
+  if(document.visibilityState === 'visible' && p && !MTAuth.token()) mtPairPollOnce(p);
+});
+
+// ฝั่งแอป LINE: หน้ายืนยัน
+let _pairAccess = null;
+async function mtPairConfirmFlow(pairId){
+  _pairAccess = (typeof liff !== 'undefined' && liff.isLoggedIn()) ? liff.getAccessToken() : null;
+  let info = null;
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/pair/info?pair=' + encodeURIComponent(pairId));
+    info = await r.json();
+    if(!r.ok) throw new Error(info.error || r.status);
+  }catch(e){
+    mtPairUI('<div class="big">⏱️</div><h2>ลิงก์หมดเวลาแล้ว</h2><p>กลับไปที่แอป MedTrack<br>แล้วกด "เข้าสู่ระบบ" ใหม่อีกครั้ง</p><button class="pbtn" onclick="mtPairClose()">ปิดหน้านี้</button>');
+    return;
+  }
+  if(info.confirmed){ mtPairDoneUI(); return; }
+  mtPairUI(
+    '<div class="big">📱</div><h2>เข้าสู่ระบบแอป MedTrack<br>บนมือถือเครื่องนี้?</h2>' +
+    (info.code_required ? '<p>ใส่เลข 4 หลักที่แสดงในแอป MedTrack</p><input id="mtPairCode" inputmode="numeric" maxlength="4" autocomplete="one-time-code">' : '<p>กดยืนยันเฉพาะเมื่อคุณเพิ่งกด "เข้าสู่ระบบ"<br>ในแอป MedTrack เมื่อสักครู่</p>') +
+    '<div class="err" id="mtPairErr"></div>' +
+    '<button class="pbtn" id="mtPairBtn" onclick="mtPairConfirm(\'' + pairId.replace(/'/g, '') + '\')">✅ ยืนยัน</button>' +
+    '<button class="plink" onclick="mtPairClose()">ไม่ใช่ฉัน / ยกเลิก</button>');
+}
+async function mtPairConfirm(pairId){
+  const btn = document.getElementById('mtPairBtn'), err = document.getElementById('mtPairErr');
+  const codeEl = document.getElementById('mtPairCode');
+  btn.disabled = true; btn.textContent = 'กำลังยืนยัน...'; err.textContent = '';
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/pair/confirm', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ pair: pairId, access_token: _pairAccess, short_code: codeEl ? codeEl.value.trim() : undefined }) });
+    const j = await r.json();
+    if(j.ok && j.need_onboard){
+      // ยังไม่มีบัญชี → ลงทะเบียนในแอป LINE ก่อน แล้วยืนยันต่อให้อัตโนมัติ
+      try{ localStorage.setItem(OB_TICKET, j.onboard_ticket); localStorage.setItem('mt_pair_pending', pairId); localStorage.removeItem(KEY); }catch(e){}
+      mtPairHide(); goTo('sOnboard'); initOb();
+      showToast('ยังไม่มีบัญชี — ลงทะเบียนก่อนนะครับ');
+      return;
+    }
+    if(j.ok){ mtPairDoneUI(); return; }
+    if(j.error === 'code_required' && !codeEl){ mtPairConfirmFlow(pairId); return; }
+    err.textContent = j.message || 'ยืนยันไม่สำเร็จ ลองใหม่';
+  }catch(e){ err.textContent = 'เชื่อมต่อไม่สำเร็จ ลองใหม่'; }
+  btn.disabled = false; btn.textContent = '✅ ยืนยัน';
+}
+// หลังลงทะเบียนเสร็จใน LINE → ยืนยันการจับคู่ที่ค้างไว้
+async function mtPairFinishAfterSignup(){
+  let pairId = null; try{ pairId = localStorage.getItem('mt_pair_pending'); }catch(e){}
+  if(!pairId) return false;
+  try{ localStorage.removeItem('mt_pair_pending'); }catch(e){}
+  try{
+    const r = await fetch(MEDTRACK_BACKEND + '/api/auth/pair/confirm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ pair: pairId }) });
+    const j = await r.json();
+    if(j.ok){ mtPairDoneUI(); return true; }
+  }catch(e){}
+  return false;
+}
+function mtPairDoneUI(){
+  mtPairUI('<div class="big">✅</div><h2>ยืนยันแล้ว</h2><p>กลับไปที่แอป <b>MedTrack</b> ได้เลยครับ<br>ระบบจะเข้าสู่ระบบให้เอง</p><button class="pbtn" onclick="mtPairClose()">ปิดหน้านี้</button>');
+}
+function mtPairClose(){
+  try{ if(typeof liff !== 'undefined' && liff.isInClient()) { liff.closeWindow(); return; } }catch(e){}
+  mtPairHide();
+}
+
 async function loginExisting(){ return mtLineLogin(); }
 async function startNew(){
   // ต้องรู้ตัวตน LINE ก่อนสมัคร (กันสมัครแทนคนอื่น)
@@ -1530,6 +1667,8 @@ async function saveOnboarding(){
     profile.user_id = savedUserId; profile.id = savedUserId;
     await linkHospital(savedUserId, profile.hospital_id, profile.hn_hospital);
     showToast('✅ บันทึกข้อมูลสำเร็จ');
+    // สมัครจากการจับคู่เครื่อง → ยืนยันให้ไอคอนหน้าจอโฮมเข้าสู่ระบบด้วย
+    if (await mtPairFinishAfterSignup()) { try{ localStorage.setItem(KEY, JSON.stringify(profile)); }catch(e){} return; }
   } catch (e) {
     console.error('[onboard] save error:', e);
     showToast('⚠️ บันทึกไม่สำเร็จ — ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่');
@@ -1777,12 +1916,24 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
     mtHideOverlay();
     return;
   }
-  // 1) มีบัตรผ่าน → ตรวจแล้วเข้าหน้าหลัก
-  if (MTAuth.token() && await mtVerifySession()) return;
+  // 1) มีบัตรผ่าน → ตรวจแล้วเข้าหน้าหลัก (ยกเว้นเปิดมาเพื่อยืนยันการจับคู่ใน LINE)
+  const _pairParam = () => new URLSearchParams(location.search).get('pair');
+  if (MTAuth.token() && !_pairParam() && await mtVerifySession()) return;
+  // 1.5) ไอคอนหน้าจอโฮม: กำลังรอยืนยันจาก LINE อยู่ → แสดงหน้ารอต่อ
+  const _pend = mtPairStored();
+  if (_pend && !_pairParam()) {
+    mtPairWaiting(_pend);
+    if (await mtPairPollOnce(_pend)) return;
+    return;
+  }
   // 2) login LINE ไว้แล้ว (หรือเพิ่งกลับมาจาก LINE) → แลกบัตร / สมัครใหม่
   if (typeof liff !== 'undefined') {
     try {
       await mtLiffInit();
+      // เปิดจากลิงก์จับคู่ (ในแอป LINE) → หน้ายืนยัน
+      const pairId = _pairParam();
+      if (pairId && liff.isLoggedIn()) { await mtPairConfirmFlow(pairId); return; }
+      if (pairId && !liff.isLoggedIn()) { liff.login({ redirectUri: location.href.split('#')[0] }); return; }
       if (liff.isLoggedIn()) {
         mtShowOverlay();
         const res = await mtLiffSession();
@@ -1799,6 +1950,6 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08c</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08d</div>
 </body>
 </html>
