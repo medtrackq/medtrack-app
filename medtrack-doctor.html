@@ -100,16 +100,17 @@ td.num,th.num{text-align:right;white-space:nowrap}
 
     h += '<section class="card"><div class="big"><div class="pct" style="color:' + (s.adherence_pct == null ? 'var(--t3)' : s.adherence_pct >= 80 ? 'var(--ok)' : s.adherence_pct >= 50 ? 'var(--warn)' : 'var(--bad)') + '">' +
          (s.adherence_pct == null ? '—' : s.adherence_pct + '%') + '</div>' +
-         '<div class="lbl">กินยาตรงตามมื้อ' + (s.total ? '<br><b>' + s.taken + ' จาก ' + s.total + ' มื้อ</b>' : '<br>ยังไม่มีมื้อที่บันทึกในช่วงนี้') + '</div></div></section>';
+         '<div class="lbl">กินยาตรงตามมื้อ' + (s.total ? '<br><b>' + s.taken + ' จาก ' + s.total + ' มื้อ</b>' : '<br>ยังไม่มีมื้อที่บันทึกในช่วงนี้') +
+         (s.caregiver_confirmed ? '<br><span style="color:var(--warn)">ญาติยืนยันแทน ' + s.caregiver_confirmed + ' มื้อ</span>' : '') + '</div></div></section>';
 
     if (j.main_meds.length) {
       h += '<section class="card"><h2>' + (a ? 'ยาของคลินิกนี้' : 'ยาที่ใช้อยู่') + ' (' + j.main_meds.length + ')</h2><table><thead><tr><th>ยา</th><th class="num">กิน/มื้อ</th><th class="num">%</th><th class="num">เหลือ</th></tr></thead><tbody>' +
         j.main_meds.map(m => '<tr><td><div class="drug">' + esc(m.drug_name) + esc(dose(m)) + '</div>' +
           '<div class="sub">' + (m.times ? 'เวลา ' + esc(m.times) : '') + (m.origin_unknown ? (m.times ? ' · ' : '') + 'ไม่ทราบคลินิกที่สั่ง' : '') + '</div></td>' +
-          '<td class="num">' + ((m.taken + m.missed) ? m.taken + '/' + (m.taken + m.missed) : '—') + '</td>' +
+          '<td class="num">' + ((m.taken + m.missed) ? m.taken + '/' + (m.taken + m.missed) : '—') + (m.caregiver_confirmed ? '<div class="sub">ญาติ ' + m.caregiver_confirmed + '</div>' : '') + '</td>' +
           '<td class="num">' + pill(m.adherence_pct) + '</td>' +
           '<td class="num">' + (m.est_remaining != null ? '~' + Math.round(m.est_remaining) : '—') + '</td></tr>').join('') +
-        '</tbody></table></section>';
+        '</tbody></table>' + (j.main_meds.some(m => m.caregiver_confirmed) ? '<div class="sub" style="margin-top:6px">"ญาติ" = มื้อที่ผู้ดูแลกดยืนยันแทนผู้ป่วย (นับรวมเป็นกินแล้ว)</div>' : '') + '</section>';
     }
 
     if (j.most_missed.length) {
