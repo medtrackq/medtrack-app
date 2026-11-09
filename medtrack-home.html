@@ -2879,6 +2879,10 @@ function renderTodayDoses(doses, date){
     let actionBtn = '';
     if(d.status === 'pending'){
       actionBtn = `<button class="td-action-btn" onclick="confirmDose(${d.id})">✅ ยืนยัน</button>`;
+    } else if(!d.status && canConfirmNow(d)){
+      actionBtn = `<button class="td-action-btn" onclick="doseActionClick(null, ${d.schedule_id})">✅ กินแล้ว</button>`;
+    } else if(!d.status){
+      actionBtn = `<span class="td-status pending">⏳ รอ</span>`;
     } else {
       const pts = d.reward_points ? `+${d.reward_points} pt` : '';
       actionBtn = `<span class="td-status ${s.cls}">${s.emoji} ${s.label}${pts ? ' '+pts : ''}</span>`;
@@ -2996,7 +3000,9 @@ function renderTodayDosesElderly(doses, date){
         }
         const action = done
           ? '<div class="med-action confirmed"></div>'
-          : `<button class="med-action" onclick="confirmDose(${d.id})"></button>`;
+          : canConfirmNow(d)
+            ? `<button class="med-action" onclick="doseActionClick(${d.id || 'null'}, ${d.schedule_id})"></button>`
+            : `<button class="med-action" style="opacity:.35" onclick="toast('⏰ กดบันทึกได้ตั้งแต่ 1 ชั่วโมงก่อนเวลาเตือน')"></button>`;
         return `<div class="med-item" style="${finished?'opacity:0.65':''}">
           <div class="med-pill">💊</div>
           <div class="med-info">
@@ -3090,7 +3096,7 @@ async function confirmDose(doseId){
         if('vibrate' in navigator) navigator.vibrate(50);
       } catch(e){}
     } else if(data.error === 'not_found_or_already_confirmed'){
-      alert('ยืนยันไปแล้ว — รอโหลดใหม่...');
+      alert(data.confirmed_at && /taken|late/.test(data.status||'') ? ('มื้อนี้บันทึกว่ากินแล้วเมื่อ ' + data.confirmed_at + ' น.\nไม่ต้องกินซ้ำนะครับ') : 'มื้อนี้บันทึกไปแล้ว');
       loadTodayDoses(getUserId());
     } else {
       alert('เกิดข้อผิดพลาด: ' + (data.error||'unknown'));
@@ -5634,7 +5640,7 @@ async function deleteHospitalMapping(mappingId){
 
 </div>
 
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.09a</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.09b</div>
 <script>
 // 🩺 แสดงแถบ "พบแพทย์ใหม่ยังไม่เสร็จ" ถ้ามีรอบค้าง (best-effort — ล้มเหลวก็ไม่แสดง)
 (function(){
@@ -5733,12 +5739,26 @@ function renderConfirmSheet(){
     box.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t2);font-size:13px">ยังไม่มียาวันนี้ · เพิ่มยาด้วยการสแกนซองยา</div>';
     return;
   }
-  // มื้อที่ยังไม่มี log: แสดงเฉพาะที่เวลายังไม่ถึง (มื้อที่เลยเวลาแต่ไม่มี log = ไม่ได้ส่งเตือน เช่นยาที่เพิ่มหลังเวลานั้น)
-  const later = _pendingGroups(true).filter(g => g.time > _nowHM());
+  // มื้อที่ยังไม่มี log: ใกล้ถึงเวลา (≤ 60 นาที) กด "กินแล้ว" ได้เลย · ไกลกว่านั้นบอกว่ากดได้ตั้งแต่กี่โมง
+  const upcoming = _pendingGroups(true).filter(g => _minsUntil(g.time) > -120);
+  const early = upcoming.filter(g => _minsUntil(g.time) <= EARLY_MIN);
+  const later = upcoming.filter(g => _minsUntil(g.time) > EARLY_MIN);
   const laterHtml = later.length
     ? '<div style="font-size:12.5px;color:var(--t2);line-height:1.7;padding:4px 2px"><b>มื้อถัดไปวันนี้:</b> ' + later.map(g => g.time + ' น. (' + g.doses.length + ' ตัว)').join(' · ') +
-      '<br><span style="color:var(--t3)">ยืนยันได้เมื่อถึงเวลาเตือน</span></div>'
+      '<br><span style="color:var(--t3)">กดบันทึกได้ตั้งแต่ 1 ชั่วโมงก่อนเวลาเตือน</span></div>'
     : '';
+  const earlyHtml = early.map(g => {
+    const names = g.doses.map(d => '• ' + _escH(d.drug_name_raw || d.drug_name || 'ไม่ระบุ') + (d.dose_mg ? ' ' + _escH(fmtDose(d.dose_mg, d.dose_unit)) : '') +
+      (d.tablets_per_dose ? ' × ' + _escH(fmtTablets(d.tablets_per_dose)) : '')).join('<br>');
+    const sids = g.doses.map(d => d.schedule_id).join(',');
+    const mins = Math.round(_minsUntil(g.time));
+    return '<div style="background:var(--bg);border-radius:14px;padding:14px;border:1px solid var(--bd)">' +
+      '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">มื้อ ' + _escH(g.time) + ' น. <span style="font-size:11px;color:var(--t3)">' + (mins > 0 ? 'อีก ' + mins + ' นาที' : 'ถึงเวลาแล้ว') + '</span></div>' +
+      '<div style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:10px">' + names + '</div>' +
+      '<button type="button" onclick="confirmEarlyGroup(\'' + sids + '\', this)" style="width:100%;padding:12px;background:#fff;color:var(--teal);border:1.5px solid var(--teal);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">✅ กินแล้ว ' + g.doses.length + ' ตัว' + (mins > 0 ? ' (ก่อนเวลาเตือน)' : '') + '</button>' +
+      (mins > 0 ? '<div style="font-size:11.5px;color:var(--t3);margin-top:6px;text-align:center">กดแล้วหมอน้อยจะไม่ส่งเตือนมื้อนี้</div>' : '') + '</div>';
+  }).join('');
+  if (!groups.length && earlyHtml) { box.innerHTML = earlyHtml + laterHtml; return; }
   if (!groups.length) {
     box.innerHTML = (later.length
       ? '<div style="text-align:center;padding:12px;color:var(--t2);font-size:14px">ตอนนี้ไม่มีมื้อที่ต้องยืนยัน</div>'
@@ -5755,22 +5775,54 @@ function renderConfirmSheet(){
       '<div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:6px">มื้อ ' + _escH(g.time) + ' น.' + (due ? ' <span style="font-size:11px;color:#B45309">ถึงเวลาแล้ว</span>' : '') + '</div>' +
       '<div style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:10px">' + names + '</div>' +
       '<button type="button" onclick="confirmDoseGroup(\'' + ids + '\', this)" style="width:100%;padding:12px;background:' + (due ? 'var(--teal)' : '#fff') + ';color:' + (due ? '#fff' : 'var(--teal)') + ';border:' + (due ? 'none' : '1.5px solid var(--teal)') + ';border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">✅ กินแล้ว ' + g.doses.length + ' ตัว</button></div>';
-  }).join('') + laterHtml;
+  }).join('') + earlyHtml + laterHtml;
 }
+
+// ── กินก่อนเวลาเตือน (≤ 60 นาที) ──
+const EARLY_MIN = 60;
+function _minsUntil(hhmm){
+  const [h, m] = String(hhmm).split(':').map(Number); const n = new Date();
+  return (h * 60 + m) - (n.getHours() * 60 + n.getMinutes()) - n.getSeconds() / 60;
+}
+async function confirmEarlyGroup(sidsCsv, btn){
+  const ids = String(sidsCsv).split(',').map(Number).filter(Boolean);
+  if (!ids.length) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก...'; }
+  try {
+    const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/early-confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schedule_ids: ids }) });
+    const j = await r.json().catch(() => ({}));
+    if (j.ok) {
+      const at = (j.already || []).find(a => a.confirmed_at);
+      if (!j.confirmed.length && at) alert('มื้อนี้บันทึกว่ากินแล้วเมื่อ ' + at.confirmed_at + ' น.\nไม่ต้องกินซ้ำนะครับ');
+      else toast('✅ บันทึกแล้ว · หมอน้อยจะไม่ส่งเตือนมื้อนี้');
+      try { if ('vibrate' in navigator) navigator.vibrate(50); } catch (_) {}
+    } else if (j.error === 'too_early') {
+      toast('⏰ มื้อนี้กดบันทึกได้ตั้งแต่ ' + j.available_from + ' น.');
+    } else {
+      toast('⚠️ บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง');
+    }
+  } catch (e) { toast('⚠️ เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง'); }
+  await loadTodayDoses(getCurrentUserId());
+  if (document.getElementById('confirmBody')) renderConfirmSheet();
+}
+// ปุ่มในรายการยาวันนี้: มี log → ยืนยันตามปกติ · ยังไม่มี log แต่ใกล้เวลา → กินก่อนเวลา
+function doseActionClick(id, scheduleId){ if (id) confirmDose(id); else confirmEarlyGroup(String(scheduleId)); }
+function canConfirmNow(d){ return d.id ? d.status === 'pending' : (!d.status && _minsUntil((d.scheduled_time || '').substring(0, 5)) <= EARLY_MIN && _minsUntil((d.scheduled_time || '').substring(0, 5)) > -120); }
 
 async function confirmDoseGroup(idsCsv, btn){
   const ids = String(idsCsv).split(',').map(Number).filter(Boolean);
   if (!ids.length) return;
   btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
-  let ok = 0, fail = 0;
+  let ok = 0, fail = 0, dupAt = null;
   for (const id of ids) {
     try {
       const r = await fetch(`${MEDTRACK_BACKEND}/api/dose-logs/${id}/confirm`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       const j = await r.json().catch(() => ({}));
-      if (j.ok || j.error === 'not_found_or_already_confirmed') ok++; else fail++;
+      if (j.ok) ok++; else if (j.error === 'not_found_or_already_confirmed') { ok++; if (j.confirmed_at && /taken|late/.test(j.status || '')) dupAt = j.confirmed_at; } else fail++;
     } catch (e) { fail++; }
   }
-  toast(fail ? ('⚠️ บันทึกได้ ' + ok + ' จาก ' + ids.length + ' ตัว ลองใหม่อีกครั้ง') : '✅ บันทึกแล้ว');
+  if (dupAt && !fail) alert('มื้อนี้บันทึกว่ากินแล้วเมื่อ ' + dupAt + ' น.\nไม่ต้องกินซ้ำนะครับ');
+  else toast(fail ? ('⚠️ บันทึกได้ ' + ok + ' จาก ' + ids.length + ' ตัว ลองใหม่อีกครั้ง') : '✅ บันทึกแล้ว');
   try { if ('vibrate' in navigator) navigator.vibrate(50); } catch (_) {}
   await loadTodayDoses(getCurrentUserId());
   renderConfirmSheet();
