@@ -374,6 +374,18 @@ async function revokeUserSessions(id){
   }catch(e){ alert('ไม่สำเร็จ: ' + e.message); }
 }
 
+// 🗑️ PDPA: คนไข้ขอลบข้อมูล (ผ่านเจ้าหน้าที่)
+async function deleteUserAccount(id){
+  if(!confirm('ลบบัญชีผู้ใช้ #' + id + ' และข้อมูลทั้งหมดถาวร?\n(ยา ประวัติ นัดหมอ ผู้ดูแล รูปยา)\nกู้คืนไม่ได้')) return;
+  if((prompt('พิมพ์เลขผู้ใช้ ' + id + ' เพื่อยืนยัน')||'').trim() !== String(id)) { alert('ยกเลิก'); return; }
+  try{
+    const r = await fetch(`${API}/api/admin/user/${id}/delete-account`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ confirm:'DELETE' }) });
+    const d = await r.json();
+    alert(d.ok ? '✅ ลบบัญชีแล้ว\n' + JSON.stringify(d.deleted) : 'ไม่สำเร็จ: ' + (d.error||r.status));
+    if(d.ok){ document.getElementById('userModal').style.display='none'; loadData && loadData(); }
+  }catch(e){ alert('ไม่สำเร็จ: ' + e.message); }
+}
+
 // ══ User Inspector — ตอบ "สแกนแล้วหายไปไหน" ══
 async function inspectUser(userId){
   const modal = document.getElementById('userModal');
@@ -392,7 +404,7 @@ async function inspectUser(userId){
     body.innerHTML = `
       <div class="um-head">
         <div><div class="um-name">${u.name||'—'}</div><div class="mono" style="color:var(--t2);font-size:12px">#${u.id} · ${u.phone||'ไม่มีเบอร์'} · สมัคร ${fmtTime(u.created_at)}</div></div>
-        <div style="display:flex;gap:8px"><button class="btn" onclick="revokeUserSessions(${u.id})" title="มือถือหาย / เปลี่ยนเครื่อง">📵 ออกจากระบบทุกเครื่อง</button>
+        <div style="display:flex;gap:8px"><button class="btn" onclick="revokeUserSessions(${u.id})" title="มือถือหาย / เปลี่ยนเครื่อง">📵 ออกจากระบบทุกเครื่อง</button><button class="btn" style="color:#dc2626;border-color:#fecaca" onclick="deleteUserAccount(${u.id})" title="คนไข้ขอลบข้อมูลตาม PDPA">🗑️ ลบบัญชี</button>
         <button class="btn" onclick="document.getElementById('userModal').style.display='none'">ปิด</button></div>
       </div>
 
