@@ -99,6 +99,17 @@ td.num,th.num{text-align:right;white-space:nowrap}
     let h = '';
     h += '<section class="card head"><div class="kicker">สรุปการกินยาสำหรับแพทย์ · MedTrack</div>' +
          '<h1>' + esc(j.patient_name || 'ผู้ป่วย') + '</h1>' +
+         (function (pt) {
+           if (!pt) return '';
+           const bits = [];
+           if (pt.age) bits.push(pt.age + ' ปี');
+           if (pt.gender) bits.push(esc(pt.gender));
+           if (pt.hn) bits.push('HN ' + esc(pt.hn));
+           let x = bits.length ? '<div class="place">' + bits.join(' · ') + '</div>' : '';
+           if (pt.chronic_conditions && pt.chronic_conditions.length) x += '<div class="meta">โรคประจำตัว: ' + esc(pt.chronic_conditions.join(', ')) + '</div>';
+           x += '<div class="meta" style="' + (pt.allergies ? 'color:var(--bad);font-weight:700' : '') + '">แพ้ยา: ' + (pt.allergies ? '⚠️ ' + esc(pt.allergies) : 'ไม่ได้ระบุ') + '</div>';
+           return x;
+         })(j.patient) +
          '<div class="place">' + esc(place) + (a && a.doctor_name ? ' · ' + esc(a.doctor_name) : '') + '</div>' +
          '<div class="meta">ช่วงเวลา ' + esc(perTxt) + '</div></section>';
 
