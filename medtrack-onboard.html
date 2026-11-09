@@ -318,7 +318,7 @@ textarea.field-input{resize:none;min-height:80px}
     </div>
     <button class="btn-primary" onclick="startNew()">🚀 เริ่มใช้งานฟรี</button>
     <button class="btn-secondary" onclick="loginExisting()">เข้าสู่ระบบ (มีบัญชีแล้ว)</button>
-    <div id="mtLineHint" style="display:none;margin-top:14px;font-size:13px;line-height:1.6;opacity:.9;text-align:center">💚 กดปุ่มแล้ว ระบบจะเปิด<b>แอป LINE</b> ให้กดยืนยัน 1 ครั้ง<br>ไม่ต้องกรอกอีเมลหรือรหัสผ่าน</div>
+    <div id="mtLineHint" style="display:none;margin-top:14px;color:rgba(255,255,255,.82);font-size:13px;line-height:1.6;opacity:.9;text-align:center">💚 กดปุ่มแล้ว ระบบจะเปิด<b>แอป LINE</b> ให้กดยืนยัน 1 ครั้ง<br>ไม่ต้องกรอกอีเมลหรือรหัสผ่าน</div>
     <script>try{ if(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)) document.getElementById('mtLineHint').style.display='block'; }catch(e){}</script>
   </div>
 </div>
@@ -1338,6 +1338,24 @@ async function startNew(){
   return mtLineLogin();
 }
 
+// ── ONBOARDING STEPS ──
+const OB_STEPS = [
+  {label:'ขั้นตอน 1 จาก 6', title:'ข้อมูลส่วนตัว', sub:'ชื่อ อายุ เพศ และข้อมูลพื้นฐาน'},
+  {label:'ขั้นตอน 2 จาก 6', title:'โรคประจำตัว', sub:'เพื่อให้หมอน้อยดูแลได้ตรงจุด'},
+  {label:'ขั้นตอน 3 จาก 6', title:'เวลามื้ออาหาร', sub:'สำหรับตั้งเวลาแจ้งเตือนกินยา'},
+  {label:'ขั้นตอน 4 จาก 6', title:'เชื่อม LINE หมอน้อย', sub:'รับแจ้งเตือนกินยาผ่าน LINE'},
+  {label:'ขั้นตอน 5 จาก 6', title:'ผู้ดูแลและแจ้งเตือน', sub:'คนที่จะช่วยดูแลให้คุณกินยาครบ'},
+  {label:'ขั้นตอน 6 จาก 6', title:'ข้อตกลงและความเป็นส่วนตัว', sub:'PDPA และสิทธิ์การใช้ข้อมูล'},
+];
+let obCurrent = 1;
+let selectedAvatar = '👴';
+let caregivers = [];
+
+// 🏥 โหลด + autocomplete filter โรงพยาบาล (filter + tag สี + keyboard เหมือน Google)
+let _allHospitals = [];
+const _HOSP_TAG = { government:['htag-gov','รัฐ'], university:['htag-uni','มหาลัย'], private:['htag-priv','เอกชน'] };
+let _hospActiveIdx = -1;
+let _hospFiltered = [];
 async function loadHospitals(){
   const search = document.getElementById('f_hospital_search');
   const results = document.getElementById('hospitalResults');
@@ -1950,6 +1968,6 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08d</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08e</div>
 </body>
 </html>
