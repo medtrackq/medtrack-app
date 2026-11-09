@@ -678,28 +678,17 @@ textarea.field-input{resize:none;min-height:80px}
         + เพิ่มผู้ดูแล
       </button>
 
-      <!-- Notify toggles -->
+      <!-- การแจ้งเตือน (บันทึกบน server) -->
       <div class="sec-div">การแจ้งเตือน</div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">แจ้งเตือนทาง LINE</div>
-          <div class="toggle-sub" id="tg_line_sub">ยังไม่ได้เชื่อม LINE</div>
-        </div>
-        <button class="toggle" id="tg_line" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">แจ้งเตือน Push Notification</div>
-          <div class="toggle-sub">แจ้งเตือนในแอปและหน้าจอ</div>
-        </div>
-        <button class="toggle on" id="tg_push" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="toggle-row">
-        <div class="toggle-info">
-          <div class="toggle-title">แจ้งเตือนผู้ดูแลอัตโนมัติ</div>
-          <div class="toggle-sub">ถ้าลืมกินยาเกิน 1 ชั่วโมง</div>
-        </div>
-        <button class="toggle" id="tg_caregiver" onclick="this.classList.toggle('on')"></button>
+      <div class="field">
+        <div class="field-label">ถ้ายังไม่กด "กินแล้ว" ให้หมอน้อยเตือนซ้ำ</div>
+        <select class="field-input" id="f_repeat">
+          <option value="0">ไม่ต้องเตือนซ้ำ</option>
+          <option value="15">หลัง 15 นาที</option>
+          <option value="30" selected>หลัง 30 นาที</option>
+          <option value="60">หลัง 1 ชั่วโมง</option>
+        </select>
+        <div style="font-size:11px;color:var(--t3,#64748b);margin-top:6px;line-height:1.5">หมอน้อยเตือนกินยาทาง LINE ทุกมื้อ · ผู้ดูแลจะได้รับแจ้งตามเวลาที่ตั้งไว้ของแต่ละคน</div>
       </div>
     </div>
 
@@ -1620,7 +1609,7 @@ async function saveOnboarding(){
     allergy:document.getElementById('f_allergy').value.trim(),
     meals:{morning:document.getElementById('t_morning').value,noon:document.getElementById('t_noon').value,evening:document.getElementById('t_evening').value,bed:document.getElementById('t_bed').value},
     caregivers,
-    notify:{line:document.getElementById('tg_line').classList.contains('on'),push:document.getElementById('tg_push').classList.contains('on'),caregiverAlert:document.getElementById('tg_caregiver').classList.contains('on')},
+    notify:{repeat:parseInt(document.getElementById('f_repeat')?.value||'0')},
     pdpa:{terms:true,health:true,anonymous:document.getElementById('pdpa3').classList.contains('on')},
     treatment_rights:selectedRights,
     rights:selectedRights,
@@ -1649,7 +1638,24 @@ async function saveOnboarding(){
     lunch_time: profile.meals.noon + ':00',
     dinner_time: profile.meals.evening + ':00',
     bedtime: profile.meals.bed + ':00',
-    push_lead_minutes: 0
+    push_lead_minutes: 0,
+    // 🩺 ข้อมูลสุขภาพเก็บบน server (เปลี่ยนเครื่องไม่หาย · หมอเห็นในหน้าสรุป)
+    chronic_conditions: profile.diseases,
+    allergies: profile.allergy || null,
+    hn: profile.hn_hospital || null,
+    doctor_name: profile.doctor || null,
+    doctor_phone: profile.doctor_phone || null,
+    weight_kg: profile.weight || null,
+    height_cm: profile.height || null,
+    avatar: profile.avatar || null,
+    country: profile.country || null,
+    province: profile.province || null,
+    ethnicity: profile.ethnicity || null,
+    treatment_rights: profile.treatment_rights || null,
+    disease_duration: profile.disease_duration || null,
+    repeat_reminder_minutes: profile.notify.repeat,
+    pdpa_anonymous_ok: !!profile.pdpa.anonymous,
+    pdpa_consent: true
   };
   let ticket = null; try{ ticket = localStorage.getItem(OB_TICKET); }catch(e){}
   let savedUserId = MTAuth.userId();
@@ -1663,7 +1669,7 @@ async function saveOnboarding(){
     } else if (ticket) {
       const r = await fetch(`${MEDTRACK_BACKEND}/api/users/onboard`, {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ ...body, chronic_conditions: profile.diseases, onboard_ticket: ticket }) });
+        body: JSON.stringify({ ...body, onboard_ticket: ticket }) });
       const d = await r.json();
       if (d.session_token) {
         MTAuth.save(d.session_token, d.user || { id: d.user_id, name: d.user_name });
@@ -1684,6 +1690,7 @@ async function saveOnboarding(){
     }
     profile.user_id = savedUserId; profile.id = savedUserId;
     await linkHospital(savedUserId, profile.hospital_id, profile.hn_hospital);
+    await obCreateCaregiverInvites();
     showToast('✅ บันทึกข้อมูลสำเร็จ');
     // สมัครจากการจับคู่เครื่อง → ยืนยันให้ไอคอนหน้าจอโฮมเข้าสู่ระบบด้วย
     if (await mtPairFinishAfterSignup()) { try{ localStorage.setItem(KEY, JSON.stringify(profile)); }catch(e){} return; }
@@ -1697,6 +1704,27 @@ async function saveOnboarding(){
   showSuccessScreen(profile);
 }
 
+// ผู้ดูแลที่กรอกตอนสมัคร → สร้างคำเชิญบน server (ได้ลิงก์ให้ส่งต่อทาง LINE)
+let _obInvites = [];
+async function obCreateCaregiverInvites(){
+  _obInvites = [];
+  for (const c of caregivers) {
+    if (c._sent) continue;
+    try {
+      const r = await fetch(`${MEDTRACK_BACKEND}/api/caregivers`, { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name: c.name, relationship: c.rel || null, phone: c.phone || null, caregiver_tier: c.caregiver_tier || 'primary' }) });
+      const d = await r.json();
+      if (d.ok && d.magic_link) { c._sent = true; _obInvites.push({ name: c.name, link: d.magic_link }); }
+    } catch (e) { console.warn('[onboard] caregiver invite failed', e); }
+  }
+}
+async function obShareInvite(i){
+  const v = _obInvites[i]; if (!v) return;
+  const text = `สวัสดีครับ ${v.name} 🙏\n\nขอเชิญคุณเป็นผู้ดูแลของผมใน MedTrack — ระบบเตือนกินยา\n\n👉 กดลิงก์นี้เพื่อรับเชิญ:\n${v.link}\n\nเมื่อผมลืมกินยา คุณจะได้รับแจ้งเตือนทาง LINE ขอบคุณครับ 💊`;
+  if (navigator.share) { try { await navigator.share({ title: 'MedTrack — เชิญเป็นผู้ดูแล', text }); return; } catch (e) { return; } }
+  window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank');
+}
+
 function showSuccessScreen(p){
   const d=p.diseases||[];
   document.getElementById('successSummary').innerHTML=`
@@ -1705,7 +1733,7 @@ function showSuccessScreen(p){
     ${d.length?`<div class="success-row"><div class="success-row-ico">🩺</div>${d.join(', ')}</div>`:''}
     ${p.hospital?`<div class="success-row"><div class="success-row-ico">🏥</div>${p.hospital}</div>`:''}
     <div class="success-row"><div class="success-row-ico">⏰</div>เช้า ${p.meals.morning} · เที่ยง ${p.meals.noon} · เย็น ${p.meals.evening}</div>
-    ${p.caregivers?.length?`<div class="success-row"><div class="success-row-ico">👨‍👩‍👧</div>ผู้ดูแล ${p.caregivers.length} คน</div>`:''}
+    ${_obInvites.length?`<div class="success-row" style="flex-direction:column;align-items:stretch;gap:6px"><div><span class="success-row-ico">👨‍👩‍👧</span> ส่งลิงก์ให้ผู้ดูแลกดรับเชิญ</div>${_obInvites.map((v,i)=>`<button onclick="obShareInvite(${i})" style="padding:10px;border-radius:10px;border:0;background:#06c755;color:#fff;font-weight:700;font-size:14px;cursor:pointer">📤 ส่งลิงก์ให้ ${v.name}</button>`).join('')}</div>`:(p.caregivers?.length?`<div class="success-row"><div class="success-row-ico">👨‍👩‍👧</div>ผู้ดูแล ${p.caregivers.length} คน · ส่งลิงก์ได้ที่ ตั้งค่า → ผู้ดูแล</div>`:'')}
     ${p.country?`<div class="success-row"><div class="success-row-ico">🌏</div>${{TH:'ไทย',MM:'เมียนมา',LA:'ลาว',KH:'กัมพูชา',VN:'เวียดนาม',CN:'จีน'}[p.country]||p.country}${p.province?' · '+p.province:''}</div>`:''}
     ${p.treatment_rights?`<div class="success-row"><div class="success-row-ico">🏥</div>${p.treatment_rights}</div>`:''}
   `;
@@ -1968,6 +1996,6 @@ function ob4SimConnect(){ window.open('https://line.me/ti/p/@medtrack','_blank')
 // Fix: removed dead code call to syncSplashLang() — function never defined
 // (Original: syncSplashLang(); — caused ReferenceError on every page load)
 </script>
-<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.08e</div>
+<div id="mt-version" style="position:fixed;bottom:4px;right:6px;font:10px -apple-system,sans-serif;color:rgba(150,150,150,0.55);z-index:9998;pointer-events:none;letter-spacing:0.3px">v2026.11.09a</div>
 </body>
 </html>
